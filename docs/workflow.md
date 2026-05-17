@@ -104,7 +104,6 @@ When a language profile is active (set via `./scripts/setup.sh --lang=<lang>`):
 |------|-------|---------|
 | RTK | All | 60-90% token reduction on CLI operations |
 | tldt | Discuss, Verify | Compress long documents before feeding to context |
-| Caveman | All | 65% response compression during iterative work |
 | GSD | Plan → Ship | Persistent state and parallel execution |
 
 ---
