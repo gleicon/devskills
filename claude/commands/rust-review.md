@@ -1,4 +1,4 @@
-Review Rust code with Tiger Style constraints, safety metrics, and idiomatic Rust checks.
+Review Rust code for safety metrics, error handling, and idiomatic Rust.
 
 Applies to: Rust stable. Systems programming, CLI tools, services.
 
