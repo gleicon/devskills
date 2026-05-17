@@ -152,7 +152,8 @@ The installer writes to:
 ```
 
 Running `install.sh` from inside the devskills source repo auto-skips the
-Cursor and VSCode installs so it does not write contributor files into the repo.
+Cursor and VSCode installs and ignores `--lang`, so it does not write
+contributor files (`.cursor/`, `.github/`, `CLAUDE.md`) into the repo.
 
 ### Publishing
 

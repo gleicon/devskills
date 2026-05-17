@@ -54,6 +54,10 @@ case "${PWD}/" in
     fi
     SKIP_CURSOR=1
     SKIP_VSCODE=1
+    if [ -n "$LANG_PROFILE" ]; then
+      warn "Running inside the devskills source repo; ignoring --lang to avoid writing CLAUDE.md into the repo."
+      LANG_PROFILE=""
+    fi
     ;;
 esac
 
