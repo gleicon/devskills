@@ -115,9 +115,9 @@ install_opencode() {
 
 install_gsd() {
   if command -v npx &>/dev/null; then
-    log "Installing GSD (Get Shit Done)..."
+    log "Installing GSD (Get Shit Done) — interactive, follow prompts..."
     if [ "$DRY_RUN" -eq 0 ]; then
-      npx get-shit-done-cc@latest 2>&1 | tail -5
+      npx get-shit-done-cc@latest
     else
       log "DRY: would run npx get-shit-done-cc@latest"
     fi
@@ -127,23 +127,57 @@ install_gsd() {
 }
 
 install_rtk() {
-  if command -v cargo &>/dev/null; then
-    log "Installing RTK via Cargo..."
-    if [ "$DRY_RUN" -eq 0 ]; then
-      cargo install rtk-cli 2>&1 | tail -3 || warn "RTK cargo install failed. Try: https://github.com/rtk-ai/rtk"
+  # Detect name collision: reachingforthejack/rtk installs a binary also called 'rtk'
+  # but has no 'gain' subcommand. Test for rtk-ai by probing 'rtk gain'.
+  if command -v rtk &>/dev/null; then
+    if rtk gain &>/dev/null; then
+      log "RTK (rtk-ai) already installed at $(command -v rtk). Skipping."
+      return 0
     else
-      log "DRY: would run cargo install rtk-cli"
+      warn "A binary named 'rtk' exists at $(command -v rtk) but is NOT rtk-ai (token proxy)."
+      warn "This is likely reachingforthejack/rtk (Rust toolkit) — a known name collision."
+      warn "To fix:"
+      warn "  1. Remove the wrong binary:  cargo uninstall rtk"
+      warn "  2. Re-run install:            ./install.sh (rtk-ai will then install via brew)"
+      warn "Skipping RTK install to avoid shadowing."
+      return 1
     fi
-  elif command -v brew &>/dev/null; then
-    log "Installing RTK via Homebrew..."
+  fi
+
+  # macOS: Homebrew is the preferred path — avoids cargo name collision
+  if [[ "$(uname)" == "Darwin" ]] && command -v brew &>/dev/null; then
+    log "Installing RTK via Homebrew (macOS)..."
     if [ "$DRY_RUN" -eq 0 ]; then
-      brew install rtk-ai/tap/rtk 2>&1 | tail -3 || warn "RTK brew install failed. Check: https://github.com/rtk-ai/rtk"
+      brew install rtk-ai/tap/rtk || warn "RTK brew install failed. See: https://github.com/rtk-ai/rtk"
     else
       log "DRY: would run brew install rtk-ai/tap/rtk"
     fi
-  else
-    warn "Neither cargo nor brew found. Install RTK manually: https://github.com/rtk-ai/rtk"
+    return
+
+  # Linux: download prebuilt binary from GitHub releases
+  elif [[ "$(uname)" == "Linux" ]]; then
+    log "Installing RTK via GitHub release (Linux)..."
+    if [ "$DRY_RUN" -eq 0 ]; then
+      local bin_dir="${HOME}/.local/bin"
+      mkdir -p "$bin_dir"
+      local arch
+      arch="$(uname -m)"
+      local asset="rtk-${arch}-unknown-linux-musl"
+      local url="https://github.com/rtk-ai/rtk/releases/latest/download/${asset}"
+      if curl -fsSL "$url" -o "${bin_dir}/rtk" 2>/dev/null; then
+        chmod +x "${bin_dir}/rtk"
+        log "RTK installed to ${bin_dir}/rtk"
+        log "Ensure ${bin_dir} is on your PATH."
+      else
+        warn "RTK binary download failed. Install manually: https://github.com/rtk-ai/rtk"
+      fi
+    else
+      log "DRY: would download rtk-ai binary to ~/.local/bin/rtk"
+    fi
+    return
   fi
+
+  warn "RTK: unsupported OS or no package manager. Install manually: https://github.com/rtk-ai/rtk"
 }
 
 install_tldt() {
