@@ -1,7 +1,5 @@
 Summarize the provided content using extractive techniques.
 
-Source: https://github.com/gleicon/tldt
-
 tldt performs graph-based extractive summarization. Output consists of verbatim sentences selected from the source — no paraphrasing, no generation, no hallucination. If tldt CLI is available in the environment, prefer using it directly for maximum fidelity.
 
 ## Usage

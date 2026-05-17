@@ -18,6 +18,7 @@ The following are installed as separate tools. The install script handles this.
 | RTK | https://github.com/rtk-ai/rtk | CLI proxy; reduces AI context token consumption 60-90% |
 | Caveman | https://github.com/juliusbrussee/caveman | Response compression; reduces output tokens ~65% |
 | tldt | https://github.com/gleicon/tldt | Extractive text summarization; no LLM, no cost |
+| Tiger Style | https://tigerstyle.dev/ | Engineering principles — safety, performance, developer experience |
 
 ## Included Skills
 

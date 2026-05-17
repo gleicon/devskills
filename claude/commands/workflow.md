@@ -1,7 +1,6 @@
 Enter the standard development workflow: specification to shipped product.
 
 This workflow uses GSD (Get Shit Done) as its execution engine.
-Source: https://github.com/gsd-build/get-shit-done
 
 ## Workflow Phases
 

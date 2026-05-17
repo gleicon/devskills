@@ -1,7 +1,5 @@
 Activate caveman response compression at ULTRA level for this session.
 
-Source: https://github.com/juliusbrussee/caveman
-
 ULTRA mode: maximum compression. Target 75-85% token reduction. Fragments, symbols, and terse notation replace prose. Output is dense — if the user needs elaboration they will ask.
 
 ## What changes in ULTRA vs LITE

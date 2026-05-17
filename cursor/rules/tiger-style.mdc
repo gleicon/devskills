@@ -5,7 +5,6 @@ alwaysApply: true
 
 # Tiger Style
 
-Source: https://tigerstyle.dev/
 Full reference: https://github.com/tigerbeetle/tigerbeetle/blob/main/docs/TIGER_STYLE.md
 
 Priority order: Safety > Performance > Developer Experience.
