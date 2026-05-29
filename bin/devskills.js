@@ -58,7 +58,7 @@ function list() {
   const claudeDir = path.join(DEVSKILLS_DIR, "claude", "commands")
   const langDir = path.join(DEVSKILLS_DIR, "prompts", "language")
 
-  console.log("\nSkills (Claude Code / OpenCode commands):")
+  console.log("\nSkills (Claude Code / OpenCode commands — identical sets):")
   for (const f of fs.readdirSync(claudeDir).sort()) {
     if (f.endsWith(".md")) {
       console.log(`  /${f.replace(".md", "")}`)

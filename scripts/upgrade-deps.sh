@@ -83,6 +83,7 @@ upgrade_rtk() {
     log "Upgrading RTK via GitHub release (Linux)..."
     if [ "$DRY_RUN" -eq 0 ]; then
       local bin_dir="${HOME}/.local/bin"
+      mkdir -p "$bin_dir"
       local arch; arch="$(uname -m)"
       local url="https://github.com/rtk-ai/rtk/releases/latest/download/rtk-${arch}-unknown-linux-musl"
       curl -fsSL "$url" -o "${bin_dir}/rtk" && chmod +x "${bin_dir}/rtk" \
