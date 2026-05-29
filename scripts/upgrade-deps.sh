@@ -84,12 +84,22 @@ upgrade_rtk() {
     if [ "$DRY_RUN" -eq 0 ]; then
       local bin_dir="${HOME}/.local/bin"
       mkdir -p "$bin_dir"
-      local arch; arch="$(uname -m)"
-      local url="https://github.com/rtk-ai/rtk/releases/latest/download/rtk-${arch}-unknown-linux-musl"
-      curl -fsSL "$url" -o "${bin_dir}/rtk" && chmod +x "${bin_dir}/rtk" \
-        || warn "RTK binary download failed."
+      local arch target; arch="$(uname -m)"
+      case "$arch" in
+        x86_64)        target="x86_64-unknown-linux-musl" ;;
+        aarch64|arm64) target="aarch64-unknown-linux-gnu" ;;
+        *) warn "RTK: unsupported Linux arch '${arch}'. Upgrade manually: https://github.com/rtk-ai/rtk"; return ;;
+      esac
+      local url="https://github.com/rtk-ai/rtk/releases/latest/download/rtk-${target}.tar.gz"
+      local tmp; tmp="$(mktemp -d)"
+      if curl -fsSL "$url" -o "${tmp}/rtk.tar.gz" && tar -xzf "${tmp}/rtk.tar.gz" -C "$bin_dir"; then
+        chmod +x "${bin_dir}/rtk"
+      else
+        warn "RTK download failed."
+      fi
+      rm -rf "$tmp"
     else
-      log "DRY: would download latest rtk-ai binary to ~/.local/bin/rtk"
+      log "DRY: would download and extract latest rtk-ai release to ~/.local/bin/rtk"
     fi
   else
     warn "RTK: unsupported OS. Upgrade manually: https://github.com/rtk-ai/rtk"

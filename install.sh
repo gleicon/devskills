@@ -177,25 +177,32 @@ install_rtk() {
     fi
     return
 
-  # Linux: download prebuilt binary from GitHub releases
+  # Linux: download prebuilt binary from GitHub releases (assets are .tar.gz)
   elif [[ "$(uname)" == "Linux" ]]; then
     log "Installing RTK via GitHub release (Linux)..."
     if [ "$DRY_RUN" -eq 0 ]; then
       local bin_dir="${HOME}/.local/bin"
       mkdir -p "$bin_dir"
-      local arch
+      local arch target
       arch="$(uname -m)"
-      local asset="rtk-${arch}-unknown-linux-musl"
-      local url="https://github.com/rtk-ai/rtk/releases/latest/download/${asset}"
-      if curl -fsSL "$url" -o "${bin_dir}/rtk" 2>/dev/null; then
+      case "$arch" in
+        x86_64)        target="x86_64-unknown-linux-musl" ;;
+        aarch64|arm64) target="aarch64-unknown-linux-gnu" ;;
+        *) warn "RTK: unsupported Linux arch '${arch}'. Install manually: https://github.com/rtk-ai/rtk"; return ;;
+      esac
+      local url="https://github.com/rtk-ai/rtk/releases/latest/download/rtk-${target}.tar.gz"
+      local tmp
+      tmp="$(mktemp -d)"
+      if curl -fsSL "$url" -o "${tmp}/rtk.tar.gz" && tar -xzf "${tmp}/rtk.tar.gz" -C "$bin_dir"; then
         chmod +x "${bin_dir}/rtk"
         log "RTK installed to ${bin_dir}/rtk"
         log "Ensure ${bin_dir} is on your PATH."
       else
-        warn "RTK binary download failed. Install manually: https://github.com/rtk-ai/rtk"
+        warn "RTK download failed. Install manually: https://github.com/rtk-ai/rtk"
       fi
+      rm -rf "$tmp"
     else
-      log "DRY: would download rtk-ai binary to ~/.local/bin/rtk"
+      log "DRY: would download and extract rtk-ai release to ~/.local/bin/rtk"
     fi
     return
   fi
