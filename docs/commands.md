@@ -102,6 +102,14 @@ Extremely strict maintainability audit: abstraction quality, file sprawl (the 1k
 - **Output:** prioritized findings anchored to `file:line`, with an approval verdict.
 - **Reach for it when:** before merging non-trivial work, or auditing an area you suspect is decaying.
 
+### `/doc-quality-review` — action
+
+Strict documentation audit governed by one principle — **docs earn their length** (readers skim, they don't read). Hunts wrong docs (drifted from the code) and bloated docs (true, but nobody reads them) with equal energy. Verifies mechanically: resolves links, recounts claimed counts, runs example commands where safe.
+
+- **Args:** treated as scope (files, directories, globs); defaults to docs changed on the current branch. `--comments` also audits inline code comments (off by default).
+- **Output:** prioritized findings anchored to `file:line` with a suggested fix — accuracy/drift first, then dead links and wrong counts, missing docs, bloat-to-cut, clarity. Changes nothing.
+- **Reach for it when:** before a docs PR, after the code outgrew its README, or when the docs feel long and unread.
+
 ### `/deslop` — action
 
 Strip AI-generated slop from the branch and align it with the surrounding code. The test is "code an experienced engineer in this language and codebase wouldn't write" — judged against the language's idioms, not a fixed syntax list. Targets narrating comments, defensive overkill abnormal for a trusted path, type escape hatches used only to dodge the checker, needless nesting, and speculative scaffolding.

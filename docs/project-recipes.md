@@ -53,6 +53,7 @@ No feature — just paying down entropy. The trick is turning findings *into tas
 ```
 /deslop                                 # strip slop from recent work
 /code-quality-review .                  # full-codebase structural audit (or a path to scope it)
+/doc-quality-review .                   # docs entropy too: drift vs. code, dead links, bloat (--comments for code comments)
 you → paste the findings into:
 /project-plan                           # findings become ordered tasks in PLAN.md
 /go-review        (or /ts-review, /rust-review)   # language idioms + security
@@ -76,6 +77,7 @@ Run it on a cadence (end of a sprint, before a release). Branch-scope `/code-qua
 you → "implement task 4: the retry policy with capped backoff"
 /deslop
 /code-quality-review        # branch-scoped, before review
+/doc-quality-review         # if the feature touched README/docs — did they keep up?
 /verify-this "requests retry 3× with backoff, then surface the error"
 /project-checkpoint
 ```
@@ -144,6 +146,7 @@ you → "implement phase 1: introduce the new interface behind the old one"
 # ...next session...
 /project-resume             # picks up PLAN.md + the fresh handoff
 /project-map                # refresh PROJECT.md once the shape has changed
+/doc-quality-review         # the shape changed — hunt docs the refactor silently rotted (renames, moved files, dead links)
 ```
 
 Checkpoint between *every* phase so you can `/clear` and resume with a clean context window — that's the whole point of the state files for work this size.
