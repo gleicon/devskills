@@ -128,8 +128,8 @@ Language-specific review passes.
 
 - **`/go-review`** — idiomatic Go + security + Tiger Style.
 - **`/ts-review`** — TypeScript/Workers: strict mode, React, Cloudflare.
-- **`/rust-review`** — cargo geiger, `unsafe` counts, clippy, audit.
-- **Args:** `--no-tiger` skips the Tiger Style section (Go/TS).
+- **`/rust-review`** — cargo geiger, `unsafe`/panic counts, clippy, audit, Tiger Style + security.
+- **Args:** `--no-tiger` skips the Tiger Style section (all three).
 - **Reach for it when:** reviewing code in that language, or as a pre-PR gate.
 
 ---

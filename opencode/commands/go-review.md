@@ -13,16 +13,16 @@ Example: `/go-review --no-tiger dir1/ dir2/` reviews `dir1/` and `dir2/` without
 
 ## Review Checklist
 
-Run through each category. Report only violations — no praise, no summary.
+Use the checklist as a lens, not a scorecard: reason about the actual change, report real violations anchored to `file:line`, and flag issues even when they aren't listed. Don't manufacture findings to fill a category. Report only violations — no praise, no summary.
 
 ### Tiger Style
 
 Skip this section entirely if `--no-tiger` was passed. Otherwise it is mandatory.
-- [ ] Every function has at least 2 assertions (or equivalent panic/check guards)
+- [ ] Non-trivial functions assert their preconditions and key invariants — don't demand assertions in thin wrappers or trivial accessors
 - [ ] All loops have explicit bounds; no unbounded iteration over external input
 - [ ] No recursion without provable termination
 - [ ] All errors explicitly handled — no `_` discard of error returns
-- [ ] No post-initialization dynamic allocation in hot paths
+- [ ] No post-initialization dynamic allocation in paths actually identified as hot — don't flag ordinary allocation
 - [ ] Functions under 70 lines
 - [ ] Variable names include units/qualifiers where applicable
 
@@ -49,10 +49,10 @@ Skip this section entirely if `--no-tiger` was passed. Otherwise it is mandatory
 - [ ] No `exec.Command` with unsanitized user input
 - [ ] No hardcoded credentials or secrets
 - [ ] HTTP handlers validate and bound all user-controlled inputs
-- [ ] `net/http` timeouts set on all clients (ReadTimeout, WriteTimeout, IdleTimeout)
+- [ ] `http.Server` sets ReadTimeout/WriteTimeout/IdleTimeout; `http.Client` sets `Timeout` or uses context deadlines
 
 ### Testing
-- [ ] All exported functions have tests
+- [ ] Public surface and error paths have meaningful coverage — flag notable gaps, not every untested accessor
 - [ ] Error paths tested, not just happy path
 - [ ] Benchmarks for performance-critical functions
 - [ ] No `time.Sleep` in tests — use channels or sync primitives

@@ -2,6 +2,15 @@ Review Rust code for safety metrics, error handling, and idiomatic Rust.
 
 Applies to: Rust stable. Systems programming, CLI tools, services.
 
+## Arguments
+
+Scan the invocation for the `--no-tiger` flag. Treat every other argument as review scope (files or directories); if no scope is given, review the changed files on the current branch.
+
+- `--no-tiger` present → skip the Tiger Style section; run the remaining sections only.
+- `--no-tiger` absent → run all sections (default).
+
+The whole-crate metric commands below are baseline context. Anchor findings to the code in scope — don't report pre-existing `unwrap`/`panic` counts outside the change as if the change introduced them.
+
 ## Automated Checks (run first if tools are available)
 
 ```bash
@@ -46,9 +55,20 @@ clippy warnings:    <N>
 audit findings:     <N>
 ```
 
-Each non-zero number requires justification in the review findings.
+Each non-zero number introduced or touched by the change requires justification. Pre-existing counts outside the scope are context, not findings.
 
 ## Review Checklist
+
+Use the checklist as a lens, not a scorecard: reason about the actual change, report real violations anchored to `file:line`, and flag issues even when they aren't listed. Don't manufacture findings to fill a category.
+
+### Tiger Style
+
+Skip this section entirely if `--no-tiger` was passed. Otherwise it is mandatory.
+- [ ] Non-trivial functions assert preconditions and key invariants with `assert!` / `debug_assert!`
+- [ ] All loops over external input have explicit bounds; no recursion without provable termination
+- [ ] Functions under 70 lines
+- [ ] Named constants for limits and sizes — no unexplained magic numbers
+- [ ] Errors propagated explicitly — never silently dropped with `let _ =` or `.ok()` on a meaningful operation
 
 ### Unsafe Code
 - [ ] Every `unsafe` block has a `// SAFETY:` comment explaining the invariant relied upon
@@ -84,7 +104,7 @@ Each non-zero number requires justification in the review findings.
 - [ ] Iterator chains preferred over manual loops where clarity is not lost
 - [ ] `if let` / `while let` over `.unwrap()` on Options
 - [ ] `matches!()` macro for pattern matching in boolean context
-- [ ] Struct fields ordered: frequently accessed first (cache line consideration for hot structs)
+- [ ] Field order only matters for `#[repr(C)]`/FFI types — don't flag ordering on ordinary `repr(Rust)` structs (the compiler reorders them)
 - [ ] `#[derive]` used where applicable (Debug, Clone, PartialEq)
 - [ ] No custom `Display` that duplicates `Debug` — both should exist independently
 
@@ -93,6 +113,14 @@ Each non-zero number requires justification in the review findings.
 - [ ] `String::with_capacity(n)` / `Vec::with_capacity(n)` where size is known
 - [ ] No repeated `HashMap::get` + `HashMap::insert` — use `entry()` API
 - [ ] Large values passed by reference, not moved through multiple stack frames unnecessarily
+
+### Security
+- [ ] No SQL built by string formatting — use parameterized queries / typed query macros (`sqlx`, `diesel`)
+- [ ] No `Command::new` / shell execution with unsanitized user input
+- [ ] No hardcoded credentials or secrets
+- [ ] Untrusted input validated and bounded before use (lengths, indices, sizes)
+- [ ] Outbound URLs derived from user input validated or allow-listed (SSRF)
+- [ ] Deserialization of untrusted data is size-bounded and depth-limited
 
 ### Testing
 - [ ] Each `unsafe` block has a dedicated test
