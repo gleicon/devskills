@@ -52,9 +52,20 @@ NFR-4: Data retention: <policy>
 Numbered list. Each item is a pass/fail test that can be run.
 AC-1: Given <state>, when <action>, then <outcome>.
 
+Coverage — map every FR to the AC(s) that verify it. An uncovered FR is a spec defect:
+FR-1 → AC-1, AC-2
+FR-2 → AC-3
+
 ## Open Questions
 Questions that must be answered before implementation begins.
 ```
+
+## Requirement Quality Rules
+
+- Every requirement is verifiable. If it can't be tested pass/fail, it's a wish, not a requirement — rewrite it or move it to Constraints.
+- SHALL = mandatory, SHOULD = recommended, MAY = optional. Choose deliberately.
+- No ambiguous quantifiers: not "fast" or "reasonable" — state the number.
+- One requirement per statement. Split compound requirements; list exceptions as sub-items (`FR-N.a`, `FR-N.b`).
 
 ## Language Profile Integration
 
@@ -66,6 +77,6 @@ If a language profile is active, add a "Technical Profile" section:
 
 ## Output
 
-Write the spec to `SPEC.md` in the current directory (or `.planning/SPEC.md` if `.planning/` exists), then display it inline for review.
+Write the spec to `.project/SPEC.md` if `.project/` exists, else `.planning/SPEC.md` if `.planning/` exists, else `SPEC.md` in the current directory; then display it inline for review.
 
 Ask: "Should I proceed to planning with `/workflow`?" after displaying the spec.

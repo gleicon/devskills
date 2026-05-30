@@ -89,7 +89,7 @@ Review PLAN.md before executing. Change anything you disagree with.
 
 GSD runs PLAN.md tasks using parallel sub-agents. Each sub-agent gets a fresh context window scoped to its task. The main session stays at 30-40% context utilization.
 
-Tiger Style is applied during execution. Language profile conventions (from your `.devskills/language` file) are applied automatically if set.
+Tiger Style is applied during execution. Language profile conventions (from the `<!-- profile: <lang> -->` block in your `AGENTS.md`) are applied automatically if set.
 
 ### Step 6: Verify
 
@@ -164,6 +164,8 @@ Commit `.planning/` to git. It is the canonical record of decisions and progress
 | Compress long docs | `/tldt` before feeding to GSD discuss |
 | Reduce response noise | `/caveman-lite` or `/caveman-ultra` during iterative execution |
 | Style enforcement | `/tiger-style` at session start |
+| Token savings on CLI ops | `rtk` wraps git/build/test commands automatically (60–90% reduction) |
+| Language conventions | set a profile via `setup.sh --lang=<lang>`; `/spec` adds a Technical Profile section, execution applies the idioms, and the matching review skill (`/go-review`, `/ts-review`, `/rust-review`) runs at verify |
 
 ---
 

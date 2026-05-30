@@ -88,12 +88,11 @@ Allows `npx devskills install` without cloning.
 
 ### What gets published
 
-The `files` array in `package.json` controls this. Current value:
-```json
-"files": ["bin/", "claude/", "opencode/", "cursor/", "vscode/", "prompts/", "scripts/", "docs/", "install.sh", "README.md"]
-```
-
-Node modules, `.git/`, and `.devskills/` are excluded automatically.
+The `files` array in `package.json` controls this — it whitelists the skill
+directories (`claude/`, `opencode/`, `cursor/`, `vscode/`, `prompts/`),
+`scripts/`, `docs/`, the `bin/` CLI, and the top-level `install.sh`,
+`README.md`, and `PUBLISHING.md`. Anything not listed (node modules, `.git/`,
+tests) is excluded automatically. Check the live list with `npm pack --dry-run`.
 
 ### Verify before publishing
 
@@ -102,28 +101,6 @@ npm pack --dry-run    # list files that would be published
 npm pack             # create .tgz, inspect locally
 tar tzf devskills-*.tgz
 ```
-
----
-
-## Option 3: GitHub Releases (binary-style distribution)
-
-Useful for teams that do not use npm but want versioned installs.
-
-1. Tag a release:
-   ```bash
-   git tag v0.1.0
-   git push origin v0.1.0
-   ```
-
-2. Create a GitHub release via `gh`:
-   ```bash
-   gh release create v0.1.0 --title "v0.1.0" --notes "Initial release" --generate-notes
-   ```
-
-3. Users install from a specific tag:
-   ```bash
-   curl -fsSL https://raw.githubusercontent.com/gleicon/devskills/v0.1.0/install.sh | bash
-   ```
 
 ---
 
@@ -145,35 +122,6 @@ The install script references external tools by their latest published version. 
 2. Update the command file that references the tool.
 3. Update `docs/` if behavior changed.
 4. Bump `npm version minor` (behavior change, not just bug fix).
-
----
-
-## CI: GitHub Actions (optional)
-
-Create `.github/workflows/publish.yml` to automate npm publish on tag push:
-
-```yaml
-name: publish
-
-on:
-  push:
-    tags: ["v*"]
-
-jobs:
-  publish:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          registry-url: https://registry.npmjs.org
-      - run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-```
-
-Store `NPM_TOKEN` in GitHub repo Settings → Secrets → Actions.
 
 ---
 

@@ -44,7 +44,7 @@ When this skill is activated:
 
 ## Language Profile
 
-If a language profile is set (go, typescript, javascript, rust), apply its conventions to all code in this session. Check for a `CLAUDE.md` or `.devskills/language` file in the project root.
+If a language profile is set (go, typescript, javascript, rust), apply its conventions to all code in this session. Check `AGENTS.md` in the project root for a `<!-- profile: <lang> -->` marker.
 
 ## Shortcuts
 

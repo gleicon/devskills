@@ -8,6 +8,12 @@ OPENCODE_COMMANDS_DIR="${HOME}/.opencode/commands"
 log() { printf '[devskills] %s\n' "$1"; }
 warn() { printf '[devskills] WARN: %s\n' "$1" >&2; }
 
+# Shared GSD/RTK/tldt logic (depends on log/warn above and DRY_RUN below).
+# shellcheck source=scripts/lib/external-tools.sh
+source "${DEVSKILLS_DIR}/scripts/lib/external-tools.sh"
+# shellcheck source=scripts/lib/editors.sh
+source "${DEVSKILLS_DIR}/scripts/lib/editors.sh"
+
 # ------------------------------------------------------------
 # Arguments
 # ------------------------------------------------------------
@@ -16,6 +22,8 @@ LANG_PROFILE=""
 SKIP_EXTERNAL=0
 SKIP_CURSOR=0
 SKIP_VSCODE=0
+CONCISE=0
+HINTS=0
 DRY_RUN=0
 
 for arg in "$@"; do
@@ -25,23 +33,31 @@ for arg in "$@"; do
     --skip-external) SKIP_EXTERNAL=1 ;;
     --skip-cursor) SKIP_CURSOR=1 ;;
     --skip-vscode) SKIP_VSCODE=1 ;;
+    --concise) CONCISE=1 ;;
+    --hints) HINTS=1 ;;
     --dry-run) DRY_RUN=1 ;;
     --help|-h)
-      echo "Usage: install.sh [--lang=go|typescript|javascript|rust] [--claude-dir=PATH] [--skip-external] [--skip-cursor] [--skip-vscode] [--dry-run]"
+      echo "Usage: install.sh [--lang=go|typescript|javascript|rust] [--claude-dir=PATH] [--skip-external] [--skip-cursor] [--skip-vscode] [--concise] [--hints] [--dry-run]"
       echo ""
+      echo "  --lang=<profile>    Language profile to write: go|typescript|javascript|rust"
       echo "  --claude-dir=PATH   Claude config dir (default: \$CLAUDE_CONFIG_DIR or \$HOME/.claude)"
       echo "  --skip-external     Skip external tool installation (GSD, RTK, tldt)"
       echo "  --skip-cursor       Skip Cursor rules install into the current project"
       echo "  --skip-vscode       Skip VSCode Copilot instructions install into the current project"
+      echo "  --concise           Add a terse-response directive to AGENTS.md (with --lang)"
+      echo "  --hints             Add a devskills tooling reference to AGENTS.md (with --lang)"
+      echo "  --dry-run           Show what would happen, write nothing"
       exit 0
       ;;
   esac
 done
 
-# Expand leading ~ in --claude-dir value
+# Expand leading ~ in --claude-dir value.
+# Quote the strip pattern: an unquoted ~/ undergoes tilde expansion itself,
+# strips nothing, and yields "$HOME/~/.claude".
 case "$CLAUDE_CONFIG_DIR" in
   "~") CLAUDE_CONFIG_DIR="${HOME}" ;;
-  "~/"*) CLAUDE_CONFIG_DIR="${HOME}/${CLAUDE_CONFIG_DIR#~/}" ;;
+  "~/"*) CLAUDE_CONFIG_DIR="${HOME}/${CLAUDE_CONFIG_DIR#"~/"}" ;;
 esac
 CLAUDE_COMMANDS_DIR="${CLAUDE_CONFIG_DIR}/commands"
 
@@ -61,6 +77,19 @@ case "${PWD}/" in
     ;;
 esac
 
+# AGENTS.md is only written when --lang is given (see install_lang_profile).
+# Flag --concise/--hints used without --lang so they aren't a silent no-op.
+if [ -z "$LANG_PROFILE" ] && { [ "$CONCISE" -eq 1 ] || [ "$HINTS" -eq 1 ]; }; then
+  warn "--concise/--hints apply with --lang; nothing written to AGENTS.md. Use scripts/setup.sh for a baseline-only project."
+fi
+
+# Validate --lang up front, before any install side effects: a bad profile
+# should fail fast, not after GSD/RTK/tldt are already installed.
+if [ -n "$LANG_PROFILE" ] && [ ! -f "${DEVSKILLS_DIR}/prompts/language/${LANG_PROFILE}.md" ]; then
+  warn "No language profile for '${LANG_PROFILE}'. Available: go, typescript, javascript, rust"
+  exit 1
+fi
+
 # ------------------------------------------------------------
 # Helpers
 # ------------------------------------------------------------
@@ -69,12 +98,33 @@ install_file() {
   local src="$1"
   local dst="$2"
   if [ "$DRY_RUN" -eq 1 ]; then
-    log "DRY: would install $src -> $dst"
+    log "[dry] would install $src -> $dst"
     return
   fi
   mkdir -p "$(dirname "$dst")"
   cp "$src" "$dst"
   log "installed $dst"
+}
+
+# Commands removed or renamed in past releases. install only ever copies, so
+# without this the old name lingers next to its replacement forever (e.g. after
+# update.sh). Remove the known stale files from a target commands dir; only
+# touches names devskills itself shipped, never user-authored commands.
+#   frontend.md     -> ui.md
+#   write-a-skill.md -> write-a-command.md
+RENAMED_COMMANDS=(frontend.md write-a-skill.md)
+
+purge_renamed_commands() {
+  local dir="$1" name
+  for name in "${RENAMED_COMMANDS[@]}"; do
+    [ -f "${dir}/${name}" ] || continue
+    if [ "$DRY_RUN" -eq 1 ]; then
+      log "[dry] would remove renamed command ${dir}/${name}"
+    else
+      rm -f "${dir}/${name}"
+      log "removed renamed command ${dir}/${name}"
+    fi
+  done
 }
 
 # ------------------------------------------------------------
@@ -88,6 +138,7 @@ install_claude() {
     for f in "${DEVSKILLS_DIR}/claude/commands/"*.md; do
       install_file "$f" "${CLAUDE_COMMANDS_DIR}/$(basename "$f")"
     done
+    purge_renamed_commands "${CLAUDE_COMMANDS_DIR}"
   else
     warn "Claude Code not detected. Skipping. Install from https://claude.ai/code"
   fi
@@ -104,114 +155,9 @@ install_opencode() {
     for f in "${DEVSKILLS_DIR}/opencode/commands/"*.md; do
       install_file "$f" "${OPENCODE_COMMANDS_DIR}/$(basename "$f")"
     done
+    purge_renamed_commands "${OPENCODE_COMMANDS_DIR}"
   else
     warn "OpenCode not detected. Skipping."
-  fi
-}
-
-# ------------------------------------------------------------
-# External tools
-# ------------------------------------------------------------
-
-purge_old_gsd() {
-  local hooks_dir="${CLAUDE_CONFIG_DIR}/hooks"
-  [ -d "$hooks_dir" ] || return 0
-  local found=0
-  for f in "$hooks_dir"/*.sh "$hooks_dir"/*.js; do
-    [ -f "$f" ] || continue
-    if grep -q "gsd-hook-version:" "$f" 2>/dev/null; then
-      if [ "$DRY_RUN" -eq 0 ]; then
-        rm "$f"
-        log "removed old GSD hook: $(basename "$f")"
-      else
-        log "DRY: would remove old GSD hook: $f"
-      fi
-      found=1
-    fi
-  done
-  [ "$found" -eq 1 ] && log "Old GSD hooks removed. New GSD will reinstall fresh hooks."
-  return 0
-}
-
-install_gsd() {
-  purge_old_gsd
-  if command -v npx &>/dev/null; then
-    log "Installing GSD Redux — interactive, follow prompts..."
-    if [ "$DRY_RUN" -eq 0 ]; then
-      npx @opengsd/get-shit-done-redux@latest
-    else
-      log "DRY: would run npx @opengsd/get-shit-done-redux@latest"
-    fi
-  else
-    warn "npx not found. Install GSD manually: https://github.com/open-gsd/get-shit-done-redux"
-  fi
-}
-
-install_rtk() {
-  # Detect name collision: reachingforthejack/rtk installs a binary also called 'rtk'
-  # but has no 'gain' subcommand. Test for rtk-ai by probing 'rtk gain'.
-  if command -v rtk &>/dev/null; then
-    if rtk gain &>/dev/null; then
-      log "RTK (rtk-ai) already installed at $(command -v rtk). Skipping."
-      return 0
-    else
-      warn "A binary named 'rtk' exists at $(command -v rtk) but is NOT rtk-ai (token proxy)."
-      warn "This is likely reachingforthejack/rtk (Rust toolkit) — a known name collision."
-      warn "To fix:"
-      warn "  1. Remove the wrong binary:  cargo uninstall rtk"
-      warn "  2. Re-run install:            ./install.sh (rtk-ai will then install via brew)"
-      warn "Skipping RTK install to avoid shadowing."
-      return 1
-    fi
-  fi
-
-  # macOS: Homebrew is the preferred path — avoids cargo name collision
-  if [[ "$(uname)" == "Darwin" ]] && command -v brew &>/dev/null; then
-    log "Installing RTK via Homebrew (macOS)..."
-    if [ "$DRY_RUN" -eq 0 ]; then
-      brew install rtk-ai/tap/rtk || warn "RTK brew install failed. See: https://github.com/rtk-ai/rtk"
-    else
-      log "DRY: would run brew install rtk-ai/tap/rtk"
-    fi
-    return
-
-  # Linux: download prebuilt binary from GitHub releases
-  elif [[ "$(uname)" == "Linux" ]]; then
-    log "Installing RTK via GitHub release (Linux)..."
-    if [ "$DRY_RUN" -eq 0 ]; then
-      local bin_dir="${HOME}/.local/bin"
-      mkdir -p "$bin_dir"
-      local arch
-      arch="$(uname -m)"
-      local asset="rtk-${arch}-unknown-linux-musl"
-      local url="https://github.com/rtk-ai/rtk/releases/latest/download/${asset}"
-      if curl -fsSL "$url" -o "${bin_dir}/rtk" 2>/dev/null; then
-        chmod +x "${bin_dir}/rtk"
-        log "RTK installed to ${bin_dir}/rtk"
-        log "Ensure ${bin_dir} is on your PATH."
-      else
-        warn "RTK binary download failed. Install manually: https://github.com/rtk-ai/rtk"
-      fi
-    else
-      log "DRY: would download rtk-ai binary to ~/.local/bin/rtk"
-    fi
-    return
-  fi
-
-  warn "RTK: unsupported OS or no package manager. Install manually: https://github.com/rtk-ai/rtk"
-}
-
-install_tldt() {
-  if command -v go &>/dev/null; then
-    log "Installing tldt..."
-    if [ "$DRY_RUN" -eq 0 ]; then
-      go install github.com/gleicon/tldt/cmd/tldt@latest
-      log "tldt installed to $(go env GOPATH)/bin/tldt"
-    else
-      log "DRY: would run go install github.com/gleicon/tldt/cmd/tldt@latest"
-    fi
-  else
-    warn "Go not found. Install tldt manually: https://github.com/gleicon/tldt"
   fi
 }
 
@@ -221,45 +167,11 @@ install_tldt() {
 
 install_lang_profile() {
   local lang="$1"
-  local profile_file="${DEVSKILLS_DIR}/prompts/language/${lang}.md"
+  log "Writing AGENTS.md baseline${lang:+ + ${lang} profile} to ${PWD}"
 
-  if [ ! -f "$profile_file" ]; then
-    warn "No language profile for '${lang}'. Available: go, typescript, javascript, rust"
-    return 1
-  fi
-
-  log "Setting up language profile: ${lang}"
-
-  # Write profile marker for Claude Code CLAUDE.md
-  local claude_md="${PWD}/CLAUDE.md"
-  if [ "$DRY_RUN" -eq 0 ]; then
-    if [ -f "$claude_md" ]; then
-      # Append if not already present
-      if ! grep -q "devskills language profile" "$claude_md" 2>/dev/null; then
-        {
-          echo ""
-          echo "<!-- devskills language profile: ${lang} -->"
-          cat "$profile_file"
-        } >> "$claude_md"
-        log "Appended ${lang} profile to ${claude_md}"
-      else
-        log "Language profile already in ${claude_md}"
-      fi
-    else
-      {
-        echo "<!-- devskills language profile: ${lang} -->"
-        cat "$profile_file"
-      } > "$claude_md"
-      log "Created ${claude_md} with ${lang} profile"
-    fi
-
-    # Write .devskills/language marker
-    mkdir -p "${PWD}/.devskills"
-    echo "${lang}" > "${PWD}/.devskills/language"
-    log "Wrote .devskills/language: ${lang}"
-  else
-    log "DRY: would write ${lang} profile to CLAUDE.md and .devskills/language"
-  fi
+  # shellcheck source=scripts/lib/profile.sh
+  source "${DEVSKILLS_DIR}/scripts/lib/profile.sh"
+  devskills_apply "${DEVSKILLS_DIR}/prompts" "$PWD" "$DRY_RUN" "$lang" "$CONCISE" "$HINTS"
 }
 
 # ------------------------------------------------------------
@@ -269,10 +181,7 @@ install_lang_profile() {
 install_cursor() {
   if [ -d "${PWD}/.cursor" ] || command -v cursor &>/dev/null; then
     log "Installing Cursor rules to ${PWD}/.cursor/rules/"
-    mkdir -p "${PWD}/.cursor/rules"
-    for f in "${DEVSKILLS_DIR}/cursor/rules/"*.mdc; do
-      install_file "$f" "${PWD}/.cursor/rules/$(basename "$f")"
-    done
+    devskills_install_cursor "$PWD" "$LANG_PROFILE"
   else
     warn "Cursor not detected in current project. Run from a project directory with .cursor/ or with Cursor installed."
   fi
@@ -285,9 +194,7 @@ install_cursor() {
 install_vscode() {
   if [ -d "${PWD}/.vscode" ] || command -v code &>/dev/null; then
     log "Installing VSCode Copilot instructions to ${PWD}/.github/copilot-instructions.md"
-    install_file \
-      "${DEVSKILLS_DIR}/vscode/copilot-instructions.md" \
-      "${PWD}/.github/copilot-instructions.md"
+    devskills_install_vscode "$PWD"
   else
     warn "VSCode not detected in current project."
   fi
@@ -317,9 +224,9 @@ fi
 
 if [ "$SKIP_EXTERNAL" -eq 0 ]; then
   log "Installing external tools..."
-  install_gsd
-  install_rtk
-  install_tldt
+  devskills_gsd install
+  devskills_rtk install
+  devskills_tldt install
 else
   log "Skipping external tools (--skip-external)"
 fi

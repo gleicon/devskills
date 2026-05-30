@@ -28,3 +28,4 @@ fi
 
 echo "[devskills] Update complete."
 echo "[devskills] To also upgrade external tools: ./scripts/update.sh --upgrade-deps"
+echo "[devskills] To refresh a project's AGENTS.md blocks, re-run setup.sh in that project."

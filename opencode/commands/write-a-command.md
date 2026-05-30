@@ -7,8 +7,10 @@ When invoked, help the user create a command file that fits the devskills conven
 A command is a single Markdown file — no YAML frontmatter. Structure:
 
 - **Line 1** — one imperative sentence stating what the command does. This is what the agent sees when deciding to load it, so make it specific.
-- **Blank line, then context** — a short "When invoked, ..." paragraph framing the task.
-- **`## Process` / `## Rules` / `## Output` sections** — concrete, ordered instructions. Keep prose tight; fragments are fine.
+- **Blank line, then a framing paragraph** — for an *action* command, what it does when invoked; for a *mode* command, what behavior it switches on for the session.
+- **Concrete `##` sections** — ordered instructions. Keep prose tight; fragments are fine. Two archetypes, two natural shapes:
+  - **Action commands** (do a job, produce a result — `/spec`, `/deslop`, the reviews): `## Process` / `## Rules` / `## Output`, or domain-fit variants like `## Review Checklist` + `## Output Format`. Always end with the result the user gets.
+  - **Mode commands** (switch on a session behavior — `/tiger-style`, `/caveman-lite`, `/ui`): describe the behavior the mode enforces. No `## Output` — the effect is ongoing, not a single deliverable.
 
 No companion files. If a command needs more than one file, it is doing too much — split it into separate commands.
 
@@ -17,7 +19,7 @@ No companion files. If a command needs more than one file, it is doing too much 
 1. Gather the requirement: what task the command automates, and when the user would invoke it.
 2. Draft the command file following the format above. Keep it focused — one job per command.
 3. Write it to BOTH `claude/commands/<name>.md` and `opencode/commands/<name>.md`; the two must stay byte-identical.
-4. Add a row to the README "Included Skills" table and bump the file count in the directory tree.
+4. Register it: add a row to the README "Skills" table and an entry to `docs/commands.md`.
 5. Show the draft to the user for review before finalizing.
 
 ## Rules
@@ -28,4 +30,4 @@ No companion files. If a command needs more than one file, it is doing too much 
 
 ## Output
 
-The new command file (both copies) and the README updates, shown for review.
+The new command file (both copies) and the registration edits (README + `docs/commands.md`), shown for review.

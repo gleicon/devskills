@@ -13,7 +13,7 @@ Example: `/ts-review --no-tiger src/ worker/` reviews `src/` and `worker/` witho
 
 ## Review Checklist
 
-Report only violations — no praise, no summary.
+Use the checklist as a lens, not a scorecard: reason about the actual change, report real violations anchored to `file:line`, and flag issues even when they aren't listed. Don't manufacture findings to fill a category. Report only violations — no praise, no summary.
 
 ### Tiger Style
 
@@ -29,7 +29,7 @@ Skip this section entirely if `--no-tiger` was passed. Otherwise it is mandatory
 - [ ] No `as Type` casts that bypass runtime checks — validate at boundaries
 - [ ] Discriminated unions used for state modeling, not boolean flags
 - [ ] No optional chaining (`?.`) used to hide missing error handling
-- [ ] Enums prefer `const enum` or union of string literals over numeric enums
+- [ ] Prefer unions of string literals over enums entirely (`const enum` breaks under `isolatedModules`/`verbatimModuleSyntax` and most bundlers)
 - [ ] Return types explicit on all exported functions
 - [ ] No `namespace` — use ES modules
 
