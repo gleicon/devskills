@@ -50,6 +50,8 @@ Keep devskills up to date:
 --skip-external      skip GSD, RTK, tldt installation
 --skip-cursor        skip Cursor rules
 --skip-vscode        skip VSCode Copilot instructions
+--concise            add a terse-response directive to AGENTS.md (with --lang)
+--hints              add a devskills tooling reference to AGENTS.md (with --lang)
 --dry-run            show what would happen, write nothing
 ```
 
@@ -85,7 +87,7 @@ Use `--record` to log decisions to `DECISIONS.md`. Feed long reference docs thro
 GSD manages context rot across long builds by storing state in `.planning/` and using focused sub-agents per phase.
 
 ```
-/spec                → produce SPEC.md with acceptance criteria
+/spec  (devskills)   → produce SPEC.md with acceptance criteria
 /gsd-new-project     → initialize .planning/, build ROADMAP.md from SPEC.md
 /gsd-discuss-phase   → capture decisions and constraints before planning
 /gsd-plan-phase      → produce PLAN.md with numbered tasks
@@ -105,7 +107,7 @@ Note: `/gsd-*` commands are provided by GSD Redux, not devskills. Install GSD se
 /ts-review           # TypeScript/Workers: strict, React, Cloudflare
 /rust-review         # Rust: cargo geiger, unsafe counts, clippy, audit
 /zoom-out            # map modules, callers, boundaries — useful before planning
-/caveman-lite        # compress responses during iterative work (~35% reduction)
+/caveman-lite        # compress responses during iterative work (~25–35% reduction)
 ```
 
 Full walkthrough: [docs/gsd-workflow.md](docs/gsd-workflow.md)
@@ -128,35 +130,35 @@ These are scribes, not pilots: they record what you decide, never steer architec
 
 | Skill | Command | Description |
 |-------|---------|-------------|
-| Tiger Style | `/tiger-style` | Enforces TigerBeetle coding principles: safety, performance, experience |
-| Caveman Lite | `/caveman-lite` | Compressed response mode (~35% token reduction) |
-| Caveman Ultra | `/caveman-ultra` | Compressed response mode (~80% token reduction) |
-| TLDT | `/tldt` | Summarize context or file with extractive techniques, no LLM cost |
+| Tiger Style | `/tiger-style` | TigerBeetle engineering constraints: safety, performance, experience |
+| Caveman Lite | `/caveman-lite` | Compressed response mode (~25–35% token reduction) |
+| Caveman Ultra | `/caveman-ultra` | Compressed response mode (~75–85% token reduction) |
+| TLDT | `/tldt` | Extractive summary of context or a file — no LLM cost |
 | Workflow | `/workflow` | Spec-to-ship orchestration using GSD |
-| Project Map | `/project-map` | Scan the repo into `.project/PROJECT.md` (description + repo map + constraints) |
-| Project Plan | `/project-plan` | Ordered task roadmap in `.project/PLAN.md` from a goal, spec, or command output |
-| Project Checkpoint | `/project-checkpoint` | Persist current state to `.project/PLAN.md` (`--handoff` writes a full `.project/handoff.md`) |
-| Project Resume | `/project-resume` | Restore context from `.project/PLAN.md`; loads `handoff.md` only if fresh |
-| Spec | `/spec` | Convert a description into a verifiable structured specification |
-| Code Quality Review | `/code-quality-review` | Strict maintainability audit: abstraction quality, file sprawl, spaghetti growth — hunts "code judo" simplifications |
-| Doc Quality Review | `/doc-quality-review` | Strict docs audit: accuracy vs. the code, dead links, stale counts, coverage gaps, and bloat — governed by "docs earn their length" (`--comments` to also audit code comments) |
-| Deslop | `/deslop` | Strip AI-generated slop from the branch diff — judged against the language's idioms and surrounding code, not a fixed pattern list |
-| Go Review | `/go-review` | Go code review: Tiger Style + idiomatic Go + security (`--no-tiger` to skip style) |
-| TS Review | `/ts-review` | TypeScript/Workers review: strict mode, React, Cloudflare (`--no-tiger` to skip style) |
-| Rust Review | `/rust-review` | Rust review: geiger/unsafe counts, clippy, audit, Tiger Style + security (`--no-tiger` to skip style) |
-| Bug Review | `/bug-review` | Language-agnostic correctness audit — hunts real bugs (logic, null, error paths, races, leaks), each with its trigger condition; complements `/code-quality-review`'s maintainability lens |
-| Security Review | `/security-review` | Language-agnostic security audit — injection, broken access control, secrets/crypto, data exposure, untrusted input; each finding names the attack |
-| UI | `/ui` | UI mode (framework-agnostic): component & state discipline, design craft (hierarchy, type scale, escaping the generic AI look), a11y, Core Web Vitals |
-| Explore | `/explore` | Lay out candidate approaches with trade-offs — suggests, never decides; `--web` for bounded research; feeds `/grill-me` |
-| Grill Me | `/grill-me` | Relentless plan interview — resolve every decision branch (`--record` logs to DECISIONS.md) |
-| Handoff | `/handoff` | Compact the conversation into a handoff doc for a fresh agent |
-| Zoom Out | `/zoom-out` | Step up a layer — map modules, callers, and boundaries |
-| TDD | `/tdd` | Test-first, one vertical slice at a time; behavior over implementation |
-| Test | `/test` | Pragmatic testing mode — ensures the code that matters gets well tested as you work; risk over coverage, no design-locking (the alongside-normal-work sibling of `/tdd`) |
-| Test Quality Review | `/test-quality-review` | Strict test audit: is critical code tested, edge/failure cases, tests that lock the design — governed by "test what matters, test it well, not coverage" |
-| Debug | `/debug` | Root-cause a failure with the scientific method — reproduce, isolate, fix; hands the proven fix to `/verify-this` |
-| Verify This | `/verify-this` | Prove a falsifiable claim with local baseline-vs-treatment evidence; returns VERIFIED / NOT VERIFIED / INCONCLUSIVE (no CI needed) |
-| Write a Command | `/write-a-command` | Author a new devskills command in the repo conventions |
+| Project Map | `/project-map` | Scan the repo into `.project/PROJECT.md` |
+| Project Plan | `/project-plan` | Ordered task roadmap in `.project/PLAN.md` |
+| Project Checkpoint | `/project-checkpoint` | Persist state to `.project/PLAN.md` (`--handoff` for a full handoff) |
+| Project Resume | `/project-resume` | Restore context from `.project/PLAN.md` |
+| Spec | `/spec` | Convert a description into a structured specification |
+| Code Quality Review | `/code-quality-review` | Strict maintainability audit: abstraction, sprawl, spaghetti |
+| Doc Quality Review | `/doc-quality-review` | Strict docs audit: accuracy, dead links, bloat (`--comments` audits code comments) |
+| Deslop | `/deslop` | Strip AI-generated slop from the branch diff |
+| Go Review | `/go-review` | Go: idiomatic + security + Tiger Style (`--no-tiger` to skip style) |
+| TS Review | `/ts-review` | TypeScript/Workers: strict mode, React, Cloudflare (`--no-tiger` to skip style) |
+| Rust Review | `/rust-review` | Rust: geiger/unsafe, clippy, audit, Tiger Style (`--no-tiger` to skip style) |
+| Bug Review | `/bug-review` | Language-agnostic correctness audit — hunts real bugs |
+| Security Review | `/security-review` | Language-agnostic security audit — each finding names the attack |
+| UI | `/ui` | UI mode: component/state discipline, design craft, a11y, Core Web Vitals |
+| Explore | `/explore` | Lay out candidate approaches with trade-offs (`--web` for research) |
+| Grill Me | `/grill-me` | Relentless plan interview (`--record` logs to DECISIONS.md) |
+| Handoff | `/handoff` | Compact the conversation into a handoff doc |
+| Zoom Out | `/zoom-out` | Step up a layer — map modules, callers, boundaries |
+| TDD | `/tdd` | Test-first, one vertical slice at a time |
+| Test | `/test` | Pragmatic testing mode — test by risk, not coverage |
+| Test Quality Review | `/test-quality-review` | Strict test audit: is critical code well tested? |
+| Debug | `/debug` | Root-cause a failure with the scientific method |
+| Verify This | `/verify-this` | Prove a falsifiable claim with local before/after evidence |
+| Write a Command | `/write-a-command` | Author a new devskills command in repo conventions |
 
 Full per-command reference: [docs/commands.md](docs/commands.md). Worked, GSD-free workflows and examples: [docs/recipes.md](docs/recipes.md). Extended `/grill-me` playbook: [docs/grill-me.md](docs/grill-me.md). Tiger Style principles: [docs/tiger-style.md](docs/tiger-style.md).
 
