@@ -93,7 +93,7 @@ The `files` array in `package.json` controls this. Current value:
 "files": ["bin/", "claude/", "opencode/", "cursor/", "vscode/", "prompts/", "scripts/", "docs/", "install.sh", "README.md"]
 ```
 
-Node modules, `.git/`, and `.devskills/` are excluded automatically.
+Node modules and `.git/` are excluded automatically.
 
 ### Verify before publishing
 

@@ -66,6 +66,6 @@ If a language profile is active, add a "Technical Profile" section:
 
 ## Output
 
-Write the spec to `SPEC.md` in the current directory (or `.planning/SPEC.md` if `.planning/` exists), then display it inline for review.
+Write the spec to `.project/SPEC.md` if `.project/` exists, else `.planning/SPEC.md` if `.planning/` exists, else `SPEC.md` in the current directory; then display it inline for review.
 
 Ask: "Should I proceed to planning with `/workflow`?" after displaying the spec.

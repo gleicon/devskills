@@ -1,10 +1,10 @@
-# TypeScript Language Profile
+## Language Profile — TypeScript
 
 Target: TypeScript 5+. Cloudflare Workers, Next.js, React, edge runtimes.
 
 Apply these conventions to all TypeScript/JavaScript code in this session.
 
-## Toolchain
+### Toolchain
 
 - Runtime: Bun (preferred) or Node 20+
 - Workers: Wrangler 3+
@@ -13,7 +13,7 @@ Apply these conventions to all TypeScript/JavaScript code in this session.
 - Lint: Biome or ESLint with typescript-eslint
 - Format: Biome or Prettier
 
-## tsconfig Baseline
+### tsconfig Baseline
 
 ```json
 {
@@ -29,7 +29,7 @@ Apply these conventions to all TypeScript/JavaScript code in this session.
 
 No `any`. Justify every `unknown` cast with a runtime check.
 
-## Type Design
+### Type Design
 
 - Prefer discriminated unions over boolean flags for state:
   ```ts
@@ -43,7 +43,7 @@ No `any`. Justify every `unknown` cast with a runtime check.
 - Runtime validation at system boundaries with Zod or Valibot — not manual checks.
 - `type` for unions and aliases. `interface` for object shapes that extend.
 
-## Error Handling
+### Error Handling
 
 No `throw` in library code except for programmer errors (wrong types at runtime boundaries).
 
@@ -58,7 +58,7 @@ type Result<T, E = Error> =
 
 All `async` functions: either return `Result` or propagate typed errors. No unhandled promise rejections.
 
-## Cloudflare Workers
+### Cloudflare Workers
 
 ```ts
 export default {
@@ -73,7 +73,7 @@ export default {
 - KV and R2 operations: always handle `null` on get (key not found).
 - Durable Objects: all state mutations in `this.state.storage.transaction()`.
 
-## React
+### React
 
 - Functional components only. Named exports.
 - `useState` for local UI state. Derive everything derivable from props.
@@ -81,13 +81,13 @@ export default {
 - Data fetching: Tanstack Query or SWR — not bare `useEffect` + `fetch`.
 - No prop drilling past 2 levels — use context or co-location.
 
-## Module Conventions
+### Module Conventions
 
 - Named exports everywhere. Default exports only for pages (Next.js) and Workers entry.
 - Barrel files (`index.ts`) only at package boundaries, not within a feature folder.
 - Imports grouped: external → internal → relative. No mixing.
 
-## Testing
+### Testing
 
 ```ts
 // Vitest
@@ -103,7 +103,7 @@ describe("feature", () => {
 - Workers: use `unstable_dev` or Miniflare.
 - Components: Vitest + Testing Library. Test behavior, not implementation.
 
-## Naming
+### Naming
 
 - Files: `kebab-case.ts`
 - Types/Interfaces: `PascalCase`
@@ -111,7 +111,7 @@ describe("feature", () => {
 - Constants: `SCREAMING_SNAKE_CASE` for true constants; `camelCase` for frozen objects
 - React components: `PascalCase` file and export
 
-## Tiger Style Integration
+### Tiger Style Integration
 
 - All user input validated at entry (request body, URL params, env vars).
 - No optional chaining used to hide missing error handling.

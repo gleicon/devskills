@@ -6,46 +6,64 @@ DEVSKILLS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 usage() {
   cat <<EOF
-Usage: setup.sh --lang=<profile> [options]
+Usage: setup.sh [--lang=<profile>] [options]
 
-Profiles:
+Writes the devskills baseline (universal engineering principles) to AGENTS.md
+and points CLAUDE.md at it. --lang stacks a language profile on top.
+
+Profiles (optional):
   go                Go 1.22+ backend service
   typescript        TypeScript 5+ (Workers, Next.js, React)
   javascript        ES2022+ (Workers, vanilla frontend)
-  rust              Rust stable (systems, experimental)
+  rust              Rust stable (systems programming, large projects)
 
 Options:
+  --concise         Add a terse-response directive to AGENTS.md
+  --hints           Add a devskills tooling reference to AGENTS.md
   --cursor          Install Cursor rules into current project
   --vscode          Install VSCode Copilot instructions into current project
+  --uninstall       Remove devskills blocks from AGENTS.md/CLAUDE.md and the marker
   --dry-run         Show what would happen without writing files
 
 Example:
+  setup.sh                              # baseline only
   setup.sh --lang=go --cursor
-  setup.sh --lang=typescript --vscode --cursor
+  setup.sh --lang=typescript --concise --hints
+  setup.sh --uninstall                  # back out devskills changes
 EOF
 }
 
-LANG=""
+LANG_PROFILE=""
 DO_CURSOR=0
 DO_VSCODE=0
+DO_CONCISE=0
+DO_HINTS=0
+DO_UNINSTALL=0
 DRY_RUN=0
 
 for arg in "$@"; do
   case "$arg" in
-    --lang=*) LANG="${arg#--lang=}" ;;
+    --lang=*) LANG_PROFILE="${arg#--lang=}" ;;
     --claude-dir=*|--skip-cursor|--skip-vscode|--skip-external) ;;  # install-only flags; ignored here
     --cursor) DO_CURSOR=1 ;;
     --vscode) DO_VSCODE=1 ;;
+    --concise) DO_CONCISE=1 ;;
+    --hints) DO_HINTS=1 ;;
+    --uninstall) DO_UNINSTALL=1 ;;
     --dry-run) DRY_RUN=1 ;;
     --help|-h) usage; exit 0 ;;
     *) echo "Unknown argument: $arg"; usage; exit 1 ;;
   esac
 done
 
-if [ -z "$LANG" ]; then
-  echo "Error: --lang is required"
-  usage
-  exit 1
+# shellcheck source=lib/profile.sh
+source "${DEVSKILLS_DIR}/scripts/lib/profile.sh"
+
+if [ "$DO_UNINSTALL" -eq 1 ]; then
+  echo "Removing devskills from ${PWD}"
+  devskills_uninstall "$PWD" "$DRY_RUN"
+  echo "Done."
+  exit 0
 fi
 
 install() {
@@ -59,41 +77,22 @@ install() {
   echo "  wrote $dst"
 }
 
-# Language profile into CLAUDE.md
-PROFILE="${DEVSKILLS_DIR}/prompts/language/${LANG}.md"
-if [ ! -f "$PROFILE" ]; then
-  echo "Error: no profile for '${LANG}'. Available: go, typescript, javascript, rust"
+# Validate the language profile up front (if one was requested).
+if [ -n "$LANG_PROFILE" ] && [ ! -f "${DEVSKILLS_DIR}/prompts/language/${LANG_PROFILE}.md" ]; then
+  echo "Error: no profile for '${LANG_PROFILE}'. Available: go, typescript, javascript, rust"
   exit 1
 fi
 
-CLAUDE_MD="${PWD}/CLAUDE.md"
-echo "Language profile: ${LANG}"
-
-if [ "$DRY_RUN" -eq 0 ]; then
-  if [ -f "$CLAUDE_MD" ] && grep -q "devskills language profile" "$CLAUDE_MD" 2>/dev/null; then
-    echo "  CLAUDE.md already has a devskills profile. Edit manually to change: ${CLAUDE_MD}"
-  else
-    {
-      [ -f "$CLAUDE_MD" ] && echo ""
-      echo "<!-- devskills language profile: ${LANG} -->"
-      cat "$PROFILE"
-    } >> "$CLAUDE_MD"
-    echo "  updated $CLAUDE_MD"
-  fi
-  mkdir -p "${PWD}/.devskills"
-  echo "${LANG}" > "${PWD}/.devskills/language"
-  echo "  wrote .devskills/language"
-else
-  echo "[dry] would append ${LANG} profile to $CLAUDE_MD"
-  echo "[dry] would write .devskills/language"
-fi
+# AGENTS.md baseline (+ optional layers); CLAUDE.md imports it via @AGENTS.md.
+echo "devskills baseline${LANG_PROFILE:+ + ${LANG_PROFILE} profile}"
+devskills_apply "${DEVSKILLS_DIR}/prompts" "$PWD" "$DRY_RUN" "$LANG_PROFILE" "$DO_CONCISE" "$DO_HINTS"
 
 # Cursor rules
 if [ "$DO_CURSOR" -eq 1 ]; then
   echo "Cursor rules:"
   mkdir -p "${PWD}/.cursor/rules"
   install "${DEVSKILLS_DIR}/cursor/rules/tiger-style.mdc" "${PWD}/.cursor/rules/tiger-style.mdc"
-  case "$LANG" in
+  case "$LANG_PROFILE" in
     go)         install "${DEVSKILLS_DIR}/cursor/rules/go.mdc"         "${PWD}/.cursor/rules/go.mdc" ;;
     typescript) install "${DEVSKILLS_DIR}/cursor/rules/typescript.mdc" "${PWD}/.cursor/rules/typescript.mdc" ;;
     javascript) install "${DEVSKILLS_DIR}/cursor/rules/typescript.mdc" "${PWD}/.cursor/rules/typescript.mdc" ;;
@@ -110,5 +109,5 @@ if [ "$DO_VSCODE" -eq 1 ]; then
 fi
 
 echo ""
-echo "Done. Active language profile: ${LANG}"
+echo "Done. AGENTS.md baseline${LANG_PROFILE:+ + ${LANG_PROFILE} profile} written; CLAUDE.md imports it."
 echo "Activate in Claude Code: /tiger-style"

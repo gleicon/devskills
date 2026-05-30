@@ -1,10 +1,10 @@
-# Go Language Profile
+## Language Profile — Go
 
 Target: Go 1.22+. Backend services, CLIs, APIs, systems tooling.
 
 Apply these conventions to all Go code in this session.
 
-## Toolchain
+### Toolchain
 
 - Build: `go build ./...`
 - Test: `go test -race ./...`
@@ -13,7 +13,7 @@ Apply these conventions to all Go code in this session.
 - Vet: `go vet ./...`
 - Benchmark: `go test -bench=. -benchmem ./...`
 
-## Project Layout
+### Project Layout
 
 Follow standard Go project structure:
 ```
@@ -25,7 +25,7 @@ api/                    # protobuf or OpenAPI definitions
 
 Avoid: `util/`, `common/`, `helpers/` — name packages by what they provide, not what they are.
 
-## Error Handling
+### Error Handling
 
 ```go
 // Always wrap with context
@@ -42,7 +42,7 @@ if errors.Is(err, ErrNotFound) { ... }
 
 Never discard errors with `_`. Every error is handled or propagated.
 
-## Concurrency
+### Concurrency
 
 - Goroutines always have an explicit exit condition.
 - Use `context.Context` for cancellation — first parameter always.
@@ -57,7 +57,7 @@ g.Go(func() error { return doWork(ctx) })
 if err := g.Wait(); err != nil { ... }
 ```
 
-## HTTP Services
+### HTTP Services
 
 ```go
 // Always set timeouts
@@ -75,7 +75,7 @@ srv := &http.Server{
 
 Use `net/http/httptest` for handler tests.
 
-## Testing
+### Testing
 
 - Table-driven tests using `[]struct{ name, input, expected }`.
 - `t.Helper()` in helper functions.
@@ -83,7 +83,7 @@ Use `net/http/httptest` for handler tests.
 - No real network or filesystem in unit tests — use interfaces and fakes.
 - Integration tests in `_test.go` files with build tag `//go:build integration`.
 
-## Naming
+### Naming
 
 - Exported: `PascalCase`. Unexported: `camelCase`.
 - Error types: `ErrSomething` (sentinel) or `SomethingError` (struct).
@@ -91,7 +91,7 @@ Use `net/http/httptest` for handler tests.
 - Receiver name: short, consistent, never `self` or `this`.
 - Context variable always named `ctx`.
 
-## Tiger Style Integration
+### Tiger Style Integration
 
 - Every exported function has at minimum one guard clause asserting pre-conditions.
 - All slice/map operations on user-supplied data have length/nil checks.

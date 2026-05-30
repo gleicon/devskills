@@ -1,10 +1,10 @@
-# Rust Language Profile
+## Language Profile — Rust
 
 Target: Rust stable. Systems programming, performance-critical services, experimental large projects.
 
 Apply these conventions to all Rust code in this session.
 
-## Toolchain
+### Toolchain
 
 - Build: `cargo build`
 - Test: `cargo test`
@@ -14,7 +14,7 @@ Apply these conventions to all Rust code in this session.
 - Benchmark: `cargo bench` with Criterion
 - Check: `cargo check` (faster than build for type checking)
 
-## Cargo.toml Conventions
+### Cargo.toml Conventions
 
 ```toml
 [profile.release]
@@ -28,7 +28,7 @@ debug = true
 
 Minimize dependencies. Each crate is a liability. Prefer `std` over a crate when the implementation is straightforward.
 
-## Error Handling
+### Error Handling
 
 ```rust
 // Use thiserror for library errors
@@ -52,14 +52,14 @@ fn load_config(path: &Path) -> Result<Config> {
 
 Never `.unwrap()` in library code or production paths. Acceptable in tests and `main` with documented reason.
 
-## Memory and Ownership
+### Memory and Ownership
 
 - Prefer references over cloning. Clone only when ownership is genuinely needed.
 - Use `Arc<T>` for shared ownership across threads. `Rc<T>` for single-threaded.
 - `Mutex<T>` wraps data, not functions. Lock scopes are minimal.
 - Avoid `unsafe` unless writing FFI or performance-critical code that cannot be expressed safely. Document every `unsafe` block with the invariant it relies on.
 
-## Async (when applicable)
+### Async (when applicable)
 
 - Runtime: Tokio.
 - `async fn` for I/O-bound work. CPU-bound work goes in `tokio::task::spawn_blocking`.
@@ -73,7 +73,7 @@ async fn main() -> anyhow::Result<()> {
 }
 ```
 
-## Testing
+### Testing
 
 ```rust
 #[cfg(test)]
@@ -96,7 +96,7 @@ mod tests {
 - Integration tests in `tests/` directory.
 - Use `assert_eq!` with the expected value first.
 
-## Naming
+### Naming
 
 - Types: `PascalCase`
 - Functions/methods/variables: `snake_case`
@@ -104,7 +104,7 @@ mod tests {
 - Lifetimes: short lowercase (`'a`, `'src`, `'buf`)
 - Modules: `snake_case`
 
-## Performance
+### Performance
 
 - Allocate upfront where possible. Use `Vec::with_capacity` when size is known.
 - Profile with `perf`, `flamegraph`, or `cargo-flamegraph` before optimizing.
@@ -112,7 +112,7 @@ mod tests {
 - Zero-copy parsing with `&str` and `&[u8]` slices.
 - `#[inline]` only after profiling shows the call site is hot.
 
-## Tiger Style Integration
+### Tiger Style Integration
 
 - Assertions via `assert!` and `debug_assert!` for invariants.
 - `debug_assert!` for checks that are too expensive for release builds.
