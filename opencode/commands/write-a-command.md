@@ -10,7 +10,7 @@ A command is a single Markdown file — no YAML frontmatter. Structure:
 - **Blank line, then a framing paragraph** — for an *action* command, what it does when invoked; for a *mode* command, what behavior it switches on for the session.
 - **Concrete `##` sections** — ordered instructions. Keep prose tight; fragments are fine. Two archetypes, two natural shapes:
   - **Action commands** (do a job, produce a result — `/spec`, `/deslop`, the reviews): `## Process` / `## Rules` / `## Output`, or domain-fit variants like `## Review Checklist` + `## Output Format`. Always end with the result the user gets.
-  - **Mode commands** (switch on a session behavior — `/tiger-style`, `/caveman-lite`, `/frontend`): describe the behavior the mode enforces. No `## Output` — the effect is ongoing, not a single deliverable.
+  - **Mode commands** (switch on a session behavior — `/tiger-style`, `/caveman-lite`, `/ui`): describe the behavior the mode enforces. No `## Output` — the effect is ongoing, not a single deliverable.
 
 No companion files. If a command needs more than one file, it is doing too much — split it into separate commands.
 

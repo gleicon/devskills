@@ -131,6 +131,22 @@ To carry plan and state *across* sessions (so `/clear` is always safe), layer th
 
 ---
 
+## Building a UI feature
+
+`/ui` is a mode — turn it on and it stays active, shaping every component you build that session. It slots into the build loop above:
+
+```
+/ui                      # UI mode on: engineering + design craft, framework-agnostic
+/explore                 # at a layout/interaction fork: lay out options (--web for references)
+   ...build it: components, minimal co-located state, explicit loading/error/empty states, a11y...
+/deslop                  # strip any generated slop
+/verify-this "the form shows an inline error and keeps focus when the email is invalid"
+```
+
+Because `/ui` encodes design constraints (type scale, spacing tokens, visual hierarchy) up front, you escape the generic AI look without re-prompting for "polish" each time. Verify what the user actually sees — a screenshot or a keyboard-navigation transcript is the evidence, not a green unit test.
+
+---
+
 ## Surviving long sessions
 
 Two failure modes on long tasks: the context window fills, and prose burns tokens.

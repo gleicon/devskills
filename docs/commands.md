@@ -4,7 +4,7 @@ Every devskills command is a single prompt file invoked as `/<name>` in Claude C
 
 Commands come in two shapes:
 
-- **Modes** stay active for the rest of the session until you turn them off (`/tiger-style`, `/frontend`, `/caveman-*`). They change *how* the agent works.
+- **Modes** stay active for the rest of the session until you turn them off (`/tiger-style`, `/ui`, `/caveman-*`). They change *how* the agent works.
 - **Actions** run once and finish (`/spec`, `/code-quality-review`, `/handoff`, …). They produce an output and return.
 
 Most commands need no external tooling. The only GSD-coupled command is `/workflow`; everything else stands alone.
@@ -73,9 +73,9 @@ Activate [Tiger Style](https://tigerstyle.dev/) engineering constraints for the 
 
 - **Reach for it when:** starting focused implementation work you want held to a strict bar.
 
-### `/frontend` — mode
+### `/ui` — mode
 
-Frontend task mode: composable pure components, minimal co-located state, typed fetch wrappers, accessibility as a requirement. Covers React/Svelte/Vue/vanilla and Cloudflare Workers / edge patterns.
+UI mode, framework-agnostic (React/Svelte/Vue/Solid/vanilla, any runtime). Two halves: **engineering** (one-responsibility components, minimal co-located state, derive-don't-store, explicit loading/error/empty/success, typed boundaries, stale-response cancellation) and **design craft** (type scale + spacing tokens, deliberate visual hierarchy, intentional motion — encoding constraints to escape the generic AI look). Plus accessibility as a requirement and Core Web Vitals targets (LCP/INP/CLS). Adapts to the project's existing stack rather than imposing libraries.
 
 - **Reach for it when:** working on components, UI state, API integration, or styling.
 
