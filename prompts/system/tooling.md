@@ -9,7 +9,7 @@ This project was configured with devskills. Reference for the available helpers:
 
 **Token-saving tools:**
 - `/caveman-lite` (~35%) or `/caveman-ultra` (~80%) — compress responses
-- `tldt <file>` — extractive summarization, no LLM cost; compress long docs before adding to context
+- `/tldt [file|url]` — extractive summarization, no LLM cost; compress long docs before adding to context (uses the `tldt` CLI when installed)
 - `rtk` — transparent CLI proxy that cuts token use 60–90% on dev commands
 
 Run `devskills list` to see everything available.
