@@ -29,7 +29,7 @@
     "install-skills": "bash install.sh",
     "setup": "bash scripts/setup.sh",
     "update": "bash scripts/update.sh",
-    "test": "bash test/profile.test.sh"
+    "test": "for f in test/*.test.sh; do bash \"$f\" || exit 1; done"
   },
   "files": [
     "bin/",

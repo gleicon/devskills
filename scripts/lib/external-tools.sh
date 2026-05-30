@@ -71,15 +71,32 @@ devskills_gsd() {
 # RTK (rtk-ai token proxy)
 # ------------------------------------------------------------
 
-# Download + extract the latest rtk-ai release into ~/.local/bin. Identical for
-# install and upgrade. Honors DRY_RUN.
+# True (0) if any archive member would escape the extract dir — an absolute
+# path or a '..' component. Input: a newline-separated member list (from
+# `tar -tzf`). Pure: status only, no output. Kept as a here-string match rather
+# than `tar | grep -q`, whose SIGPIPE under `set -o pipefail` inverts the test.
+#   $1 member list
+_rtk_archive_has_unsafe_paths() {
+  grep -Eq '(^|/)\.\.(/|$)|^/' <<<"$1"
+}
+
+# True (0) if <dir> holds a real, top-level 'rtk' binary — a regular file, not
+# a symlink that could point elsewhere. Pure: status only.
+#   $1 staged dir
+_rtk_staged_binary_ok() {
+  [ -f "${1}/rtk" ] && [ ! -L "${1}/rtk" ]
+}
+
+# Download, verify, and safely extract the latest rtk-ai release into
+# ~/.local/bin. Identical for install and upgrade. Honors DRY_RUN.
+#
+# The archive is untrusted until validated (see the step comments below), so a
+# tampered release can't write outside ~/.local/bin.
 _rtk_linux_download() {
   if [ "${DRY_RUN:-0}" -eq 1 ]; then
-    log "[dry] would download and extract latest rtk-ai release to ~/.local/bin/rtk"
+    log "[dry] would download, verify, and extract the latest rtk-ai release to ~/.local/bin/rtk"
     return 0
   fi
-  local bin_dir="${HOME}/.local/bin"
-  mkdir -p "$bin_dir"
   local arch target
   arch="$(uname -m)"
   case "$arch" in
@@ -87,15 +104,58 @@ _rtk_linux_download() {
     aarch64|arm64) target="aarch64-unknown-linux-gnu" ;;
     *) warn "RTK: unsupported Linux arch '${arch}'. Install manually: https://github.com/rtk-ai/rtk"; return 1 ;;
   esac
-  local url="https://github.com/rtk-ai/rtk/releases/latest/download/rtk-${target}.tar.gz"
+  local base_url="https://github.com/rtk-ai/rtk/releases/latest/download"
+  local asset="rtk-${target}.tar.gz"
   local tmp; tmp="$(mktemp -d)"
-  if curl -fsSL "$url" -o "${tmp}/rtk.tar.gz" && tar -xzf "${tmp}/rtk.tar.gz" -C "$bin_dir"; then
-    chmod +x "${bin_dir}/rtk"
-    log "RTK installed to ${bin_dir}/rtk"
-    log "Ensure ${bin_dir} is on your PATH."
-  else
+
+  if ! curl -fsSL "${base_url}/${asset}" -o "${tmp}/${asset}"; then
     warn "RTK download failed. Install manually: https://github.com/rtk-ai/rtk"
+    rm -rf "$tmp"; return 1
   fi
+
+  # Integrity: a published checksum that's present and wrong is fatal; a missing
+  # one degrades to transport (HTTPS) trust with a warning.
+  if curl -fsSL "${base_url}/${asset}.sha256" -o "${tmp}/${asset}.sha256" 2>/dev/null; then
+    local want got
+    want="$(awk '{print $1; exit}' "${tmp}/${asset}.sha256")"
+    got="$(sha256sum "${tmp}/${asset}" | awk '{print $1}')"
+    if [ -z "$want" ] || [ "$want" != "$got" ]; then
+      warn "RTK checksum mismatch — refusing to install (expected ${want:-<none>}, got ${got})."
+      rm -rf "$tmp"; return 1
+    fi
+  else
+    warn "RTK: no published checksum found; verifying transport only (HTTPS)."
+  fi
+
+  # Refuse any member that could escape the extract dir before extracting a
+  # single byte.
+  local members
+  if ! members="$(tar -tzf "${tmp}/${asset}")"; then
+    warn "RTK: could not read archive. Install manually: https://github.com/rtk-ai/rtk"
+    rm -rf "$tmp"; return 1
+  fi
+  if _rtk_archive_has_unsafe_paths "$members"; then
+    warn "RTK archive contains unsafe paths — refusing to extract. Install manually: https://github.com/rtk-ai/rtk"
+    rm -rf "$tmp"; return 1
+  fi
+
+  # Extract into an isolated dir, then take only the rtk binary — and only if
+  # it's a real file, not a symlink pointing elsewhere.
+  local stage="${tmp}/extract"
+  mkdir -p "$stage"
+  if ! tar -xzf "${tmp}/${asset}" -C "$stage" --no-same-owner; then
+    warn "RTK extract failed. Install manually: https://github.com/rtk-ai/rtk"
+    rm -rf "$tmp"; return 1
+  fi
+  if ! _rtk_staged_binary_ok "$stage"; then
+    warn "RTK archive did not contain the expected 'rtk' binary. Install manually: https://github.com/rtk-ai/rtk"
+    rm -rf "$tmp"; return 1
+  fi
+
+  mkdir -p "${HOME}/.local/bin"
+  install -m 0755 "${stage}/rtk" "${HOME}/.local/bin/rtk"
+  log "RTK installed to ${HOME}/.local/bin/rtk"
+  log "Ensure ${HOME}/.local/bin is on your PATH."
   rm -rf "$tmp"
 }
 
