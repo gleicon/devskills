@@ -134,7 +134,15 @@ Language-specific review passes.
 
 ---
 
-## Verification
+## Debugging & verification
+
+### `/debug` — action
+
+Find the root cause of a failure with the scientific method, then prove the fix. Reproduce-first, one hypothesis at a time, evidence over intuition — disciplined against the usual AI failure modes (thrashing, changing five things at once, silencing the symptom). Lightweight and stateless — the agent-agnostic counterpart to GSD's heavier `/gsd:debug`.
+
+- **Args:** the failure to chase — a failing test, error, stack trace, or wrong-behavior description. Refuses a vague "it's broken".
+- **Output:** root cause (`file:line` + why), the minimal fix, before/after evidence, and the `/verify-this` claim to lock it in.
+- **Reach for it when:** something fails and you don't yet know *why*. Pairs with `/verify-this` — `/debug` finds and fixes, `/verify-this` proves it held.
 
 ### `/verify-this` — action
 

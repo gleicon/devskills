@@ -76,9 +76,9 @@ Doing it in that order means the structural review isn't distracted by slop, and
 
 ---
 
-## Prove it: `/verify-this` for a bugfix
+## Find then prove: `/debug` → `/verify-this` for a bugfix
 
-A passing test isn't proof the user-visible bug is gone. `/verify-this` captures before/after evidence and returns a hard verdict — **no CI needed**.
+When you don't yet know *why* it fails, start with `/debug` — it reproduces first, narrows to the root cause one hypothesis at a time, applies a minimal fix, then hands the proven fix to `/verify-this`. A passing test isn't proof the user-visible bug is gone; `/verify-this` captures before/after evidence and returns a hard verdict — **no CI needed**.
 
 ```
 /verify-this  the fix on this branch makes `mytool parse bad.json` exit 0 instead of panicking

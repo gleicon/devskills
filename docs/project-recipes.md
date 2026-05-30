@@ -97,14 +97,12 @@ Skip `/project-plan`/`/project-checkpoint` for a one-liner you commit immediatel
 
 ## Fixing a bug
 
-Reproduce first, then prove the fix with the same probe — that's what `/verify-this` is built for.
+Root-cause it, fix it, prove it — `/debug` runs that loop and hands the proven fix to `/verify-this`.
 
 ```
-/verify-this "mytool parse empty.json panics"   # capture the failing baseline
-/zoom-out                   # find where it lives, if unfamiliar
-you → "the parser panics on empty input — find the cause and fix it"
-/deslop
-/verify-this "mytool parse empty.json exits 0 with an error message, no panic"  # prove it
+/debug "mytool parse empty.json panics"   # reproduce → root cause → minimal fix
+/deslop                     # clean the fix if it sprawled
+/verify-this "mytool parse empty.json exits 0 with an error message, no panic"  # /debug hands off here to prove it
 /project-checkpoint         # if it was more than a trivial fix
 ```
 

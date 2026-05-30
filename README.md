@@ -150,6 +150,7 @@ These are scribes, not pilots: they record what you decide, never steer architec
 | Handoff | `/handoff` | Compact the conversation into a handoff doc for a fresh agent |
 | Zoom Out | `/zoom-out` | Step up a layer — map modules, callers, and boundaries |
 | TDD | `/tdd` | Test-first, one vertical slice at a time; behavior over implementation |
+| Debug | `/debug` | Root-cause a failure with the scientific method — reproduce, isolate, fix; hands the proven fix to `/verify-this` |
 | Verify This | `/verify-this` | Prove a falsifiable claim with local baseline-vs-treatment evidence; returns VERIFIED / NOT VERIFIED / INCONCLUSIVE (no CI needed) |
 | Write a Command | `/write-a-command` | Author a new devskills command in the repo conventions |
 
