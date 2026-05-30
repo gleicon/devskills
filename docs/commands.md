@@ -104,7 +104,7 @@ Extremely strict maintainability audit: abstraction quality, file sprawl (the 1k
 
 ### `/deslop` — action
 
-Strip AI-generated slop from the branch and align it with the surrounding code. Targets stray/inconsistent comments, defensive `try/catch` in trusted paths, `any`-casts that only dodge types, and needless nesting.
+Strip AI-generated slop from the branch and align it with the surrounding code. The test is "code an experienced engineer in this language and codebase wouldn't write" — judged against the language's idioms, not a fixed syntax list. Targets narrating comments, defensive overkill abnormal for a trusted path, type escape hatches used only to dodge the checker, needless nesting, and speculative scaffolding.
 
 - **Args:** treated as scope (files or directories); defaults to the branch diff against main.
 - **Output:** the edits applied, plus a 1–3 sentence summary. Behavior preserved.

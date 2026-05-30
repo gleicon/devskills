@@ -56,7 +56,7 @@ Why this order: the cheapest time to discover the design is wrong is *before* a 
 
 ## Generate, then clean: `/deslop` before review
 
-Fresh AI-generated code carries slop — over-commenting, defensive `try/catch` in trusted paths, `any`-casts, needless nesting. Clean it before anyone (human or `/code-quality-review`) looks at it.
+Fresh AI-generated code carries slop — narrating comments, defensive overkill in trusted paths, type escape hatches that only dodge the checker, needless nesting. `/deslop` judges against the language's idioms and the surrounding code (so it won't flag idiomatic Go `any`, or look for `try/catch` in a language that has none). Clean it before anyone (human or `/code-quality-review`) looks at it.
 
 ```
 # after generating a batch of code on a branch

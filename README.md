@@ -139,7 +139,7 @@ These are scribes, not pilots: they record what you decide, never steer architec
 | Project Resume | `/project-resume` | Restore context from `.project/PLAN.md`; loads `handoff.md` only if fresh |
 | Spec | `/spec` | Convert a description into a verifiable structured specification |
 | Code Quality Review | `/code-quality-review` | Strict maintainability audit: abstraction quality, file sprawl, spaghetti growth — hunts "code judo" simplifications |
-| Deslop | `/deslop` | Strip AI-generated slop from the branch diff — stray comments, defensive noise, `any`-casts, needless nesting |
+| Deslop | `/deslop` | Strip AI-generated slop from the branch diff — judged against the language's idioms and surrounding code, not a fixed pattern list |
 | Go Review | `/go-review` | Go code review: Tiger Style + idiomatic Go + security (`--no-tiger` to skip style) |
 | TS Review | `/ts-review` | TypeScript/Workers review: strict mode, React, Cloudflare (`--no-tiger` to skip style) |
 | Rust Review | `/rust-review` | Rust review: cargo geiger, unsafe counts, clippy, audit |
