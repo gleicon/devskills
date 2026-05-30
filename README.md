@@ -110,6 +110,20 @@ Note: `/gsd-*` commands are provided by GSD Redux, not devskills. Install GSD se
 
 Full walkthrough: [docs/gsd-workflow.md](docs/gsd-workflow.md)
 
+**Lite planning, without GSD**
+
+If GSD is more machinery than you want, a smaller `.project/` workflow keeps just the parts worth keeping — a project description, a plan, and current state in plain files, so any session is safe to `/clear` or end:
+
+```
+/project-map         # scan the repo → .project/PROJECT.md (description + map)
+/project-plan        # ordered tasks → .project/PLAN.md (feed it a goal, SPEC.md, or command output)
+   ...you drive the work...
+/project-checkpoint  # persist state → .project/PLAN.md (--handoff for a full .project/handoff.md)
+/project-resume      # restore context from .project/PLAN.md (loads handoff.md only if fresh)
+```
+
+These are scribes, not pilots: they record what you decide, never steer architecture. Full walkthrough: [docs/project-workflow.md](docs/project-workflow.md)
+
 ## Skills
 
 | Skill | Command | Description |
@@ -119,6 +133,10 @@ Full walkthrough: [docs/gsd-workflow.md](docs/gsd-workflow.md)
 | Caveman Ultra | `/caveman-ultra` | Compressed response mode (~80% token reduction) |
 | TLDT | `/tldt` | Summarize context or file with extractive techniques, no LLM cost |
 | Workflow | `/workflow` | Spec-to-ship orchestration using GSD |
+| Project Map | `/project-map` | Scan the repo into `.project/PROJECT.md` (description + repo map + constraints) |
+| Project Plan | `/project-plan` | Ordered task roadmap in `.project/PLAN.md` from a goal, spec, or command output |
+| Project Checkpoint | `/project-checkpoint` | Persist current state to `.project/PLAN.md` (`--handoff` writes a full `.project/handoff.md`) |
+| Project Resume | `/project-resume` | Restore context from `.project/PLAN.md`; loads `handoff.md` only if fresh |
 | Spec | `/spec` | Convert a description into a verifiable structured specification |
 | Code Quality Review | `/code-quality-review` | Strict maintainability audit: abstraction quality, file sprawl, spaghetti growth — hunts "code judo" simplifications |
 | Deslop | `/deslop` | Strip AI-generated slop from the branch diff — stray comments, defensive noise, `any`-casts, needless nesting |

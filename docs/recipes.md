@@ -126,6 +126,8 @@ For small-to-medium work you don't need the full `.planning/` machinery. This lo
 
 Ship with plain `git` + `gh`. The artifacts that persist your thinking are `SPEC.md` and `DECISIONS.md` — commit them. This is deliberately lighter than a phase-based engine: fewer moving parts, no background state, faster to start.
 
+To carry plan and state *across* sessions (so `/clear` is always safe), layer the `.project/` commands on top — `/project-map`, `/project-plan`, `/project-checkpoint`, `/project-resume`. See [project-workflow.md](project-workflow.md).
+
 ---
 
 ## Surviving long sessions

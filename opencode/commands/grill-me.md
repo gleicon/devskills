@@ -4,7 +4,7 @@ When invoked, stress-test every aspect of the plan. Walk down each branch of the
 
 ## Arguments
 
-If invoked with `--record`, append every resolved decision to `DECISIONS.md` in the current directory as the interview proceeds — one entry per decision: the question, the chosen answer, and a one-line rationale. Plain Markdown, no fixed schema. Without the flag, keep decisions in the conversation only.
+If invoked with `--record`, append every resolved decision to `.project/DECISIONS.md` if `.project/` exists, else `DECISIONS.md` in the current directory, as the interview proceeds — one entry per decision: the question, the chosen answer, and a one-line rationale. Plain Markdown, no fixed schema. Without the flag, keep decisions in the conversation only.
 
 ## Process
 

@@ -32,7 +32,29 @@ Interview you relentlessly about a plan or design until you share the same under
 
 ### `/workflow` — action *(uses GSD)*
 
-Spec-to-ship orchestration backed by GSD (Get Shit Done). Requires GSD installed separately. If you are not using GSD, build with the standalone loop in [recipes.md](recipes.md) instead.
+Spec-to-ship orchestration backed by GSD (Get Shit Done). Requires GSD installed separately. If you are not using GSD, use the `/project-*` family below instead.
+
+---
+
+## Project memory (`.project/`)
+
+A minimal, file-backed alternative to GSD — persistent description, plan, and state in plain markdown under `.project/`, so any session is safe to `/clear` or end. These are *scribes, not pilots*: they record what you decide, never steer architecture. Full walkthrough: [project-workflow.md](project-workflow.md).
+
+### `/project-map` — action
+
+Scan the repo and write/refresh `.project/PROJECT.md` (overview, stack, repo map, constraints). Facts only — describes what exists. Run once at start; re-run when the repo drifts.
+
+### `/project-plan` — action
+
+Turn input into an ordered task checklist in `.project/PLAN.md` (`## Roadmap`). Input can be a goal, a `SPEC.md`, or pasted output from another command (e.g. `/code-quality-review` findings). Sequences and scopes; does not choose architecture.
+
+### `/project-checkpoint` — action
+
+Update `.project/PLAN.md`'s `## Now` (state, next, open questions) and roadmap statuses. Run before `/clear` or end of session. `--handoff` also writes a richer `.project/handoff.md`.
+
+### `/project-resume` — action
+
+Read `.project/PLAN.md` (+ `PROJECT.md`) and report where to pick up. Loads `handoff.md` only if it's newer than the plan and the latest commit, else flags it stale. Read-only.
 
 ---
 
