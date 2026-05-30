@@ -10,7 +10,7 @@ For the GSD-managed workflow instead, see [gsd-workflow.md](gsd-workflow.md). Fo
 
 ## The state lives in `.project/`
 
-Plain markdown, committed to git. No hidden state, no checksums.
+Plain markdown. No hidden state, no checksums. Commit it as shared project memory, **or** add `.project/` to `.gitignore` for a local-only scratch space — the workflow doesn't depend on git either way (and you can commit `PROJECT.md`/`PLAN.md` while ignoring the scratch `EXPLORE.md`/`handoff.md` if you prefer).
 
 ```
 .project/
@@ -41,7 +41,7 @@ Run before `/clear` or at end of session. Ticks roadmap statuses and overwrites 
 
 ### `/project-resume` → reads state
 
-Run at session start. Reads `PLAN.md` (and `PROJECT.md` for the map), then summarizes where to pick up. If `handoff.md` exists it is loaded **only if it is newer than both `PLAN.md` and the latest commit** — otherwise it's flagged as stale and ignored, so a forgotten handoff never misleads a fresh session. Read-only.
+Run at session start. Reads `PLAN.md` (and `PROJECT.md` for the map), then summarizes where to pick up. If `handoff.md` exists it is loaded **only if it is newer than `PLAN.md`** (by file modification time — no git required) — otherwise it's flagged as stale and ignored, so a forgotten handoff never misleads a fresh session. Read-only.
 
 ---
 

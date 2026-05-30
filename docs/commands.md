@@ -61,7 +61,7 @@ Update `.project/PLAN.md`'s `## Now` (state, next, open questions) and roadmap s
 
 ### `/project-resume` — action
 
-Read `.project/PLAN.md` (+ `PROJECT.md`) and report where to pick up. Loads `handoff.md` only if it's newer than the plan and the latest commit, else flags it stale. Read-only.
+Read `.project/PLAN.md` (+ `PROJECT.md`) and report where to pick up. Loads `handoff.md` only if it's newer than the plan (by file time — no git dependency, so `.project/` can be git-ignored), else flags it stale. Read-only.
 
 ---
 

@@ -122,7 +122,7 @@ If GSD is more machinery than you want, a smaller `.project/` workflow keeps jus
 /project-resume      # restore context from .project/PLAN.md (loads handoff.md only if fresh)
 ```
 
-These are scribes, not pilots: they record what you decide, never steer architecture. Full walkthrough: [docs/project-workflow.md](docs/project-workflow.md)
+These are scribes, not pilots: they record what you decide, never steer architecture. Commit `.project/` as shared memory or add it to `.gitignore` for a local-only scratch space — the workflow doesn't rely on git. Full walkthrough: [docs/project-workflow.md](docs/project-workflow.md)
 
 ## Skills
 
