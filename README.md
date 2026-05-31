@@ -237,4 +237,4 @@ System-level prompts (session preamble, not slash commands) go in `prompts/syste
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE).
