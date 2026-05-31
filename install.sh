@@ -197,7 +197,7 @@ install_cursor() {
 install_vscode() {
   if [ -d "${PWD}/.vscode" ] || command -v code &>/dev/null; then
     log "Installing VSCode Copilot instructions to ${PWD}/.github/copilot-instructions.md"
-    devskills_install_vscode "$PWD"
+    devskills_install_vscode "$PWD" "$LANG_PROFILE"
   else
     warn "VSCode not detected in current project."
   fi

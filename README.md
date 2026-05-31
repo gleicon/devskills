@@ -180,7 +180,7 @@ Running `setup.sh` with no flags writes just the baseline. Each block lives betw
 
 `update.sh` refreshes the globally-installed skills, but not a project's `AGENTS.md` — the managed blocks are a point-in-time snapshot. To pull baseline or tooling changes into a project after an update, re-run `setup.sh` there (idempotent, so it just refreshes the blocks in place).
 
-The baseline blocks target `AGENTS.md` (Claude Code and OpenCode). Cursor and VSCode Copilot have their own rule mechanisms — `--cursor` installs `.cursor/rules/*.mdc` and `--vscode` writes `copilot-instructions.md`; those paths carry Tiger Style and the language rules but not the `base`/`concise`/`tooling` blocks.
+The baseline blocks target `AGENTS.md` (Claude Code and OpenCode). Cursor and VSCode Copilot have their own rule mechanisms — `--cursor` installs `.cursor/rules/*.mdc` and `--vscode` writes `copilot-instructions.md`. Both honor `--lang`: they carry Tiger Style plus the notes for the selected language only (no `--lang` writes Tiger Style alone), but not the `base`/`concise`/`tooling` blocks.
 
 To back out, `setup.sh --uninstall` strips the devskills blocks (and removes a file that held *only* devskills content), leaving your own content untouched — a clean install→uninstall round-trip restores the originals exactly.
 

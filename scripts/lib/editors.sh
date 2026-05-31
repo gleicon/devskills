@@ -45,10 +45,27 @@ devskills_install_cursor() {
   esac
 }
 
-# Install VSCode Copilot instructions into <dir>/.github.
-#   $1 target dir
+# Install VSCode Copilot instructions into <dir>/.github: the base instructions
+# plus the Language-Specific Notes for <lang> only (an empty/unknown lang writes
+# the base alone). Parallels devskills_install_cursor — one source per language,
+# all editor targets follow when a profile is added.
+#   $1 target dir  $2 lang ("" for none)
 devskills_install_vscode() {
-  _dske_copy \
-    "${DEVSKILLS_DIR}/vscode/copilot-instructions.md" \
-    "${1}/.github/copilot-instructions.md"
+  local dir="$1" lang="$2"
+  local src="${DEVSKILLS_DIR}/vscode"
+  local dst="${dir}/.github/copilot-instructions.md"
+  local note="${src}/lang/${lang}.md"
+  local has_note=0
+  [ -n "$lang" ] && [ -f "$note" ] && has_note=1
+
+  if [ "${DRY_RUN:-0}" -eq 1 ]; then
+    _dske_log "[dry] would write ${dst}$( [ "$has_note" -eq 1 ] && printf ' (+ %s notes)' "$lang" )"
+    return 0
+  fi
+  mkdir -p "$(dirname "$dst")"
+  cat "${src}/copilot-base.md" > "$dst"
+  if [ "$has_note" -eq 1 ]; then
+    { printf '\n## Language-Specific Notes\n\n'; cat "$note"; } >> "$dst"
+  fi
+  _dske_log "wrote ${dst}$( [ "$has_note" -eq 1 ] && printf ' (+ %s notes)' "$lang" )"
 }
