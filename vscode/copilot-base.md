@@ -23,6 +23,12 @@ Apply Tiger Style principles (https://tigerstyle.dev/) to all generated code:
 - Explicit over implicit. Pass parameters directly; do not rely on ambient state.
 - Validate all inputs at system boundaries (user input, external APIs, file reads).
 
+## Context Discipline
+
+- Locate before reading: find the relevant place, then read scoped regions — not whole files "to be safe".
+- If `PROJECT.md` exists, prefer its map over re-deriving structure. When the map and the code disagree, the code wins.
+- Sufficiency beats thrift: when unsure, read more. A wrong answer costs far more than the extra context.
+
 ## What to Avoid
 
 - Magic numbers without named constants.

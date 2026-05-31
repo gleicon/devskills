@@ -1,0 +1,12 @@
+---
+description: Context discipline — locate before reading, read scoped, prefer the project map. Applied to all interactions.
+alwaysApply: true
+---
+
+# Context Discipline
+
+Pull context on demand. Locate before you read.
+
+- Search to find the relevant place; read scoped regions, not whole files "to be safe".
+- If `PROJECT.md` exists, read its map first and prefer it over re-deriving structure. When the map and the code disagree, the code wins — reread the file.
+- Sufficiency beats thrift: when unsure, read more. A wrong answer costs far more than the tokens.

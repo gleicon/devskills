@@ -5,9 +5,9 @@
 # --skip-cursor; setup.sh is opt-in via --cursor); this lib owns *how*, so the
 # mechanics live in one place instead of drifting between the two scripts.
 #
-# Cursor rules are curated, not dumped: always tiger-style, plus the single
-# rule matching the language profile (javascript reuses the typescript rule).
-# A project's .cursor/rules/ stays scoped to what it actually uses.
+# Cursor rules are curated, not dumped: always tiger-style and context, plus the
+# single rule matching the language profile (javascript reuses the typescript
+# rule). A project's .cursor/rules/ stays scoped to what it actually uses.
 #
 # Contract: DEVSKILLS_DIR points at the devskills source root. DRY_RUN (0|1)
 # is honored; defaults to 0.
@@ -30,13 +30,14 @@ _dske_copy() {
   _dske_log "wrote ${dst}"
 }
 
-# Install Cursor rules into <dir>/.cursor/rules: tiger-style plus the rule
-# matching <lang> (an empty lang installs tiger-style only).
+# Install Cursor rules into <dir>/.cursor/rules: tiger-style and context, plus
+# the rule matching <lang> (an empty lang installs the always-apply rules only).
 #   $1 target dir  $2 lang ("" for none)
 devskills_install_cursor() {
   local dir="$1" lang="$2"
   local rules="${DEVSKILLS_DIR}/cursor/rules"
   _dske_copy "${rules}/tiger-style.mdc" "${dir}/.cursor/rules/tiger-style.mdc"
+  _dske_copy "${rules}/context.mdc"     "${dir}/.cursor/rules/context.mdc"
   case "$lang" in
     go)                    _dske_copy "${rules}/go.mdc"         "${dir}/.cursor/rules/go.mdc" ;;
     typescript|javascript) _dske_copy "${rules}/typescript.mdc" "${dir}/.cursor/rules/typescript.mdc" ;;

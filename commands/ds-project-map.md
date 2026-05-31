@@ -5,7 +5,7 @@ When invoked, read the actual codebase and write (or refresh) `.project/PROJECT.
 ## Process
 
 1. Create `.project/` if it does not exist.
-2. Read the repo to establish facts: languages and runtime, build/test commands, entry points, and where the major pieces live.
+2. Establish facts efficiently — locate before reading. Lean on cheap signals first: the file tree, manifests (`package.json`, `go.mod`, etc.), and entry points. Search to find the major pieces; read scoped regions, not whole files. Read enough to be accurate, no more — the map is identifiers and one-liners, not a digest of every file.
 3. Write `.project/PROJECT.md` with these sections:
    - **Overview** — one paragraph: what the project is and who it's for.
    - **Stack** — languages, runtime, key dependencies, build/test commands.

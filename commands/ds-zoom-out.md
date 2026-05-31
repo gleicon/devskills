@@ -5,6 +5,7 @@ When invoked, the user is unfamiliar with this area of code and wants the broade
 ## Process
 
 - Identify the module or area in focus.
+- Locate before reading: if `PROJECT.md` exists, start from its map; search for the callers and neighbours rather than reading files wholesale. You need boundaries and relationships, not line-by-line internals.
 - Go up one layer: describe the role it plays in the system, not its internals.
 - Map the relevant neighbouring modules and the callers that depend on this one.
 - Name the data and control flow that crosses its boundary.

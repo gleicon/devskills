@@ -63,6 +63,15 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 - Validate untrusted input where it enters — args, request payloads, external API responses. Don't trust it deep inside.
 - Handle the errors that can actually happen; propagate or surface the rest. Never swallow an error to make a path look clean.
 
+## 6. Retrieve Just-in-Time
+
+**Pull context on demand. Locate before you read.**
+
+- Search to find the right place; read scoped regions, not whole files "to be safe".
+- If `PROJECT.md` exists, read its map first and prefer it over re-deriving structure. When the map and the code disagree, the code wins — reread the file.
+- Delegate broad searches to a sub-agent where one is available, so the sweep stays out of your context.
+- Sufficiency beats thrift: when unsure, read more. A wrong answer costs far more than the tokens.
+
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
