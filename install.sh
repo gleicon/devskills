@@ -149,7 +149,8 @@ purge_renamed_commands() {
 install_claude() {
   if command -v claude &>/dev/null || [ -d "${CLAUDE_CONFIG_DIR}" ]; then
     log "Installing Claude Code commands to ${CLAUDE_COMMANDS_DIR}"
-    mkdir -p "${CLAUDE_COMMANDS_DIR}"
+    # install_file makes the dir on real copies; guard so --dry-run leaves none.
+    [ "$DRY_RUN" -eq 1 ] || mkdir -p "${CLAUDE_COMMANDS_DIR}"
     for f in "${DEVSKILLS_DIR}/commands/"*.md; do
       install_file "$f" "${CLAUDE_COMMANDS_DIR}/$(basename "$f")"
     done
@@ -166,7 +167,8 @@ install_claude() {
 install_opencode() {
   if command -v opencode &>/dev/null || [ -d "${HOME}/.opencode" ]; then
     log "Installing OpenCode commands to ${OPENCODE_COMMANDS_DIR}"
-    mkdir -p "${OPENCODE_COMMANDS_DIR}"
+    # install_file makes the dir on real copies; guard so --dry-run leaves none.
+    [ "$DRY_RUN" -eq 1 ] || mkdir -p "${OPENCODE_COMMANDS_DIR}"
     for f in "${DEVSKILLS_DIR}/commands/"*.md; do
       install_file "$f" "${OPENCODE_COMMANDS_DIR}/$(basename "$f")"
     done
