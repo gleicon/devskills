@@ -91,7 +91,7 @@ fi
 # VSCode Copilot
 if [ "$DO_VSCODE" -eq 1 ]; then
   echo "VSCode Copilot:"
-  devskills_install_vscode "$PWD"
+  devskills_install_vscode "$PWD" "$LANG_PROFILE"
 fi
 
 echo ""
