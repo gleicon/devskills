@@ -8,9 +8,10 @@
 # copies were guarded; only the directory creation leaked.
 #
 # Two tiers, both black-box against the real install.sh under a sandboxed $HOME:
-#   1. test_command_paths   — names the original bug: the two command-install
-#                             paths create nothing under --dry-run, and a real
-#                             run still copies every command.
+#   1. test_command_paths   — names the original bug: the command-install
+#                             paths (Claude, OpenCode, Codex) create nothing
+#                             under --dry-run, and a real run still copies
+#                             every command.
 #   2. test_nothing_written — the broader invariant: a near-full --dry-run
 #                             (--lang + cursor + vscode enabled) writes nothing
 #                             ANYWHERE under $HOME or PWD. Catches future leaks
@@ -35,12 +36,13 @@ sandbox_home() {
   local home; home="$(mktemp -d "${TMPDIR:-/tmp}/dsk-dryrun-home.XXXXXX")"
   mkdir -p "${home}/.opencode"
   mkdir -p "${home}/.claude"
+  mkdir -p "${home}/.codex"
   printf '%s' "$home"
 }
 
 run_install() {
   local home="$1"; shift
-  HOME="$home" CLAUDE_CONFIG_DIR="${home}/.claude" \
+  HOME="$home" CLAUDE_CONFIG_DIR="${home}/.claude" CODEX_HOME="${home}/.codex" \
     bash "${REPO}/install.sh" "$@" >/dev/null 2>&1
 }
 
@@ -72,18 +74,25 @@ test_command_paths() {
   [ ! -d "${home}/.claude/commands" ] \
     && pass "~/.claude/commands not created" \
     || fail "~/.claude/commands created in dry-run"
+  [ ! -d "${home}/.codex/prompts" ] \
+    && pass "~/.codex/prompts not created" \
+    || fail "~/.codex/prompts created in dry-run"
 
   echo "test: a real run still creates dirs and copies commands"
   local expected; expected="$(ls "${REPO}/commands"/*.md | wc -l | tr -d ' ')"
   run_install "$home" --skip-external --skip-cursor --skip-vscode
   local oc; oc="$(ls "${home}/.opencode/commands"/*.md 2>/dev/null | wc -l | tr -d ' ')"
   local cc; cc="$(ls "${home}/.claude/commands"/*.md 2>/dev/null | wc -l | tr -d ' ')"
+  local cx; cx="$(ls "${home}/.codex/prompts"/*.md 2>/dev/null | wc -l | tr -d ' ')"
   [ "$oc" = "$expected" ] \
     && pass "~/.opencode/commands has all ${expected} commands" \
     || fail "~/.opencode/commands has ${oc}, expected ${expected}"
   [ "$cc" = "$expected" ] \
     && pass "~/.claude/commands has all ${expected} commands" \
     || fail "~/.claude/commands has ${cc}, expected ${expected}"
+  [ "$cx" = "$expected" ] \
+    && pass "~/.codex/prompts has all ${expected} commands" \
+    || fail "~/.codex/prompts has ${cx}, expected ${expected}"
 
   rm -rf "$home"
 }
@@ -102,7 +111,7 @@ test_nothing_written() {
   proj_before="$(fingerprint "$proj")"
 
   # cursor + vscode enabled (not skipped); --lang exercises the AGENTS.md path.
-  HOME="$home" CLAUDE_CONFIG_DIR="${home}/.claude" \
+  HOME="$home" CLAUDE_CONFIG_DIR="${home}/.claude" CODEX_HOME="${home}/.codex" \
     bash -c "cd '$proj' && bash '${REPO}/install.sh' --dry-run --lang=go --skip-external" \
     >/dev/null 2>&1
 

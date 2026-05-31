@@ -1,6 +1,6 @@
 # devskills
 
-Installable skill package for Claude Code, OpenCode, Cursor, and VSCode Copilot. Opinionated defaults, composable language profiles, full dev workflow from specification to shipped product.
+Installable skill package for Claude Code, OpenCode, OpenAI Codex, Cursor, and VSCode Copilot. Opinionated defaults, composable language profiles, full dev workflow from specification to shipped product.
 
 No magic. Files in the right directories. Prompts that encode real constraints.
 
@@ -11,7 +11,9 @@ git clone https://github.com/gleicon/devskills.git ~/.devskills
 ~/.devskills/install.sh
 ```
 
-Skills copy to `~/.claude/commands/` and `~/.opencode/commands/`. External tools (GSD, RTK, tldt) install automatically if prerequisites are present.
+Skills copy to `~/.claude/commands/`, `~/.opencode/commands/`, and `~/.codex/prompts/` (each installed only when that tool is detected). External tools (GSD, RTK, tldt) install automatically if prerequisites are present.
+
+In Codex, devskills commands are invoked under the `prompts:` namespace — `/ds-debug` becomes `/prompts:ds-debug`. Codex reads a project's `AGENTS.md` natively, so `setup.sh` covers its persistent surface with no extra step.
 
 Skip external tools:
 
@@ -181,7 +183,7 @@ Full per-command reference: [docs/commands.md](docs/commands.md). Worked, GSD-fr
 
 ## Project Setup
 
-`setup.sh` builds your project's `AGENTS.md` from stacked, independently-managed blocks, and points `CLAUDE.md` at it with a single `@AGENTS.md` import — so Claude Code (which reads `CLAUDE.md`) and OpenCode (which reads `AGENTS.md`) share the same content with no duplication.
+`setup.sh` builds your project's `AGENTS.md` from stacked, independently-managed blocks, and points `CLAUDE.md` at it with a single `@AGENTS.md` import — so Claude Code (which reads `CLAUDE.md`) and OpenCode and OpenAI Codex (which read `AGENTS.md` directly) share the same content with no duplication.
 
 | Block | Flag | Contents |
 |-------|------|----------|
@@ -194,7 +196,7 @@ Running `setup.sh` with no flags writes just the baseline. Each block lives betw
 
 `update.sh` refreshes the globally-installed skills, but not a project's `AGENTS.md` — the managed blocks are a point-in-time snapshot. To pull baseline or tooling changes into a project after an update, re-run `setup.sh` there (idempotent, so it just refreshes the blocks in place).
 
-The baseline blocks target `AGENTS.md` (Claude Code and OpenCode). Cursor and VSCode Copilot have their own rule mechanisms — `--cursor` installs `.cursor/rules/*.mdc` and `--vscode` writes `copilot-instructions.md`. Both honor `--lang`: they carry Tiger Style plus the notes for the selected language only (no `--lang` writes Tiger Style alone), but not the `base`/`concise`/`tooling` blocks.
+The baseline blocks target `AGENTS.md` (Claude Code, OpenCode, and OpenAI Codex). Cursor and VSCode Copilot have their own rule mechanisms — `--cursor` installs `.cursor/rules/*.mdc` and `--vscode` writes `copilot-instructions.md`. Both honor `--lang`: they carry Tiger Style plus the notes for the selected language only (no `--lang` writes Tiger Style alone), but not the `base`/`concise`/`tooling` blocks.
 
 To back out, `setup.sh --uninstall` strips the devskills blocks (and removes a file that held *only* devskills content), leaving your own content untouched — a clean install→uninstall round-trip restores the originals exactly.
 
@@ -244,7 +246,7 @@ devskills ships its own prompt commands based on these upstream sources.
 
 ## Adding Skills
 
-Drop a `.md` file into `commands/`. The filename becomes the command name. The file content is the system prompt injected when the command runs. `install.sh` copies it to both `~/.claude/commands/` and `~/.opencode/commands/`.
+Drop a `.md` file into `commands/`. The filename becomes the command name. The file content is the system prompt injected when the command runs. `install.sh` copies it to `~/.claude/commands/`, `~/.opencode/commands/`, and `~/.codex/prompts/` (the latter invoked as `/prompts:<name>`).
 
 For Cursor, drop a `.mdc` file into `cursor/rules/`. Use YAML frontmatter:
 - `alwaysApply: true` — inject regardless of open file

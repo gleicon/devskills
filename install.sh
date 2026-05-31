@@ -4,6 +4,9 @@ set -euo pipefail
 DEVSKILLS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLAUDE_CONFIG_DIR="${CLAUDE_CONFIG_DIR:-${HOME}/.claude}"
 OPENCODE_COMMANDS_DIR="${HOME}/.opencode/commands"
+# Codex honors CODEX_HOME (default ~/.codex); custom prompts live in prompts/.
+CODEX_HOME_DIR="${CODEX_HOME:-${HOME}/.codex}"
+CODEX_COMMANDS_DIR="${CODEX_HOME_DIR}/prompts"
 
 log() { printf '[devskills] %s\n' "$1"; }
 warn() { printf '[devskills] WARN: %s\n' "$1" >&2; }
@@ -179,6 +182,28 @@ install_opencode() {
 }
 
 # ------------------------------------------------------------
+# OpenAI Codex prompts
+# ------------------------------------------------------------
+
+# Codex reads project AGENTS.md natively (built by setup.sh/profile.sh), so only
+# the command surface needs installing. Custom prompts are plain .md files in
+# ${CODEX_HOME}/prompts, invoked namespaced as /prompts:<filename>. Like Claude
+# and OpenCode, this is a global target with no opt-out — detection gates it.
+install_codex() {
+  if command -v codex &>/dev/null || [ -d "${CODEX_HOME_DIR}" ]; then
+    log "Installing Codex prompts to ${CODEX_COMMANDS_DIR}"
+    # install_file makes the dir on real copies; guard so --dry-run leaves none.
+    [ "$DRY_RUN" -eq 1 ] || mkdir -p "${CODEX_COMMANDS_DIR}"
+    for f in "${DEVSKILLS_DIR}/commands/"*.md; do
+      install_file "$f" "${CODEX_COMMANDS_DIR}/$(basename "$f")"
+    done
+    purge_renamed_commands "${CODEX_COMMANDS_DIR}"
+  else
+    warn "Codex not detected. Skipping. Install from https://developers.openai.com/codex"
+  fi
+}
+
+# ------------------------------------------------------------
 # Language profile
 # ------------------------------------------------------------
 
@@ -226,6 +251,7 @@ log "source: ${DEVSKILLS_DIR}"
 
 install_claude
 install_opencode
+install_codex
 
 if [ "$SKIP_CURSOR" -eq 0 ]; then
   install_cursor
@@ -256,6 +282,7 @@ log ""
 log "Done. Verify with:"
 log "  claude /ds-tiger-style-mode   — in Claude Code"
 log "  /ds-tiger-style-mode          — in Cursor or OpenCode"
+log "  /prompts:ds-tiger-style-mode  — in Codex"
 log "  rtk --version                 — RTK token proxy"
 log "  tldt --version                — text summarizer"
 log ""
