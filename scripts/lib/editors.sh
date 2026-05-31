@@ -41,6 +41,7 @@ devskills_install_cursor() {
     go)                    _dske_copy "${rules}/go.mdc"         "${dir}/.cursor/rules/go.mdc" ;;
     typescript|javascript) _dske_copy "${rules}/typescript.mdc" "${dir}/.cursor/rules/typescript.mdc" ;;
     rust)                  _dske_copy "${rules}/rust.mdc"       "${dir}/.cursor/rules/rust.mdc" ;;
+    python)                _dske_copy "${rules}/python.mdc"     "${dir}/.cursor/rules/python.mdc" ;;
   esac
 }
 

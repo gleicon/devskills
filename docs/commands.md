@@ -176,16 +176,17 @@ Language-agnostic **security** audit — the portable counterpart to the per-lan
 
 - **Args:** treated as scope (files, directories, globs); defaults to code changed on the current branch.
 - **Output:** prioritized findings anchored to `file:line` — critical (code exec / breach / auth bypass) → high → hardening. Each **describes the attack** (input → sink) and the fix. Exploitable over theoretical. Changes nothing.
-- **Reach for it when:** any change that touches input handling, auth, secrets, or external I/O — and as a pre-PR gate. The deeper language-specific checks live in `/go·ts·rust-review`.
+- **Reach for it when:** any change that touches input handling, auth, secrets, or external I/O — and as a pre-PR gate. The deeper language-specific checks live in `/go·ts·rust·python-review`.
 
-### `/go-review` · `/ts-review` · `/rust-review` — action
+### `/go-review` · `/ts-review` · `/rust-review` · `/python-review` — action
 
 Language-specific review passes.
 
 - **`/go-review`** — idiomatic Go + security + Tiger Style.
 - **`/ts-review`** — TypeScript/Workers: strict mode, React, Cloudflare.
 - **`/rust-review`** — cargo geiger, `unsafe`/panic counts, clippy, audit, Tiger Style + security.
-- **Args:** `--no-tiger` skips the Tiger Style section (all three).
+- **`/python-review`** — Python idioms, `mypy --strict` typing, security, Tiger Style.
+- **Args:** `--no-tiger` skips the Tiger Style section (all of them).
 - **Reach for it when:** reviewing code in that language, or as a pre-PR gate.
 
 ---

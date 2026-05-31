@@ -45,7 +45,7 @@ Keep devskills up to date:
 ### install.sh flags
 
 ```
---lang=<profile>     go | typescript | javascript | rust
+--lang=<profile>     go | typescript | javascript | rust | python
 --claude-dir=<path>  Claude config dir (default: $CLAUDE_CONFIG_DIR or ~/.claude)
 --skip-external      skip GSD, RTK, tldt installation
 --skip-cursor        skip Cursor rules
@@ -58,7 +58,7 @@ Keep devskills up to date:
 ### setup.sh flags (per-project)
 
 ```
---lang=<profile>     optional; stacks a language profile (go|typescript|javascript|rust)
+--lang=<profile>     optional; stacks a language profile (go|typescript|javascript|rust|python)
 --concise            add a terse-response directive to AGENTS.md
 --hints              add a devskills tooling reference to AGENTS.md
 --cursor             install Cursor rules into current project
@@ -146,6 +146,7 @@ These are scribes, not pilots: they record what you decide, never steer architec
 | Go Review | `/go-review` | Go: idiomatic + security + Tiger Style (`--no-tiger` to skip style) |
 | TS Review | `/ts-review` | TypeScript/Workers: strict mode, React, Cloudflare (`--no-tiger` to skip style) |
 | Rust Review | `/rust-review` | Rust: geiger/unsafe, clippy, audit, Tiger Style (`--no-tiger` to skip style) |
+| Python Review | `/python-review` | Python: idioms, typing, security, Tiger Style (`--no-tiger` to skip style) |
 | Bug Review | `/bug-review` | Language-agnostic correctness audit — hunts real bugs |
 | Security Review | `/security-review` | Language-agnostic security audit — each finding names the attack |
 | UI | `/ui` | UI mode: component/state discipline, design craft, a11y, Core Web Vitals |
@@ -193,6 +194,7 @@ Each profile encodes idioms, toolchain defaults, and review constraints for its 
 | `typescript` | TypeScript 5+, Wrangler | Cloudflare Workers, Next.js, React |
 | `javascript` | ES2022+, Wrangler | Cloudflare Workers, vanilla frontend |
 | `rust` | Rust stable | Systems programming, large projects |
+| `python` | Python 3.11+ | Backend services, APIs, CLIs, data pipelines |
 
 ## Scripts
 

@@ -51,6 +51,13 @@ Apply Tiger Style principles (https://tigerstyle.dev/) to all generated code:
 - ESM (`import`/`export`) everywhere.
 - Async errors always handled.
 
+### Python
+
+- Type-annotated; passes `mypy --strict`. Modern syntax (`list[str]`, `X | None`).
+- Catch specific exceptions, never bare `except:`. Chain with `raise ... from err`.
+- No mutable default arguments. Resources via `with`.
+- `pytest` with plain `assert`; `ruff` for lint/format, `uv` for deps.
+
 ## What to Avoid
 
 - Magic numbers without named constants.

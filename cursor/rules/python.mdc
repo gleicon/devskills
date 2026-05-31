@@ -1,0 +1,41 @@
+---
+description: Python conventions — typing, errors, structure, async, testing.
+globs: ["**/*.py"]
+alwaysApply: false
+---
+
+# Python Conventions
+
+Target: Python 3.11+. Backend services, APIs, CLIs, data pipelines.
+
+## Typing
+
+- Annotate every signature; code passes `mypy --strict`. No implicit `Any`.
+- Modern syntax: `list[str]`, `X | None`, not `Optional[X]`.
+- `@dataclass(frozen=True, slots=True)` for value objects; `Protocol` for interfaces; `Enum` over magic strings.
+- No `# type: ignore` without a reason comment.
+
+## Errors
+
+- Catch specific exceptions. No bare `except:`. Chain with `raise ... from err`.
+- Package-level exception hierarchy. Don't signal failure with `None`/sentinels where an exception is clearer.
+- Resources via context managers (`with`), never manual `try/finally`.
+
+## Async
+
+- `asyncio` for I/O-bound work. No blocking calls (`time.sleep`, `requests`, sync DB) inside `async def`.
+- CPU-bound work → `ProcessPoolExecutor`, not threads (GIL).
+- Every external `await` has a timeout.
+
+## Testing
+
+- `pytest` with plain `assert`. Parametrize with `@pytest.mark.parametrize`; setup via fixtures.
+- No real network/filesystem in unit tests — fakes and `tmp_path`. `pytest.raises` for error paths.
+- Test behavior through the public API, not private functions.
+
+## Naming & Structure
+
+- `snake_case` for functions/variables, `PascalCase` for classes, `UPPER_CASE` for constants.
+- `src/<package>/` layout; `tests/` mirrors it. Avoid `utils.py`/`helpers.py` grab-bags.
+- No mutable default arguments (`def f(x=[])`) — use `None` and create inside.
+- Lint and format with `ruff`; manage deps with `uv`.

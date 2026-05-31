@@ -39,9 +39,9 @@ for arg in "$@"; do
     --phases) PHASES=1 ;;
     --dry-run) DRY_RUN=1 ;;
     --help|-h)
-      echo "Usage: install.sh [--lang=go|typescript|javascript|rust] [--claude-dir=PATH] [--skip-external] [--skip-cursor] [--skip-vscode] [--concise] [--hints] [--phases] [--dry-run]"
+      echo "Usage: install.sh [--lang=go|typescript|javascript|rust|python] [--claude-dir=PATH] [--skip-external] [--skip-cursor] [--skip-vscode] [--concise] [--hints] [--phases] [--dry-run]"
       echo ""
-      echo "  --lang=<profile>    Language profile to write: go|typescript|javascript|rust"
+      echo "  --lang=<profile>    Language profile to write: go|typescript|javascript|rust|python"
       echo "  --claude-dir=PATH   Claude config dir (default: \$CLAUDE_CONFIG_DIR or \$HOME/.claude)"
       echo "  --skip-external     Skip external tool installation (GSD, RTK, tldt)"
       echo "  --skip-cursor       Skip Cursor rules install into the current project"
@@ -89,7 +89,7 @@ fi
 # Validate --lang up front, before any install side effects: a bad profile
 # should fail fast, not after GSD/RTK/tldt are already installed.
 if [ -n "$LANG_PROFILE" ] && [ ! -f "${DEVSKILLS_DIR}/prompts/language/${LANG_PROFILE}.md" ]; then
-  warn "No language profile for '${LANG_PROFILE}'. Available: go, typescript, javascript, rust"
+  warn "No language profile for '${LANG_PROFILE}'. Available: go, typescript, javascript, rust, python"
   exit 1
 fi
 
