@@ -2,12 +2,17 @@
 
 Every devskills command is a single prompt file invoked as `/<name>` in Claude Code, OpenCode, or Cursor (and as `/prompts:<name>` in OpenAI Codex). This is the reference: what each one does, its arguments, and when to reach for it. For worked, multi-step workflows see [recipes.md](recipes.md).
 
-Commands come in two shapes:
+## Kinds of command
 
-- **Modes** stay active for the rest of the session until you turn them off (`/ds-tiger-style-mode`, `/ds-ui-mode`, `/caveman-*`). They change *how* the agent works.
-- **Actions** run once and finish (`/ds-spec`, `/ds-code-quality-review`, `/ds-handoff`, …). They produce an output and return.
+A command's **suffix tells you its kind**:
 
-No command needs external tooling — every one stands alone.
+- **`-mode`** — persistent, toggleable session behavior; changes *how* the agent works until you turn it off. *tiger-style, ui, test, tdd, data, git, step, quality-gate, caveman-lite/ultra.*
+- **`-review`** — a findings-list audit. Report-only by default (several take `--fix`); findings are independent and fixable in any order. *bug, security, data, code-quality, doc-quality, test-quality, ui-quality, comment, and the six language reviews.*
+- **`-plan`** — graded, sequenced moves that each carry a trade-off or dependency, so the output is a *plan*, not a verdict. *perf-plan, architecture-plan.*
+- **no suffix** — a one-shot action that produces a result and returns. *spec, explore, blueprint, grill-me, handoff, zoom-out, tldt, verify-this, debug, deslop, write-a-command, and the project-\* family.*
+- **language profiles** — configured per project via `--lang=<x>`, not invoked as slash commands (see the [README](../README.md#language-profiles)).
+
+Everything except `-mode` runs once and finishes; a `-mode` stays on. The per-command headings below tag each one with its kind. No command needs external tooling — every one stands alone.
 
 ---
 
@@ -126,7 +131,7 @@ Pragmatic testing mode: as you build normally, ensure the code that matters gets
 
 ## Quality & cleanup
 
-### `/ds-code-quality-review` — action
+### `/ds-code-quality-review` — review
 
 Extremely strict maintainability audit: abstraction quality, file sprawl (the 1k-line smell), spaghetti-condition growth. Ambitiously hunts "code judo" — restructurings that delete whole categories of complexity while preserving behavior.
 
@@ -134,7 +139,7 @@ Extremely strict maintainability audit: abstraction quality, file sprawl (the 1k
 - **Output:** prioritized findings anchored to `file:line`, with an approval verdict. Changes nothing by default; `--fix` applies the mechanical, behavior-preserving findings — structural/code-judo restructurings stay reported.
 - **Reach for it when:** before merging non-trivial work, or auditing an area you suspect is decaying.
 
-### `/ds-doc-quality-review` — action
+### `/ds-doc-quality-review` — review
 
 Strict documentation audit governed by one principle — **docs earn their length** (readers skim, they don't read). Hunts wrong docs (drifted from the code) and bloated docs (true, but nobody reads them) with equal energy. Verifies mechanically: resolves links, recounts claimed counts, runs example commands where safe.
 
@@ -142,7 +147,7 @@ Strict documentation audit governed by one principle — **docs earn their lengt
 - **Output:** prioritized findings anchored to `file:line` with a suggested fix — accuracy/drift first, then dead links and wrong counts, missing docs, bloat-to-cut, clarity. Changes nothing by default; `--fix` applies the mechanical, unambiguous findings (dead links, stale counts, lossless bloat-cuts).
 - **Reach for it when:** before a docs PR, after the code outgrew its README, or when the docs feel long and unread.
 
-### `/ds-test-quality-review` — action
+### `/ds-test-quality-review` — review
 
 Strict test-suite audit governed by one principle — **test what matters, and test it well — not coverage.** Hunts critical/core code that's under-tested (the bug waiting to ship) and tests that are bad (green but worthless, or design-locking and worse than nothing) with equal energy. Checks edge/failure-mode coverage on risky logic, behavior-vs-implementation quality, and flags tests coupled to internals for rewrite-or-delete. Explicitly rejects coverage-chasing.
 
@@ -150,7 +155,7 @@ Strict test-suite audit governed by one principle — **test what matters, and t
 - **Output:** prioritized findings anchored to `file:line` — untested critical code first, then missing edge cases, design-locking tests, weak tests, bloat-to-cut. Changes nothing by default; `--fix` applies the mechanical, unambiguous findings (deleting worthless or duplicate tests) — writing or redesigning tests stays reported.
 - **Reach for it when:** before merging logic-heavy work, or when a suite is green but you don't trust it. The audit counterpart to the `/ds-test-mode` mode and `/ds-tdd-mode`.
 
-### `/ds-ui-quality-review` — action
+### `/ds-ui-quality-review` — review
 
 Strict UI audit governed by one principle — **a UI is judged on both halves: it works and it's crafted.** Framework-agnostic. Hunts engineering correctness (missing/broken async states — especially **empty** — fetch waterfalls, uncancelled stale responses, state that should be derived, index-as-key), accessibility barriers (non-semantic controls, keyboard/focus gaps, contrast, missing labels/live regions), Core Web Vitals (layout shift, INP, oversized critical path), and design craft (generic-AI defaults, flat hierarchy, unsystematized type/spacing).
 
@@ -166,7 +171,7 @@ Strip AI-generated slop from the branch and align it with the surrounding code. 
 - **Output:** the edits applied, plus a 1–3 sentence summary. Behavior preserved.
 - **Reach for it when:** right after generating a batch of code, before review. Cheaper and narrower than `/ds-code-quality-review`.
 
-### `/ds-comment-review` — action
+### `/ds-comment-review` — review
 
 Strict review of code comments under one lens — **does each comment earn its place, and is it as short as it can be?** Comments are for humans and explain **WHY, not WHAT** — one line by default, only where the reason isn't obvious, never restating code or citing plan/ticket IDs; a long comment is rare and signals importance. Unlike `/ds-doc-quality-review --comments` (reports under a docs-accuracy lens) and `/ds-deslop` (branch-diff, matches existing style), this **imposes** the discipline regardless of the codebase's existing habits, works on any scope, and can apply the fix. Comment-only and behavior-preserving — never changes code logic.
 
@@ -198,7 +203,7 @@ After each pass: shows findings for that pass, asks "accept all / reject all / s
 
 The review commands are a **layered gate, not competing alternatives** — cheapest and narrowest first, deepest last: `/ds-deslop` (noise) → `/ds-bug-review` (correctness) → `/ds-security-review` (exploitability) → `/ds-data-review` (data correctness, when the change touches schema/queries/transactions/migrations) → the language review (idioms) → `/ds-code-quality-review` (structure). Each answers a different question, so running several on the same code isn't redundant. The full pre-PR sequence is in [recipes.md](recipes.md#a-pre-pr-quality-gate).
 
-### `/ds-bug-review` — action
+### `/ds-bug-review` — review
 
 Language-agnostic **correctness** audit — the bug-hunting pass. Asks one thing: *will this misbehave at runtime?* Hunts logic errors, null/absent-value derefs, swallowed errors and half-done failure paths, resource leaks, races (TOCTOU, lock ordering), boundary/overflow mistakes, and contract misuse. Distinct from `/ds-code-quality-review` (which is maintainability, not bugs) — the same split the harness draws between cleanup and correctness.
 
@@ -206,7 +211,7 @@ Language-agnostic **correctness** audit — the bug-hunting pass. Asks one thing
 - **Output:** prioritized findings anchored to `file:line` — critical (data loss / reachable crash) first, then likely-wrong, then edge-case. Each names **the exact condition that triggers it** plus the fix and a confidence note. Real defects only; no theoretical nulls. Changes nothing by default; `--fix` applies only mechanical, unambiguous fixes — logic-changing or uncertain ones stay reported.
 - **Reach for it when:** before merging logic-heavy work, or on any code outside go/ts/rust where there's no language review. Confirmed findings hand off to `/ds-debug` (root-cause) and `/ds-verify-this` (prove the fix).
 
-### `/ds-security-review` — action
+### `/ds-security-review` — review
 
 Language-agnostic **security** audit — the portable counterpart to the per-language Security sections. Traces untrusted data from entry to dangerous sink: injection (SQL/command/path/SSRF/template), output handling (XSS, unsafe deserialization), broken access control (IDOR, privilege escalation), secrets and weak crypto, sensitive-data exposure, mass assignment / unsafe upload / DoS, and transport/config gaps.
 
@@ -214,7 +219,7 @@ Language-agnostic **security** audit — the portable counterpart to the per-lan
 - **Output:** prioritized findings anchored to `file:line` — critical (code exec / breach / auth bypass) → high → hardening. Each **describes the attack** (input → sink) and the fix. Exploitable over theoretical. Changes nothing by default; `--fix` applies only mechanical, unambiguous fixes — anything that changes behavior or rests on an assumption stays reported.
 - **Reach for it when:** any change that touches input handling, auth, secrets, or external I/O — and as a pre-PR gate. The deeper language-specific checks live in `/go·ts·rust·python·java·zig-review`.
 
-### `/ds-data-review` — action
+### `/ds-data-review` — review
 
 Store-agnostic **data correctness** audit — the question no other review owns: *is the data correct, consistent, and well-modeled?* Works on relational **and** NoSQL, adapting to the store (won't demand FKs from a document database). Checks schema & integrity (missing constraints, wrong types, referential gaps, partition-key hotspots, unbounded documents), query-result correctness (JOINs that drop/duplicate rows, NULL/aggregate semantics, `LIMIT` without `ORDER BY`, pagination drift), transactions & consistency (missing boundaries, wrong isolation level, lost updates, eventual-consistency-read-as-strong), and migration safety (backward-incompatible DDL against running code, locking DDL on large tables, racy backfills, missing rollback). The line vs neighbors is drawn by *consequence*: a query that's slow → `/ds-perf-plan`; one that returns wrong/duplicate data → here. Injection stays with `/ds-security-review` (assumes parameterized queries); general code-logic races stay with `/ds-bug-review`.
 
@@ -222,7 +227,7 @@ Store-agnostic **data correctness** audit — the question no other review owns:
 - **Output:** prioritized findings anchored to `file:line` — critical (silent data loss/corruption, or a migration that can lock production) → wrong-results → integrity-gap → hardening. Each names **the exact condition that triggers wrong/lost/inconsistent data**, the fix (prefer a store-enforced constraint over an app-side check that races), and the store/engine assumption it rests on. Changes nothing by default; `--fix` applies only mechanical, unambiguous fixes — migration-altering or uncertain ones stay reported.
 - **Reach for it when:** a change touches schema, queries, transactions, or migrations (add `--pipelines` for ETL/pipeline code). Confirmed findings hand off to `/ds-verify-this` (prove the fix against real before/after data). The build-time complement is the `/ds-data-mode` mode.
 
-### `/ds-go-review` · `/ds-ts-review` · `/ds-rust-review` · `/ds-python-review` · `/ds-java-review` · `/ds-zig-review` — action
+### `/ds-go-review` · `/ds-ts-review` · `/ds-rust-review` · `/ds-python-review` · `/ds-java-review` · `/ds-zig-review` — review
 
 Language-specific review passes.
 
@@ -241,7 +246,7 @@ Language-specific review passes.
 
 A *plan* is not a findings list. Where the reviews above report independent defects you fix in any order, a plan produces **graded, costed moves** — each tagged by the architectural cost it incurs (L1/L2/L3) and ranked so the cheap, high-impact wins come first. The output is an actionable, trade-off-aware plan; it still changes nothing.
 
-### `/ds-perf-plan` — action
+### `/ds-perf-plan` — plan
 
 Language-agnostic performance pass governed by one question — **where is this doing more work than it needs to, and what would each speedup cost?** A *plan*, not a verdict: every candidate move is tagged by the architectural cost of applying it (**L1** free win, **L2** localized restructuring, **L3** architectural/boundary-breaking), and ranked by impact ÷ cost so free wins float up. The spine is the anti-hallucination guardrail: **no finding without a cost model** (Big-O, alloc/IO/query counts, or a measured profile), each labeled `measured` / `reasoned` / `speculative`. Distinct from the language reviews' idiom-level `### Performance` checklist, from `/ds-code-quality-review` (which disclaims micro-opts), and from `/ds-ui-quality-review` (frontend rendering).
 
@@ -249,7 +254,7 @@ Language-agnostic performance pass governed by one question — **where is this 
 - **Output:** ranked moves grouped by level, each anchored to `file:line` with its cost model, level tag (and the architecture/clarity cost for L2/L3), evidence label, and the `/ds-verify-this` claim that would prove the win. Changes nothing.
 - **Reach for it when:** a path is hot or a change is perf-sensitive. Pairs with `/ds-verify-this` to prove the speedup with a same-machine baseline/treatment.
 
-### `/ds-architecture-plan` — action
+### `/ds-architecture-plan` — plan
 
 Assess an **existing** codebase's architecture and produce a sequenced refactoring plan, governed by one question — **is the architecture itself sound, and if not, what's the highest-leverage way to fix it, in what order?** Operates at the **module / dependency / boundary** altitude: god packages, import cycles, dependency-direction violations, logic in the wrong layer, shotgun-surgery coupling, duplicated subsystems. Distinct from `/ds-code-quality-review` (file/function altitude, *within* the architecture) and `/ds-zoom-out` (maps, renders no judgment). The spine against cargo-culting: **no recommendation without a concrete symptom in this codebase** — a cycle path, files that co-change, logic at `file:line` — generic "adopt hexagonal/DDD" with no local evidence is banned.
 
