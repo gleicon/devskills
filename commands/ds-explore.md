@@ -18,7 +18,7 @@ When invoked, help the operator think through how to solve a problem by surfacin
    - Without `--web`: work from the context and your knowledge. **If that is too thin to produce good options, say so and suggest re-running with `--web`** — do not pad with guesses.
 4. Lay out **2–4 candidate approaches**. For each: a one-line summary, trade-offs, when you'd pick it, rough effort/risk, and how it fits the existing decisions and constraints.
 5. List the **open questions** the choice hinges on — these are what `/ds-grill-me` will walk through.
-6. Write the artifact to `.project/EXPLORE.md` if `.project/` exists, else a fresh `mktemp -d`; return the path.
+6. Write the artifact to `.project/EXPLORE.md` if `.project/` exists, else `EXPLORE.md` in a fresh `mktemp -d`; return the path.
 
 ## Rules
 

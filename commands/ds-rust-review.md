@@ -107,7 +107,7 @@ Skip this section entirely if `--no-tiger` was passed. Otherwise it is mandatory
 - [ ] `matches!()` macro for pattern matching in boolean context
 - [ ] Field order only matters for `#[repr(C)]`/FFI types — don't flag ordering on ordinary `repr(Rust)` structs (the compiler reorders them)
 - [ ] `#[derive]` used where applicable (Debug, Clone, PartialEq)
-- [ ] No custom `Display` that duplicates `Debug` — both should exist independently
+- [ ] No custom `Display` that just re-emits the `Debug` output — if `Display` adds nothing over `{:?}`, drop it
 
 ### Performance
 _Idiom-level checks only — for a ranked, costed optimization plan, use `/ds-perf-plan`._
