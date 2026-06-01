@@ -133,7 +133,7 @@ you both its origin and its kind: `/ds-tiger-style-mode` is a mode you toggle,
 | Caveman Lite | `/ds-caveman-lite-mode` | Compressed response mode (~25–35% token reduction) |
 | Caveman Ultra | `/ds-caveman-ultra-mode` | Compressed response mode (~75–85% token reduction) |
 | TLDT | `/ds-tldt` | Extractive summary of context or a file — no LLM cost |
-| Workflow | `/ds-workflow` | `.project`-native orient & resume — read the plan, report where to pick up, suggest the next command |
+| Workflow | `/ds-workflow` | Standalone phase-map orchestrator — orient, then route each phase to its command (uses `.project/` state when present, never requires it) |
 | Project Map | `/ds-project-map` | Scan the repo into `.project/PROJECT.md` |
 | Project Plan | `/ds-project-plan` | Ordered task roadmap in `.project/PLAN.md` |
 | Project Checkpoint | `/ds-project-checkpoint` | Persist state to `.project/PLAN.md` (`--handoff` for a full handoff) |

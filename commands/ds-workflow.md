@@ -1,10 +1,10 @@
 Enter the development workflow — orient, spec, build, verify, ship.
 
-A `.project`-native orient-and-resume command. If `.project/PLAN.md` exists, it reads the plan and reports where to pick up; with no plan, it gives a fresh-start orientation pointing at the commands that begin one.
+A standalone phase-map orchestrator: it orients you, then routes each phase to its primary command. It requires nothing else — every phase works on its own. When `.project/` is present it *also* reads that state to orient faster, but the `.project/` commands are optional persistence, never required: you get the same workflow with or without them.
 
 ## On activation
 
-1. Check for `.project/PLAN.md`. If present, read it (and `.project/PROJECT.md` if present) and report where to pick up. If absent, this is a fresh start — point at `/ds-spec`, `/ds-explore`, or `/ds-project-map` to begin.
+1. If `.project/` is present, read `.project/PROJECT.md` (context) and `.project/PLAN.md` (where to pick up) when they exist, and report where to resume. If no plan is found — or `.project/` isn't in use — treat it as a fresh start and point at `/ds-spec` (lock the WHAT) or `/ds-explore` (lay out approaches) to begin.
 2. Report current state: what exists, what phase you appear to be in, what's next.
 3. Activate `/ds-tiger-style-mode` implicitly — engineering bar on for the session.
 4. If a language profile is set in `AGENTS.md` (look for `<!-- profile: <lang> -->`), apply its conventions.
@@ -18,7 +18,7 @@ Each phase has a primary command and the question it answers. Emit an Insight bl
 ```
 `Insight ─────────────────────────────────────`
 /ds-zoom-out — map the area before changing it
-/ds-project-resume — pick up from .project/PLAN.md if it exists
+/ds-project-resume — restore where you left off (only if .project/ is in use)
 `─────────────────────────────────────────────`
 ```
 
@@ -36,8 +36,8 @@ Each phase has a primary command and the question it answers. Emit an Insight bl
 *"In what order do we build it?"*
 ```
 `Insight ─────────────────────────────────────`
-/ds-project-plan — turn spec/decisions into ordered tasks → .project/PLAN.md
 /ds-blueprint — for a new system, commit to a structure first (modules, deps, build order)
+/ds-project-plan — sequence spec/decisions into ordered tasks (only if you persist state under .project/)
 `─────────────────────────────────────────────`
 ```
 
@@ -87,8 +87,8 @@ Give it something measurable. It refuses vague claims.
 *"Save state, open the PR."*
 ```
 `Insight ─────────────────────────────────────`
-/ds-project-checkpoint — persist state before /clear or end of session
-/ds-handoff — richer context file for a long pause or handoff to another person
+/ds-handoff — capture goal/done/remaining into a handoff doc for a long pause or another person (works anywhere)
+/ds-project-checkpoint — persist state before /clear or end of session (only if .project/ is in use)
 Then: git push + gh pr create
 `─────────────────────────────────────────────`
 ```
@@ -101,7 +101,7 @@ Then: git push + gh pr create
 /ds-workflow build    → activate tiger-style + suggest build modes
 /ds-workflow review   → run the full pre-PR gate (deslop → reviews → verify)
 /ds-workflow status   → report current phase, what exists, what's next
-/ds-workflow ship     → checkpoint + gh pr create guidance
+/ds-workflow ship     → persist state (handoff, or checkpoint if .project/ is in use) + gh pr create guidance
 ```
 
 ## Surviving long sessions

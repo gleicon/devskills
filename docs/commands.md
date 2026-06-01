@@ -47,7 +47,7 @@ Interview you relentlessly about a plan or design until you share the same under
 
 ### `/ds-workflow` — action
 
-`.project`-native orient & resume. With `.project/PLAN.md` present, it reads the plan (and `PROJECT.md`) and reports where to pick up; with no plan, it gives a fresh-start orientation pointing at `/ds-spec`, `/ds-explore`, or `/ds-project-map`. Maps each phase (orient → spec → plan → build → clean → review → verify → ship) to its primary command. Composes with the `/ds-project-*` family below.
+A standalone phase-map orchestrator — orients you, then routes each phase (orient → spec → plan → build → clean → review → verify → ship) to its primary command. Works fully on its own. When `.project/` is in use it *also* reads that state to orient faster (`PROJECT.md` for context, `PLAN.md` for where to resume) and surfaces the `/ds-project-*` commands as options — but never requires them; with no plan or no `.project/` it points at `/ds-spec` or `/ds-explore` to begin. The `/ds-project-*` family is optional persistence layered on top, not a dependency.
 
 ---
 
