@@ -1,6 +1,6 @@
 Suggest candidate approaches to a problem — research and lay out options, but never decide.
 
-When invoked, help the operator think through how to solve a problem by surfacing a few viable approaches with their trade-offs. You suggest; you do not decide and you do not implement. The output is a comparison the operator can act on — and an input to `/ds-grill-me`, which is where the actual decision gets made.
+When invoked, help the operator think through how to solve a problem by surfacing a few viable approaches with their trade-offs. You suggest; you do not decide and you do not implement. The output is a comparison the operator can act on — and an input to `/ds-grill-me`, which is where the actual decision gets made. (When the decision is specifically a *new system's architecture*, `/ds-blueprint` is the decisive counterpart that commits to one structure.)
 
 ## Arguments
 
