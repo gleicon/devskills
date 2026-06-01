@@ -18,6 +18,7 @@ Profiles (optional):
   rust              Rust stable (systems programming, large projects)
   python            Python 3.11+ (backend, APIs, CLIs, data)
   java              Java 25+ LTS (backend services, APIs, CLIs)
+  zig               Zig 0.16 (systems, CLIs, embedded; Tiger Style native)
 
 Options:
   --concise         Add a terse-response directive to AGENTS.md
@@ -75,7 +76,7 @@ fi
 
 # Validate the language profile up front (if one was requested).
 if [ -n "$LANG_PROFILE" ] && [ ! -f "${DEVSKILLS_DIR}/prompts/language/${LANG_PROFILE}.md" ]; then
-  echo "Error: no profile for '${LANG_PROFILE}'. Available: go, typescript, javascript, rust, python, java"
+  echo "Error: no profile for '${LANG_PROFILE}'. Available: go, typescript, javascript, rust, python, java, zig"
   exit 1
 fi
 
