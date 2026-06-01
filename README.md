@@ -168,6 +168,7 @@ you both its origin and its kind: `/ds-tiger-style-mode` is a mode you toggle,
 | Zig Review | `/ds-zig-review` | Zig: explicit allocators, errors-as-values, safety, Tiger Style (`--no-tiger` to skip style) |
 | Bug Review | `/ds-bug-review` | Language-agnostic correctness audit — hunts real bugs |
 | Security Review | `/ds-security-review` | Language-agnostic security audit — each finding names the attack |
+| Perf Plan | `/ds-perf-plan` | Language-agnostic optimization plan — moves tagged by architectural cost (L1/L2/L3), each with a cost model (`--max-level` to clamp, `--no-tiger` to skip style) |
 | UI | `/ds-ui-mode` | UI mode: component/state discipline, design craft, a11y, Core Web Vitals |
 | UI Quality Review | `/ds-ui-quality-review` | Strict UI audit: async-state/fetch correctness, a11y, Core Web Vitals, design craft |
 | Explore | `/ds-explore` | Lay out candidate approaches with trade-offs (`--web` for research) |

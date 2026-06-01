@@ -109,6 +109,21 @@ Give it something measurable. It will refuse "the code is cleaner" — that's a 
 
 ---
 
+## Find then prove: `/ds-perf-plan` → `/ds-verify-this` for a speedup
+
+Performance work is the most hallucination-prone — "this loop looks slow, add a cache" with no measurement breaks clean code and often *pessimizes*. The pairing closes that gap: `/ds-perf-plan` finds the candidates and refuses any without a cost model (Big-O, alloc/IO/query counts, or a profile), tagging each `measured` / `reasoned` / `speculative` and by architectural cost (L1/L2/L3). Then you apply the move you choose and `/ds-verify-this` proves the win with a same-machine baseline/treatment.
+
+```
+/ds-perf-plan src/index/            # rank costed moves; free wins (L1) first
+/ds-perf-plan --max-level=1         # or: only the behavior- and structure-preserving wins
+   ...apply the move you picked...
+/ds-verify-this  `bench query big.idx` runs ≥2× faster on this branch vs parent
+```
+
+`/ds-perf-plan` names the *price* of each speedup, so trading architecture for speed (L3) is a deliberate choice; `/ds-verify-this` makes sure the speedup is real before you keep it. Reach for it when a path is hot or a change is perf-sensitive — not as a blanket pass over code that isn't.
+
+---
+
 ## A pre-PR quality gate
 
 Stitch the quality commands into one gate you run before marking a PR ready:
@@ -119,11 +134,12 @@ Stitch the quality commands into one gate you run before marking a PR ready:
 /ds-bug-review              # 3. correctness: real bugs, not style
 /ds-security-review         # 4. exploitability — if it touches input, auth, secrets, or I/O
 /ds-test-quality-review     # 5. is the risky logic actually covered, with good tests?
-/ds-go-review               # 6. language pass (or /ds-ts-review, /ds-rust-review)
-/ds-verify-this  <claim>    # 7. prove the headline change actually works
+/ds-perf-plan               # 6. performance: where is it doing more work than needed? (perf-sensitive changes)
+/ds-go-review               # 7. language pass (or /ds-ts-review, /ds-rust-review)
+/ds-verify-this  <claim>    # 8. prove the headline change actually works
 ```
 
-Then write the PR description from what you learned and `gh pr ready`. Each step answers a *different* question — slop (noise), structure, correctness, exploitability, test coverage, language idioms, behavior — so they don't overlap. Not every PR needs all seven: reach for `/ds-security-review` when it touches untrusted input, `/ds-test-quality-review` when the logic is non-trivial. Run the questions that apply.
+Then write the PR description from what you learned and `gh pr ready`. Each step answers a *different* question — slop (noise), structure, correctness, exploitability, test coverage, performance, language idioms, behavior — so they don't overlap. Not every PR needs all eight: reach for `/ds-security-review` when it touches untrusted input, `/ds-test-quality-review` when the logic is non-trivial, `/ds-perf-plan` when a path is hot or the change is perf-sensitive. Run the questions that apply.
 
 ---
 
@@ -205,6 +221,7 @@ Two failure modes on long tasks: the context window fills, and prose burns token
 | Find real bugs (correctness) | `/ds-bug-review` |
 | Audit security, language-agnostic | `/ds-security-review` |
 | Check whether the right things are tested | `/ds-test-quality-review` |
+| Plan a performance optimization (costed) | `/ds-perf-plan` |
 | Review language idioms + security | `/ds-go-review` · `/ds-ts-review` · `/ds-rust-review` |
 | Find why something fails, then fix it | `/ds-debug` |
 | Prove a change actually works | `/ds-verify-this` |
