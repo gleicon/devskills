@@ -8,7 +8,7 @@ Everything here is **GSD-free**: it relies only on the commands, `git`, and `gh`
 
 ## Modes stack — run several at once
 
-A **mode** (`/ds-tiger-style-mode`, `/ds-ui-mode`, `/ds-test-mode`, `/ds-caveman-lite-mode` / `/ds-caveman-ultra-mode`) doesn't do a job and return — it changes *how* the agent works for the rest of the session. Modes **compose**: turn on as many as fit the work. Building a tested UI to a strict bar is three at once —
+A **mode** (`/ds-tiger-style-mode`, `/ds-ui-mode`, `/ds-data-mode`, `/ds-test-mode`, `/ds-caveman-lite-mode` / `/ds-caveman-ultra-mode`) doesn't do a job and return — it changes *how* the agent works for the rest of the session. Modes **compose**: turn on as many as fit the work. Building a tested UI to a strict bar is three at once —
 
 ```
 /ds-tiger-style-mode             # safety + explicitness bar
@@ -133,13 +133,14 @@ Stitch the quality commands into one gate you run before marking a PR ready:
 /ds-code-quality-review     # 2. structure: is the diff making the codebase worse?
 /ds-bug-review              # 3. correctness: real bugs, not style
 /ds-security-review         # 4. exploitability — if it touches input, auth, secrets, or I/O
-/ds-test-quality-review     # 5. is the risky logic actually covered, with good tests?
-/ds-perf-plan               # 6. performance: where is it doing more work than needed? (perf-sensitive changes)
-/ds-go-review               # 7. language pass (or /ds-ts-review, /ds-rust-review)
-/ds-verify-this  <claim>    # 8. prove the headline change actually works
+/ds-data-review             # 5. data correctness — if it touches schema, queries, transactions, or migrations
+/ds-test-quality-review     # 6. is the risky logic actually covered, with good tests?
+/ds-perf-plan               # 7. performance: where is it doing more work than needed? (perf-sensitive changes)
+/ds-go-review               # 8. language pass (or /ds-ts-review, /ds-rust-review)
+/ds-verify-this  <claim>    # 9. prove the headline change actually works
 ```
 
-Then write the PR description from what you learned and `gh pr ready`. Each step answers a *different* question — slop (noise), structure, correctness, exploitability, test coverage, performance, language idioms, behavior — so they don't overlap. Not every PR needs all eight: reach for `/ds-security-review` when it touches untrusted input, `/ds-test-quality-review` when the logic is non-trivial, `/ds-perf-plan` when a path is hot or the change is perf-sensitive. Run the questions that apply.
+Then write the PR description from what you learned and `gh pr ready`. Each step answers a *different* question — slop (noise), structure, correctness, exploitability, data correctness, test coverage, performance, language idioms, behavior — so they don't overlap. Not every PR needs all nine: reach for `/ds-security-review` when it touches untrusted input, `/ds-data-review` when it touches schema/queries/migrations, `/ds-test-quality-review` when the logic is non-trivial, `/ds-perf-plan` when a path is hot or the change is perf-sensitive. Run the questions that apply.
 
 ---
 
@@ -214,6 +215,22 @@ Because `/ds-ui-mode` encodes design constraints (type scale, spacing tokens, vi
 
 ---
 
+## Building a data pipeline
+
+`/ds-data-mode` is the data analogue of `/ds-ui-mode`: turn it on and every transform you build that session is shaped against the naive ETL defaults (read-all → overwrite, assume data arrives once and in order, crash on a bad record, no replay). Stack it with the test mode and verify the property that actually matters — a backfill reprocesses cleanly:
+
+```
+/ds-data-mode                    # discipline on: idempotency, late/out-of-order data, schema drift, replay-safety
+/ds-test-mode                    # cover the transforms as you build (stacks)
+   ...build it: pure transforms, upsert-on-key writes, event-time windowing, boundary assertions...
+/ds-verify-this "re-running yesterday's window produces identical row counts and totals — no double-counting"
+/ds-data-review --pipelines      # audit the pipeline code + the store it writes to
+```
+
+The mode shapes how the pipeline gets *built*; `/ds-data-review --pipelines` audits the built pipeline code (idempotency, replay-safety, late-data handling, schema-drift contracts), and plain `/ds-data-review` audits the *store* it writes to (schema, constraints, transactions, migrations). They're complements, not duplicates — run the mode while building, the review before merging.
+
+---
+
 ## Surviving long sessions
 
 Two failure modes on long tasks: the context window fills, and prose burns tokens.
@@ -248,11 +265,13 @@ Two failure modes on long tasks: the context window fills, and prose burns token
 | Understand unfamiliar code before changing it | `/ds-zoom-out` |
 | Build with real, refactor-proof tests | `/ds-tdd-mode` |
 | Keep the core tested as you work (mode) | `/ds-test-mode` |
+| Build a data pipeline correctly as you go (mode) | `/ds-data-mode` |
 | Remove AI slop from a fresh branch | `/ds-deslop` |
 | Bring a codebase's comments to discipline | `/ds-comment-review` |
 | Judge structure / find simplifications | `/ds-code-quality-review` |
 | Find real bugs (correctness) | `/ds-bug-review` |
 | Audit security, language-agnostic | `/ds-security-review` |
+| Check the data is correct, consistent, and well-modeled | `/ds-data-review` |
 | Check whether the right things are tested | `/ds-test-quality-review` |
 | Plan a performance optimization (costed) | `/ds-perf-plan` |
 | Plan a refactor of an existing architecture | `/ds-architecture-plan` |

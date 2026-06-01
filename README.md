@@ -168,9 +168,11 @@ you both its origin and its kind: `/ds-tiger-style-mode` is a mode you toggle,
 | Zig Review | `/ds-zig-review` | Zig: explicit allocators, errors-as-values, safety, Tiger Style (`--no-tiger` to skip style) |
 | Bug Review | `/ds-bug-review` | Language-agnostic correctness audit — hunts real bugs |
 | Security Review | `/ds-security-review` | Language-agnostic security audit — each finding names the attack |
+| Data Review | `/ds-data-review` | Store-agnostic data audit — schema/integrity, query-result correctness, transactions, migration safety. Each finding names the path to wrong/lost data (`--pipelines` also audits ETL/pipeline code) |
 | Perf Plan | `/ds-perf-plan` | Language-agnostic optimization plan — moves tagged by architectural cost (L1/L2/L3), each with a cost model (`--max-level` to clamp, `--no-tiger` to skip style) |
 | Architecture Plan | `/ds-architecture-plan` | Module/dependency/boundary analysis of an existing codebase → sequenced refactoring plan. Levels L1/L2/L3, `--max-level` to clamp |
 | UI | `/ds-ui-mode` | UI mode: component/state discipline, design craft, a11y, Core Web Vitals |
+| Data | `/ds-data-mode` | Data-engineering discipline as you build pipelines: idempotency, late/out-of-order data, schema drift, replay/backfill safety, data-quality assertions. Tool-agnostic |
 | UI Quality Review | `/ds-ui-quality-review` | Strict UI audit: async-state/fetch correctness, a11y, Core Web Vitals, design craft |
 | Explore | `/ds-explore` | Lay out candidate approaches with trade-offs (`--web` for research) |
 | Blueprint | `/ds-blueprint` | Design a target architecture for a new system — modules, dependency rules, seams, build order. Decisive counterpart to `ds-explore` |
@@ -182,7 +184,7 @@ you both its origin and its kind: `/ds-tiger-style-mode` is a mode you toggle,
 | Test Quality Review | `/ds-test-quality-review` | Strict test audit: is critical code well tested? |
 | Debug | `/ds-debug` | Root-cause a failure with the scientific method |
 | Verify This | `/ds-verify-this` | Prove a falsifiable claim with local before/after evidence |
-| Quality Gate | `/ds-quality-gate-mode` | Six-pass review pipeline (deslop → test → security → bug → quality → docs), implement fixes between passes, toggleable mode |
+| Quality Gate | `/ds-quality-gate-mode` | Seven-pass review pipeline (deslop → test → security → bug → data → quality → docs), implement fixes between passes, toggleable mode |
 | Write a Command | `/ds-write-a-command` | Author a new devskills command in repo conventions |
 
 Full per-command reference: [docs/commands.md](docs/commands.md). Worked, GSD-free workflows and examples: [docs/recipes.md](docs/recipes.md). Extended `/ds-grill-me` playbook: [docs/grill-me.md](docs/grill-me.md). Tiger Style principles: [docs/tiger-style.md](docs/tiger-style.md).

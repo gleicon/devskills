@@ -87,6 +87,12 @@ UI mode, framework-agnostic (React/Svelte/Vue/Solid/vanilla, any runtime). Two h
 
 - **Reach for it when:** working on components, UI state, API integration, or styling.
 
+### `/ds-data-mode` — mode
+
+Data-engineering discipline, tool-agnostic (Spark/Airflow/dbt/Flink/plain scripts, batch **and** streaming). Counters the naive ETL shape LLMs default to (read-all → transform → overwrite, assume data arrives once and in order, crash on a bad record, no replay) by encoding constraints up front: **idempotent** transforms (upsert on a key) with no wall-clock/random/order dependence, real-world data handling (event-time windowing with explicit watermarks, dedup on a business key safe under at-least-once, quarantine malformed rows, explicit schema-drift contracts), reprocessing & recovery (replayable/backfillable with no double-counting, time-partitioned, checkpointed, no destructive overwrite without a recovery path), boundary data-quality assertions that **fail the run**, and E/T/L separation with testable pure transforms. Matches the project's existing stack rather than imposing a framework.
+
+- **Reach for it when:** building or extending a data pipeline or transform. Stacks with `/ds-tiger-style-mode` + `/ds-test-mode`. The after-the-fact audit counterpart is `/ds-data-review` (the store) and `/ds-data-review --pipelines` (the pipeline code itself) — mode shapes the build, review audits it.
+
 ---
 
 ## Test & build
@@ -162,9 +168,11 @@ Strict review of code comments under one lens — **does each comment earn its p
 
 ### `/ds-quality-gate-mode` — mode
 
-Six-pass review pipeline for a feature branch or scoped path. Run in order; implement accepted findings between passes before proceeding.
+Seven-pass review pipeline for a feature branch or scoped path. Run in order; implement accepted findings between passes before proceeding.
 
-Pipeline: `/ds-deslop` → `/ds-test-quality-review` → `/ds-security-review` → `/ds-bug-review` → `/ds-code-quality-review` → `/ds-doc-quality-review`
+Pipeline: `/ds-deslop` → `/ds-test-quality-review` → `/ds-security-review` → `/ds-bug-review` → `/ds-data-review` → `/ds-code-quality-review` → `/ds-doc-quality-review`
+
+`/ds-data-review` runs only when the change touches schema, queries, transactions, or migrations; otherwise it's skipped with a note.
 
 After each pass: shows findings for that pass, asks "accept all / reject all / skip N", implements accepted ones, then moves to the next pass. Reports a one-paragraph summary at the end.
 
@@ -176,7 +184,7 @@ After each pass: shows findings for that pass, asks "accept all / reject all / s
 
 ## Reviews
 
-The review commands are a **layered gate, not competing alternatives** — cheapest and narrowest first, deepest last: `/ds-deslop` (noise) → `/ds-bug-review` (correctness) → `/ds-security-review` (exploitability) → the language review (idioms) → `/ds-code-quality-review` (structure). Each answers a different question, so running several on the same code isn't redundant. The full pre-PR sequence is in [recipes.md](recipes.md#a-pre-pr-quality-gate).
+The review commands are a **layered gate, not competing alternatives** — cheapest and narrowest first, deepest last: `/ds-deslop` (noise) → `/ds-bug-review` (correctness) → `/ds-security-review` (exploitability) → `/ds-data-review` (data correctness, when the change touches schema/queries/transactions/migrations) → the language review (idioms) → `/ds-code-quality-review` (structure). Each answers a different question, so running several on the same code isn't redundant. The full pre-PR sequence is in [recipes.md](recipes.md#a-pre-pr-quality-gate).
 
 ### `/ds-bug-review` — action
 
@@ -193,6 +201,14 @@ Language-agnostic **security** audit — the portable counterpart to the per-lan
 - **Args:** treated as scope (files, directories, globs); defaults to code changed on the current branch.
 - **Output:** prioritized findings anchored to `file:line` — critical (code exec / breach / auth bypass) → high → hardening. Each **describes the attack** (input → sink) and the fix. Exploitable over theoretical. Changes nothing.
 - **Reach for it when:** any change that touches input handling, auth, secrets, or external I/O — and as a pre-PR gate. The deeper language-specific checks live in `/go·ts·rust·python·java·zig-review`.
+
+### `/ds-data-review` — action
+
+Store-agnostic **data correctness** audit — the question no other review owns: *is the data correct, consistent, and well-modeled?* Works on relational **and** NoSQL, adapting to the store (won't demand FKs from a document database). Checks schema & integrity (missing constraints, wrong types, referential gaps, partition-key hotspots, unbounded documents), query-result correctness (JOINs that drop/duplicate rows, NULL/aggregate semantics, `LIMIT` without `ORDER BY`, pagination drift), transactions & consistency (missing boundaries, wrong isolation level, lost updates, eventual-consistency-read-as-strong), and migration safety (backward-incompatible DDL against running code, locking DDL on large tables, racy backfills, missing rollback). The line vs neighbors is drawn by *consequence*: a query that's slow → `/ds-perf-plan`; one that returns wrong/duplicate data → here. Injection stays with `/ds-security-review` (assumes parameterized queries); general code-logic races stay with `/ds-bug-review`.
+
+- **Args:** scope (files, directories, globs — including schema and migration files); defaults to code changed on the current branch. State the store/engine (Postgres, Mongo, DynamoDB…) when known — isolation defaults and dialects differ; otherwise it infers and **states the assumption**. `--pipelines` adds a sixth area — data-pipeline / ETL correctness (idempotency, replay/backfill safety, late & out-of-order data, dedup, schema drift); off by default, and the after-the-fact audit counterpart to the `/ds-data-mode` build mode.
+- **Output:** prioritized findings anchored to `file:line` — critical (silent data loss/corruption, or a migration that can lock production) → wrong-results → integrity-gap → hardening. Each names **the exact condition that triggers wrong/lost/inconsistent data**, the fix (prefer a store-enforced constraint over an app-side check that races), and the store/engine assumption it rests on. Changes nothing.
+- **Reach for it when:** a change touches schema, queries, transactions, or migrations (add `--pipelines` for ETL/pipeline code). Confirmed findings hand off to `/ds-verify-this` (prove the fix against real before/after data). The build-time complement is the `/ds-data-mode` mode.
 
 ### `/ds-go-review` · `/ds-ts-review` · `/ds-rust-review` · `/ds-python-review` · `/ds-java-review` · `/ds-zig-review` — action
 
