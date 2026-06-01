@@ -28,6 +28,14 @@ Surface candidate approaches to a problem with their trade-offs — suggests, ne
 - **Args:** a problem/question; `--web` to opt into web research.
 - **Reach for it when:** facing a "how should I build this?" fork and you want options laid out before deciding. It's the upstream of `/ds-grill-me`: explore generates the options, `/ds-grill-me` walks you through choosing.
 
+### `/ds-blueprint` — action
+
+Design a target architecture for a **new** system from its requirements — module/boundary decomposition, dependency-direction rules, seams, and build order (walking skeleton first). The **decisive** counterpart to `/ds-explore`: where explore surveys options and abstains, blueprint commits to one structure and notes the strongest alternative briefly. Describes the structural *how*, not the behavioral *what* (`/ds-spec`); to critique an architecture that *already exists*, use `/ds-architecture-plan`. The spine is YAGNI: **no structural element without a requirement that demands it** — generic patterns (hexagonal, DDD, microservices) appear only when a stated need forces them.
+
+- **Args:** a requirements source (a `SPEC.md` path, a freeform description, or a chosen approach from `/ds-explore`); with none, reads `SPEC.md` if present or asks. `--no-tiger` skips the Tiger Style section.
+- **Output:** a blueprint — shape (+ the tier it's pitched at), modules/boundaries, dependency rules (acyclic), seams, build order, what's deferred (and what would justify adding it), and the alternative considered. Changes nothing.
+- **Reach for it when:** starting a new system or subsystem and you want the structural HOW committed before building. Hand the build order to `/ds-project-plan`.
+
 ### `/ds-grill-me` — action
 
 Interview you relentlessly about a plan or design until you share the same understanding. One question at a time, each with a recommended answer; explores the codebase instead of asking when it can.
@@ -212,6 +220,14 @@ Language-agnostic performance pass governed by one question — **where is this 
 - **Args:** scope (files, directories, globs); defaults to code changed on the current branch. `--max-level=<1|2|3>` (or freeform "free wins only") clamps higher tiers; `--no-tiger` skips the Tiger Style section.
 - **Output:** ranked moves grouped by level, each anchored to `file:line` with its cost model, level tag (and the architecture/clarity cost for L2/L3), evidence label, and the `/ds-verify-this` claim that would prove the win. Changes nothing.
 - **Reach for it when:** a path is hot or a change is perf-sensitive. Pairs with `/ds-verify-this` to prove the speedup with a same-machine baseline/treatment.
+
+### `/ds-architecture-plan` — action
+
+Assess an **existing** codebase's architecture and produce a sequenced refactoring plan, governed by one question — **is the architecture itself sound, and if not, what's the highest-leverage way to fix it, in what order?** Operates at the **module / dependency / boundary** altitude: god packages, import cycles, dependency-direction violations, logic in the wrong layer, shotgun-surgery coupling, duplicated subsystems. Distinct from `/ds-code-quality-review` (file/function altitude, *within* the architecture) and `/ds-zoom-out` (maps, renders no judgment). The spine against cargo-culting: **no recommendation without a concrete symptom in this codebase** — a cycle path, files that co-change, logic at `file:line` — generic "adopt hexagonal/DDD" with no local evidence is banned.
+
+- **Args:** scope (directories, packages, the repo); defaults to the whole project. `--max-level=<1|2|3>` clamps (`--max-level=1` = safe, in-place wins only); `--no-tiger` skips the Tiger Style section.
+- **Output:** a 3–5 line assessment, then ordered steps ranked by leverage — each with its level tag (L1 in-place / L2 restructure-within-style / L3 architecture-style change), the symptom it fixes, why-now/what-it-unblocks, blast radius & risk, and whether characterization tests are needed at the seam first. Changes nothing.
+- **Reach for it when:** onboarding a codebase inherited in a bad state, or before a structural refactor. Map first with `/ds-zoom-out`; turn the roadmap into tasks with `/ds-project-plan`. (To design a *new* architecture, use `/ds-blueprint`.)
 
 ---
 

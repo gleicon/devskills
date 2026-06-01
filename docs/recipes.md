@@ -165,6 +165,39 @@ To carry plan and state *across* sessions (so `/clear` is always safe), layer th
 
 ---
 
+## Greenfield: design the architecture before you build
+
+`/ds-spec` and `/ds-explore` get you to *what* and *which options* — but neither commits to a structure. `/ds-blueprint` is the decisive step that does: it takes the requirements and recommends one architecture — modules, dependency rules, seams, build order — then you build the walking skeleton first.
+
+```
+/ds-spec                    # WHAT: requirements + acceptance criteria → SPEC.md
+/ds-explore                 # options at the big forks (--web to research references)
+/ds-blueprint  SPEC.md      # commit to one architecture: modules, deps, seams, build order
+/ds-project-plan            # turn the build order into an ordered task list
+   ...build the walking skeleton, then the increments...
+```
+
+`/ds-blueprint`'s spine is YAGNI — every layer/boundary/queue must trace to a stated requirement, so you get the simplest structure that meets the actual scale, not a cargo-culted one. It states what it deliberately deferred and what would justify adding it later.
+
+---
+
+## Onboarding a codebase inherited in a bad state
+
+When you adopt a running project whose architecture is already wrong, `/ds-code-quality-review` won't help — it works *within* the architecture. `/ds-architecture-plan` works *on* it: it questions whether the structure itself is sound and lays out a sequenced, risk-tagged refactoring roadmap.
+
+```
+/ds-zoom-out                     # 1. map the system first — modules, callers, boundaries
+/ds-architecture-plan            # 2. critique + sequenced roadmap (L1/L2/L3 by blast radius)
+/ds-architecture-plan --max-level=1   # or: safe, in-place wins only to start
+/ds-project-plan                 # 3. turn the roadmap into ordered tasks
+   ...build each step; add characterization tests at the seam before risky moves...
+/ds-verify-this <claim>          # 4. prove a risky move preserved behavior
+```
+
+Every step in the plan is anchored to a concrete symptom in *your* codebase — a cycle path, files that co-change, logic in the wrong layer at `file:line` — never generic "go DDD" advice. Mind the altitude split: `/ds-architecture-plan` owns the architecture itself; `/ds-code-quality-review` owns file/function/abstraction cleanup within it.
+
+---
+
 ## Building a UI feature
 
 `/ds-ui-mode` is a mode — turn it on and it stays active, shaping every component you build that session. It slots into the build loop above:
@@ -222,6 +255,8 @@ Two failure modes on long tasks: the context window fills, and prose burns token
 | Audit security, language-agnostic | `/ds-security-review` |
 | Check whether the right things are tested | `/ds-test-quality-review` |
 | Plan a performance optimization (costed) | `/ds-perf-plan` |
+| Plan a refactor of an existing architecture | `/ds-architecture-plan` |
+| Commit to an architecture for a new system | `/ds-blueprint` |
 | Review language idioms + security | `/ds-go-review` · `/ds-ts-review` · `/ds-rust-review` |
 | Find why something fails, then fix it | `/ds-debug` |
 | Prove a change actually works | `/ds-verify-this` |

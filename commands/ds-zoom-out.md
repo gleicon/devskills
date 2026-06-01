@@ -1,6 +1,6 @@
 Step up a layer of abstraction and map how the current code fits the bigger picture.
 
-When invoked, the user is unfamiliar with this area of code and wants the broader context — not a line-by-line read.
+When invoked, the user is unfamiliar with this area of code and wants the broader context — not a line-by-line read. This maps and explains; it renders no judgment. To turn the map into a critique and a sequenced refactoring roadmap, follow with `/ds-architecture-plan`.
 
 ## Process
 

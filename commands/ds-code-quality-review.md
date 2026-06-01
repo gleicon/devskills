@@ -1,6 +1,6 @@
 Run an extremely strict maintainability review of code changes — abstraction quality, file sprawl, and spaghetti-condition growth.
 
-When invoked, perform a deep code-quality audit focused on implementation quality, maintainability, abstraction quality, and overall codebase health. Be **ambitious** about structure: do not merely identify local cleanup opportunities — actively search for "code judo" moves that preserve behavior while making the implementation dramatically simpler, smaller, more direct, and more elegant.
+When invoked, perform a deep code-quality audit focused on implementation quality, maintainability, abstraction quality, and overall codebase health. Be **ambitious** about structure: do not merely identify local cleanup opportunities — actively search for "code judo" moves that preserve behavior while making the implementation dramatically simpler, smaller, more direct, and more elegant. This works at the file/function/abstraction altitude, *within* the existing architecture — whether the architecture itself is sound is `/ds-architecture-plan`'s question, not this one.
 
 ## Arguments
 
