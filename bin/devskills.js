@@ -24,13 +24,13 @@ function run(script, extraArgs) {
 
 function help() {
   console.log(`
-devskills — AI skill package for Claude Code, OpenCode, Cursor, VSCode
+devskills — command pack for Claude Code, OpenCode, Cursor, VSCode
 
 Commands:
-  install              Install skills to all detected environments
+  install              Install commands to all detected environments
   setup [--lang=<lang>] Configure current project (AGENTS.md baseline + options)
-  update               Pull latest and reinstall skills
-  list                 List available skills and language profiles
+  update               Pull latest and reinstall commands
+  list                 List available commands and language profiles
   version              Print the installed devskills version
 
 Language profiles (optional): go, typescript, javascript, rust
@@ -63,7 +63,7 @@ function list() {
   const commandsDir = path.join(DEVSKILLS_DIR, "commands")
   const langDir = path.join(DEVSKILLS_DIR, "prompts", "language")
 
-  console.log("\nSkills (Claude Code / OpenCode commands):")
+  console.log("\nCommands (Claude Code / OpenCode):")
   for (const f of fs.readdirSync(commandsDir).sort()) {
     if (f.endsWith(".md")) {
       console.log(`  /${f.replace(".md", "")}`)

@@ -1,6 +1,8 @@
 # devskills
 
-Installable skill package for Claude Code, OpenCode, OpenAI Codex, Cursor, and VSCode Copilot. Opinionated defaults, composable language profiles, full dev workflow from specification to shipped product.
+Installable **command** pack for Claude Code, OpenCode, OpenAI Codex, Cursor, and VSCode Copilot. Opinionated defaults, composable language profiles, a full dev workflow from specification to shipped product.
+
+Despite the name, this is **not** a Skills repo — it ships **commands**, not skills. A Claude Code *Skill* is invoked by the model whenever it decides one applies; a devskills **command** is a slash command *you* invoke, when you choose. That difference is the point: the tools stay under your control. devskills doesn't hand the model more autonomy — it sharpens *your* developer skills with tools you drive directly, and you keep total control over when each one runs.
 
 No magic. Files in the right directories. Prompts that encode real constraints.
 
@@ -11,7 +13,7 @@ git clone https://github.com/gleicon/devskills.git ~/.devskills
 ~/.devskills/install.sh
 ```
 
-Skills copy to `~/.claude/commands/`, `~/.opencode/commands/`, and `~/.codex/prompts/` (each installed only when that tool is detected). External tools (RTK, tldt) install automatically if prerequisites are present.
+Commands copy to `~/.claude/commands/`, `~/.opencode/commands/`, and `~/.codex/prompts/` (each installed only when that tool is detected). External tools (RTK, tldt) install automatically if prerequisites are present.
 
 In Codex, devskills commands are invoked under the `prompts:` namespace — `/ds-debug` becomes `/prompts:ds-debug`. Codex reads a project's `AGENTS.md` natively, so `setup.sh` covers its persistent surface with no extra step.
 
@@ -40,7 +42,7 @@ Per-project setup (run from inside a project):
 Keep devskills up to date:
 
 ```bash
-~/.devskills/scripts/update.sh              # pull + reinstall skills
+~/.devskills/scripts/update.sh              # pull + reinstall commands
 ~/.devskills/scripts/update.sh --upgrade-deps  # also force-upgrade RTK, tldt
 ```
 
@@ -166,7 +168,7 @@ devskills ships no fixed pipeline. Each command does one job and hands control b
 
 Running `setup.sh` with no flags writes just the baseline. Each block lives between `<!-- BEGIN/END devskills:<id> -->` markers, so re-running is idempotent and swapping `--lang` replaces only that block. Existing `AGENTS.md`/`CLAUDE.md` files are backed up (sibling timestamped `.bak`) once, before any change — these are transient; delete them or keep them out of version control once you've confirmed the result.
 
-`update.sh` refreshes the globally-installed skills, but not a project's `AGENTS.md` — the managed blocks are a point-in-time snapshot. To pull baseline or tooling changes into a project after an update, re-run `setup.sh` there (idempotent, so it just refreshes the blocks in place).
+`update.sh` refreshes the globally-installed commands, but not a project's `AGENTS.md` — the managed blocks are a point-in-time snapshot. To pull baseline or tooling changes into a project after an update, re-run `setup.sh` there (idempotent, so it just refreshes the blocks in place).
 
 The baseline blocks target `AGENTS.md` (Claude Code, OpenCode, and OpenAI Codex). Cursor and VSCode Copilot have their own rule mechanisms — `--cursor` installs `.cursor/rules/*.mdc` and `--vscode` writes `copilot-instructions.md`. Both honor `--lang`: they carry Tiger Style plus the notes for the selected language only (no `--lang` writes Tiger Style alone), but not the `base`/`concise`/`tooling` blocks.
 
@@ -188,7 +190,7 @@ Each profile encodes idioms, toolchain defaults, and review constraints for its 
 
 ## Scripts
 
-`install.sh` — one-time global install. Copies skills to Claude Code and OpenCode config dirs. Installs external tools. Run from anywhere.
+`install.sh` — one-time global install. Copies commands to Claude Code and OpenCode config dirs. Installs external tools. Run from anywhere.
 
 `scripts/setup.sh` — per-project configurator. Builds `AGENTS.md` (engineering baseline + optional language/concise/tooling blocks) and points `CLAUDE.md` at it via `@AGENTS.md`, optionally installs Cursor rules and VSCode Copilot instructions into the current directory. Run from inside a project. See [Repository Setup](#repository-setup).
 
@@ -211,7 +213,7 @@ devskills ships its own prompt commands based on these upstream sources.
 
 | Reference | Used by |
 |-----------|---------|
-| [Tiger Style](https://tigerstyle.dev/) | `/ds-tiger-style-mode`, all review skills |
+| [Tiger Style](https://tigerstyle.dev/) | `/ds-tiger-style-mode`, all review commands |
 | [Caveman](https://github.com/juliusbrussee/caveman) | `/ds-caveman-lite-mode`, `/ds-caveman-ultra-mode` |
 | [mattpocock/skills](https://github.com/mattpocock/skills) | `/ds-grill-me`, `/ds-handoff`, `/ds-zoom-out`, `/ds-tdd-mode`, `/ds-write-a-command` |
 | [cursor/plugins — cursor-team-kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit/skills) | `/ds-code-quality-review`, `/ds-deslop`, `/ds-verify-this` |

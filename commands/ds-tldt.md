@@ -4,7 +4,7 @@ tldt performs graph-based extractive summarization. Output consists of verbatim 
 
 ## Usage
 
-Invoke this skill with one of:
+Invoke this command with one of:
 
 - `/ds-tldt` — summarize the most recent large block of text in context
 - `/ds-tldt <filename>` — summarize a file
@@ -48,6 +48,6 @@ Source: <filename or url>
 
 ## When to trigger automatically
 
-This skill can be configured to trigger automatically when input exceeds a token threshold (default: 2000 tokens). Set `TLDT_AUTO_THRESHOLD` in environment to override.
+This command can be configured to trigger automatically when input exceeds a token threshold (default: 2000 tokens). Set `TLDT_AUTO_THRESHOLD` in environment to override.
 
 Install tldt: `go install github.com/gleicon/tldt/cmd/tldt@latest`

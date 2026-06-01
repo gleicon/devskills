@@ -104,4 +104,4 @@ violation: <what the code does>
 fix: <what it should do instead>
 ```
 
-This skill remains active for the current session. Respond with "Tiger Style active." to confirm activation, then proceed with the user's task.
+This command remains active for the current session. Respond with "Tiger Style active." to confirm activation, then proceed with the user's task.

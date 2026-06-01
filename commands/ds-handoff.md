@@ -6,7 +6,7 @@ When invoked, write a handoff document summarizing the current conversation, the
 
 1. Create a temp directory with `mktemp -d`; the output path is `<that-directory>/ds-handoff.md`.
 2. Write the handoff document to that path: current goal, what is done, what remains, key decisions, and open questions.
-3. Suggest which skills the next session should use, if any.
+3. Suggest which commands the next session should use, if any.
 
 ## Rules
 

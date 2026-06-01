@@ -19,7 +19,7 @@ No companion files. If a command needs more than one file, it is doing too much 
 1. Gather the requirement: what task the command automates, and when the user would invoke it.
 2. Draft the command file following the format above. Keep it focused — one job per command.
 3. Write it to `commands/ds-<name>.md` (mode commands: `commands/ds-<name>-mode.md`) — install.sh copies it to Claude Code, OpenCode, and Codex (the last invoked as `/prompts:ds-<name>`).
-4. Register it: add a row to the README "Skills" table and an entry to `docs/commands.md`.
+4. Register it: add a row to the README "Commands" table and an entry to `docs/commands.md`.
 5. Show the draft to the user for review before finalizing.
 
 ## Rules

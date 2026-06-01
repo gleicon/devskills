@@ -69,7 +69,7 @@ Allows `npx devskills install` without cloning.
 3. **Bump the version** before each publish:
    ```bash
    npm version patch   # 0.1.0 → 0.1.1 (bug fixes)
-   npm version minor   # 0.1.0 → 0.2.0 (new skills)
+   npm version minor   # 0.1.0 → 0.2.0 (new commands)
    npm version major   # 0.1.0 → 1.0.0 (breaking changes)
    ```
 
@@ -88,7 +88,7 @@ Allows `npx devskills install` without cloning.
 
 ### What gets published
 
-The `files` array in `package.json` controls this — it whitelists the skill
+The `files` array in `package.json` controls this — it whitelists the content
 directories (`claude/`, `opencode/`, `cursor/`, `vscode/`, `prompts/`),
 `scripts/`, `docs/`, the `bin/` CLI, and the top-level `install.sh`,
 `README.md`, and `PUBLISHING.md`. Anything not listed (node modules, `.git/`,
@@ -104,12 +104,12 @@ tar tzf devskills-*.tgz
 
 ---
 
-## Updating Published Skills
+## Updating Published Commands
 
-### After adding a new skill file
+### After adding a new command file
 
 1. Add the file to `commands/` — install.sh copies it to both Claude Code and OpenCode destinations.
-2. Update `README.md` skills table.
+2. Update `README.md` commands table.
 3. Bump version: `npm version patch`.
 4. `npm publish`.
 5. `git push && git push --tags`.

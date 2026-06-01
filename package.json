@@ -1,7 +1,7 @@
 {
   "name": "devskills",
   "version": "0.1.0",
-  "description": "Installable AI skill package for Claude Code, OpenCode, Cursor, and VSCode. Tiger Style, project workflow, reviews, RTK, Caveman, tldt.",
+  "description": "Installable command pack for Claude Code, OpenCode, Cursor, and VSCode. Tiger Style, project workflow, reviews, RTK, Caveman, tldt.",
   "keywords": [
     "claude-code",
     "cursor",
@@ -26,7 +26,7 @@
     "devskills": "./bin/devskills.js"
   },
   "scripts": {
-    "install-skills": "bash install.sh",
+    "install-commands": "bash install.sh",
     "setup": "bash scripts/setup.sh",
     "update": "bash scripts/update.sh",
     "test": "for f in test/*.test.sh; do bash \"$f\" || exit 1; done"

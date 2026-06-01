@@ -125,6 +125,6 @@ Edsger Dijkstra: "Simple and elegant systems tend to be easier and faster to des
 
 ## Application to This Package
 
-The `/ds-tiger-style-mode` skill encodes these principles as session-level constraints for Claude Code, OpenCode, and equivalent tools. The Cursor rules apply them automatically based on file type. The language profiles include Tiger Style integration notes specific to each language's idioms.
+The `/ds-tiger-style-mode` command encodes these principles as session-level constraints for Claude Code, OpenCode, and equivalent tools. The Cursor rules apply them automatically based on file type. The language profiles include Tiger Style integration notes specific to each language's idioms.
 
 Tiger Style is not a mechanical checklist — it is a habit of engineering rigor that protects against the most common causes of production failure: unchecked assumptions, deferred correctness, and complexity growth.
