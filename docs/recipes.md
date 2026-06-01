@@ -154,7 +154,7 @@ For small-to-medium work you don't need the full `.planning/` machinery. This lo
 /ds-explore                 # 2. at a fork: lay out approaches → EXPLORE.md (--web to research)
 /ds-grill-me --record       # 3. decide the open branches → DECISIONS.md
 /ds-zoom-out                # 4. in unfamiliar code: map the area before changing it
-/ds-tiger-style-mode             # 5. engineering bar on (stack /ds-test-mode to keep the core covered as you build)
+/ds-tiger-style-mode             # 5. engineering bar on (stack /ds-test-mode to keep the core covered, /ds-git-mode to land each working unit as a clean commit)
    ...build it, driving the design yourself...
 /ds-deslop                  # 6. clean the generated code
 /ds-code-quality-review     # 7. audit structure before review
