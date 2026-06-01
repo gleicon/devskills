@@ -25,7 +25,7 @@ Standard `src/main/java` / `src/test/java` source roots with the package tree mi
 ### Error Handling
 
 - Prefer unchecked exceptions for application errors — they compose with streams and lambdas and don't leak implementation across architectural seams. Reserve checked exceptions for the rare genuinely recoverable, caller-actionable condition, and don't let them cross layer boundaries. (Don't blanket-wrap in `RuntimeException` to dodge the compiler either — model real error types.)
-- Never swallow an exception — no empty `catch` blocks. Preserve the cause: `throw new AppException("context", e)`. Don't log-and-rethrow the same exception at every layer.
+- No empty `catch` blocks. Preserve the cause: `throw new AppException("context", e)`. Don't log-and-rethrow the same exception at every layer.
 - Catch the most specific exception type; never `catch (Exception e)` (or `Throwable`) as a catch-all unless re-raising.
 
 ### Resources & Concurrency
@@ -47,4 +47,3 @@ Standard `src/main/java` / `src/test/java` source roots with the package tree mi
 
 - Non-trivial methods validate their preconditions (`Objects.requireNonNull`, guard clauses, or `assert` for internal invariants); don't assert in trivial getters or thin wrappers.
 - All loops over external input have explicit bounds; no unbounded recursion without provable termination.
-- Keep methods under 70 lines; refactor past that without being asked.

@@ -46,4 +46,3 @@ Manage the project with `uv` (or `pip` + a virtualenv if the repo already uses i
 - Non-trivial functions validate their preconditions (`assert` for invariants, raised exceptions for caller errors and bad input). Don't assert in thin wrappers or trivial accessors.
 - All loops over external input have explicit bounds; no unbounded recursion without provable termination.
 - No mutable default arguments (`def f(x=[])`) — use `None` and create inside.
-- Keep functions under 70 lines; refactor past that without being asked.

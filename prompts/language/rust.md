@@ -57,4 +57,3 @@ Unit tests in the same file (`#[cfg(test)] mod tests`); integration tests in `te
 
 - Assert invariants with `assert!` / `debug_assert!` (the latter for checks too expensive for release). Document public functions' preconditions.
 - Panic only on programmer errors (violated invariants), never on bad input.
-- Refactor functions over 70 lines.

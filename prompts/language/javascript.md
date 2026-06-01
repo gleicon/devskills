@@ -10,7 +10,7 @@ Runtime: Bun or Node 20+. Workers: Wrangler 3+. Test: Vitest. Lint/format: Biome
 
 ### Error Handling
 
-Every `async` function handles errors explicitly — no unhandled rejections, no silent discard in `catch`.
+Every `async` function handles or propagates its errors — no unhandled promise rejections.
 
 ```js
 async function fetchUser(id) {
@@ -46,6 +46,4 @@ Vitest, same structure as the TypeScript profile.
 
 ### Tiger Style
 
-- Validate input at every external boundary (request, env, file read).
 - No silent error discard in `catch` blocks.
-- Refactor functions over 70 lines.

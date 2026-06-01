@@ -20,7 +20,7 @@ Build with `zig build` (declare targets and steps in `build.zig`, dependencies i
 ### Error Handling
 
 - Errors are values: return error unions (`!T`), define explicit error sets, propagate with `try`, and clean up with `errdefer`. No hidden control flow.
-- Handle or propagate every error. Don't paper over one with `catch unreachable` unless the impossibility is genuinely provable — and then assert it. Use `catch |err|` to handle, `orelse` for optionals.
+- Don't paper over an error with `catch unreachable` unless the impossibility is genuinely provable — and then assert it. Use `catch |err|` to handle, `orelse` for optionals.
 - No `unreachable` or `.?` on values derived from input — only where an invariant guarantees presence.
 
 ### Language & Idioms
@@ -44,4 +44,3 @@ Zig is Tiger Style's native context — apply it fully.
 - Assert preconditions, postconditions, and invariants with `std.debug.assert`; assert the things that "can't happen," and assert on both sides of a boundary.
 - All loops over external input have explicit upper bounds; no unbounded recursion. Prefer fixed-size buffers with named capacity constants over dynamic growth in hot or embedded paths.
 - Named constants for every limit and size — no magic numbers.
-- Keep functions under 70 lines; refactor past that without being asked.

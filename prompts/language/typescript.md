@@ -73,7 +73,5 @@ Vitest. Workers via `unstable_dev`/Miniflare. Components with Testing Library â€
 
 ### Tiger Style
 
-- Validate all user input at entry (request body, URL params, env vars).
 - Optional chaining never used to hide missing error handling.
 - Promises tracked, not fire-and-forget (unless `ctx.waitUntil()` owns them).
-- Refactor functions over 70 lines.

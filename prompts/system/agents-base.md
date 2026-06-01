@@ -17,6 +17,7 @@ Before implementing:
 - No "flexibility" or "configurability" that wasn't requested.
 - No error handling for impossible scenarios.
 - If you write 200 lines and it could be 50, rewrite it.
+- Refactor a function once it grows past ~70 lines, without being asked — length alone is a smell worth fixing.
 - **Comments target humans and explain WHY, not WHAT** — a non-obvious constraint, invariant, or workaround. Default to one line, only where the reason isn't clear from the code; never restate code or cite plan/ticket IDs. A comment past a few lines is rare and signals "this matters" — keep that signal meaningful.
 
 Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.

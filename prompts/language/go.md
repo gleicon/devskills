@@ -20,7 +20,7 @@ Test with `go test -race ./...`. Lint with `golangci-lint run`. Benchmark with `
 
 ### Error Handling
 
-- Wrap with context: `fmt.Errorf("operation: %w", err)`. Never discard with `_` — every error is handled or propagated.
+- Wrap with context: `fmt.Errorf("operation: %w", err)`. Never discard an error with `_`.
 - Sentinel errors (`var ErrNotFound = errors.New(...)`) checked with `errors.Is`, not `==`.
 
 ### Concurrency
@@ -51,4 +51,3 @@ Always set timeouts: `http.Server` gets `ReadTimeout`/`WriteTimeout`/`IdleTimeou
 
 - Non-trivial functions assert their preconditions; validate length/nil on user-supplied slices and maps.
 - No `panic` in library code (acceptable in `main` for configuration errors only).
-- Refactor functions over 70 lines without being asked.
