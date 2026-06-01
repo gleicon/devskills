@@ -17,18 +17,17 @@ for arg in "$@"; do
     --dry-run) DRY_RUN=1 ;;
     --help|-h)
       echo "Usage: upgrade-deps.sh [--dry-run]"
-      echo "Force-reinstalls GSD, RTK, and tldt to their latest published versions."
+      echo "Force-reinstalls RTK and tldt to their latest published versions."
       exit 0
       ;;
   esac
 done
 
-# Shared GSD/RTK/tldt logic (depends on log/warn/DRY_RUN above).
+# Shared RTK/tldt logic (depends on log/warn/DRY_RUN above).
 # shellcheck source=lib/external-tools.sh
 source "${SCRIPT_DIR}/lib/external-tools.sh"
 
 log "Force-upgrading all external tools..."
-devskills_gsd upgrade
 devskills_rtk upgrade
 devskills_tldt upgrade
 log "Caveman: bundled in devskills prompt files. Run scripts/update.sh to update."

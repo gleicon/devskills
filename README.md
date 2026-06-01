@@ -11,7 +11,7 @@ git clone https://github.com/gleicon/devskills.git ~/.devskills
 ~/.devskills/install.sh
 ```
 
-Skills copy to `~/.claude/commands/`, `~/.opencode/commands/`, and `~/.codex/prompts/` (each installed only when that tool is detected). External tools (GSD, RTK, tldt) install automatically if prerequisites are present.
+Skills copy to `~/.claude/commands/`, `~/.opencode/commands/`, and `~/.codex/prompts/` (each installed only when that tool is detected). External tools (RTK, tldt) install automatically if prerequisites are present.
 
 In Codex, devskills commands are invoked under the `prompts:` namespace — `/ds-debug` becomes `/prompts:ds-debug`. Codex reads a project's `AGENTS.md` natively, so `setup.sh` covers its persistent surface with no extra step.
 
@@ -41,7 +41,7 @@ Keep devskills up to date:
 
 ```bash
 ~/.devskills/scripts/update.sh              # pull + reinstall skills
-~/.devskills/scripts/update.sh --upgrade-deps  # also force-upgrade GSD, RTK, tldt
+~/.devskills/scripts/update.sh --upgrade-deps  # also force-upgrade RTK, tldt
 ```
 
 > **Renamed in this release:** every command is now namespaced with a `ds-`
@@ -57,7 +57,7 @@ Keep devskills up to date:
 ```
 --lang=<profile>     go | typescript | javascript | rust | python | java | zig
 --claude-dir=<path>  Claude config dir (default: $CLAUDE_CONFIG_DIR or ~/.claude)
---skip-external      skip GSD, RTK, tldt installation
+--skip-external      skip RTK, tldt installation
 --skip-cursor        skip Cursor rules
 --skip-vscode        skip VSCode Copilot instructions
 --concise            add a terse-response directive to AGENTS.md (with --lang)
@@ -92,21 +92,20 @@ Use any external AI (ChatGPT, Claude.ai, Gemini) to draft a product description.
 
 Use `--record` to log decisions to `DECISIONS.md`. Feed long reference docs through `/ds-tldt` first to compress them before adding to context.
 
-**3. Build a project with GSD**
+**3. Build the project**
 
-GSD manages context rot across long builds by storing state in `.planning/` and using focused sub-agents per phase.
+Keep plan and state across sessions in plain markdown under `.project/`, so any session is safe to `/clear` or end:
 
 ```
-/ds-spec  (devskills)   → produce SPEC.md with acceptance criteria
-/gsd-new-project     → initialize .planning/, build ROADMAP.md from SPEC.md
-/gsd-discuss-phase   → capture decisions and constraints before planning
-/gsd-plan-phase      → produce PLAN.md with numbered tasks
-/gsd-execute-phase   → implement; sub-agents stay context-lean
-/gsd-verify-work     → validate against acceptance criteria
-/gsd-ship            → create PR from verified work
+/ds-spec                → produce SPEC.md with acceptance criteria (optional)
+/ds-project-map         → scan the repo → .project/PROJECT.md (description + map)
+/ds-project-plan        → ordered tasks → .project/PLAN.md (feed it a goal, SPEC.md, or command output)
+   ...you drive the work...
+/ds-project-checkpoint  → persist state → .project/PLAN.md (--handoff for a full handoff.md)
+/ds-project-resume      → restore context from .project/PLAN.md
 ```
 
-Note: `/gsd-*` commands are provided by GSD Redux, not devskills. Install GSD separately (`npx @opengsd/get-shit-done-redux@latest`) or let `install.sh` handle it.
+These are scribes, not pilots: they record what you decide, never steer architecture — and they're **optional persistence, not a dependency**. The same spec→build→ship loop runs without `.project/` (see the [standalone build loop](docs/recipes.md#a-standalone-build-loop)); `.project/` just carries plan and state across sessions so any `/clear` is safe. Commit it as shared memory or add it to `.gitignore` for a local-only scratch space — the workflow doesn't rely on git. Walkthrough: [docs/project-workflow.md](docs/project-workflow.md) · use cases: [docs/project-recipes.md](docs/project-recipes.md)
 
 **4. Keep quality high between phases**
 
@@ -119,22 +118,6 @@ Note: `/gsd-*` commands are provided by GSD Redux, not devskills. Install GSD se
 /ds-zoom-out            # map modules, callers, boundaries — useful before planning
 /ds-caveman-lite-mode        # compress responses during iterative work (~25–35% reduction)
 ```
-
-Full walkthrough: [docs/gsd-workflow.md](docs/gsd-workflow.md)
-
-**Lite planning, without GSD**
-
-If GSD is more machinery than you want, a smaller `.project/` workflow keeps just the parts worth keeping — a project description, a plan, and current state in plain files, so any session is safe to `/clear` or end:
-
-```
-/ds-project-map         # scan the repo → .project/PROJECT.md (description + map)
-/ds-project-plan        # ordered tasks → .project/PLAN.md (feed it a goal, SPEC.md, or command output)
-   ...you drive the work...
-/ds-project-checkpoint  # persist state → .project/PLAN.md (--handoff for a full .project/handoff.md)
-/ds-project-resume      # restore context from .project/PLAN.md (loads handoff.md only if fresh)
-```
-
-These are scribes, not pilots: they record what you decide, never steer architecture. Commit `.project/` as shared memory or add it to `.gitignore` for a local-only scratch space — the workflow doesn't rely on git. Walkthrough: [docs/project-workflow.md](docs/project-workflow.md) · use cases: [docs/project-recipes.md](docs/project-recipes.md)
 
 ## Skills
 
@@ -150,7 +133,7 @@ you both its origin and its kind: `/ds-tiger-style-mode` is a mode you toggle,
 | Caveman Lite | `/ds-caveman-lite-mode` | Compressed response mode (~25–35% token reduction) |
 | Caveman Ultra | `/ds-caveman-ultra-mode` | Compressed response mode (~75–85% token reduction) |
 | TLDT | `/ds-tldt` | Extractive summary of context or a file — no LLM cost |
-| Workflow | `/ds-workflow` | Spec-to-ship orchestration using GSD |
+| Workflow | `/ds-workflow` | Standalone phase-map orchestrator — orient, then route each phase to its command (uses `.project/` state when present, never requires it) |
 | Project Map | `/ds-project-map` | Scan the repo into `.project/PROJECT.md` |
 | Project Plan | `/ds-project-plan` | Ordered task roadmap in `.project/PLAN.md` |
 | Project Checkpoint | `/ds-project-checkpoint` | Persist state to `.project/PLAN.md` (`--handoff` for a full handoff) |
@@ -191,7 +174,7 @@ you both its origin and its kind: `/ds-tiger-style-mode` is a mode you toggle,
 
 Every `*-review` reports by default and changes nothing; pass `--fix` to apply the **mechanical, unambiguous** findings in place (correctness and security fixes, and anything resting on judgment, stay reported either way).
 
-Full per-command reference: [docs/commands.md](docs/commands.md). Worked, GSD-free workflows and examples: [docs/recipes.md](docs/recipes.md). Extended `/ds-grill-me` playbook: [docs/grill-me.md](docs/grill-me.md). Tiger Style principles: [docs/tiger-style.md](docs/tiger-style.md).
+Full per-command reference: [docs/commands.md](docs/commands.md). Worked workflows and examples: [docs/recipes.md](docs/recipes.md). Extended `/ds-grill-me` playbook: [docs/grill-me.md](docs/grill-me.md). Tiger Style principles: [docs/tiger-style.md](docs/tiger-style.md).
 
 ## Project Setup
 
@@ -232,7 +215,7 @@ Each profile encodes idioms, toolchain defaults, and review constraints for its 
 
 `scripts/setup.sh` — per-project configurator. Builds `AGENTS.md` (engineering baseline + optional language/concise/tooling blocks) and points `CLAUDE.md` at it via `@AGENTS.md`, optionally installs Cursor rules and VSCode Copilot instructions into the current directory. Run from inside a project. See [Project Setup](#project-setup).
 
-`scripts/update.sh` — pulls the latest devskills repo and reinstalls skills. Use `--upgrade-deps` to also force-upgrade GSD, RTK, and tldt to their latest published versions.
+`scripts/update.sh` — pulls the latest devskills repo and reinstalls skills. Use `--upgrade-deps` to also force-upgrade RTK and tldt to their latest published versions.
 
 `scripts/upgrade-deps.sh` — force-upgrades external tools regardless of current state. Useful after upstream major version bumps.
 
@@ -242,7 +225,6 @@ Installed by `install.sh`. Managed by `upgrade-deps.sh`.
 
 | Tool | Purpose |
 |------|---------|
-| [GSD Redux](https://github.com/open-gsd/get-shit-done-redux) | Full dev lifecycle: discuss, plan, execute, verify, ship |
 | [RTK](https://github.com/rtk-ai/rtk) | CLI proxy; reduces AI context token use 60-90% |
 | [tldt](https://github.com/gleicon/tldt) | Extractive text summarization; no LLM, no cost |
 

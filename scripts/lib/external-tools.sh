@@ -1,12 +1,12 @@
-# external-tools.sh — shared GSD/RTK/tldt logic for devskills.
+# external-tools.sh — shared RTK/tldt logic for devskills.
 #
 # Sourced by install.sh and scripts/upgrade-deps.sh. Each public function takes
-# a mode (install|upgrade). The underlying commands are identical for GSD and
-# tldt (both fetch @latest); they differ only for RTK, where:
+# a mode (install|upgrade). For tldt the command is identical either way (it
+# fetches @latest); RTK differs, where:
 #   - install short-circuits when a correct rtk-ai binary is already present;
 #   - install uses `brew install`, upgrade uses `brew upgrade || brew install`.
-# The Linux download path and the old-hook purge are byte-identical either way,
-# so they live here once instead of being copy-pasted into both scripts.
+# The Linux download path is byte-identical either way, so it lives here once
+# instead of being copy-pasted into both scripts.
 #
 # Logging: install.sh and upgrade-deps.sh each define log()/warn() with their
 # own prefix and this lib uses theirs (resolved at call time). DRY_RUN (0|1) is
@@ -24,47 +24,6 @@ run_or_dry() {
     return 0
   fi
   "$@"
-}
-
-# ------------------------------------------------------------
-# GSD Redux
-# ------------------------------------------------------------
-
-# Remove hooks left by pre-Redux GSD, identified by a gsd-hook-version: header.
-# CLAUDE_CONFIG_DIR is honored when set, else falls back to ~/.claude.
-purge_old_gsd_hooks() {
-  local hooks_dir="${CLAUDE_CONFIG_DIR:-${HOME}/.claude}/hooks"
-  [ -d "$hooks_dir" ] || return 0
-  local found=0 f
-  for f in "$hooks_dir"/*.sh "$hooks_dir"/*.js; do
-    [ -f "$f" ] || continue
-    grep -q "gsd-hook-version:" "$f" 2>/dev/null || continue
-    if [ "${DRY_RUN:-0}" -eq 0 ]; then
-      rm "$f"
-      log "removed old GSD hook: $(basename "$f")"
-    else
-      log "[dry] would remove old GSD hook: $f"
-    fi
-    found=1
-  done
-  [ "$found" -eq 1 ] && log "Old GSD hooks removed. Redux will reinstall fresh hooks."
-  return 0
-}
-
-# Install or upgrade GSD Redux. The npx command is the same for both modes.
-#   $1 mode (install|upgrade)
-devskills_gsd() {
-  local mode="$1" verbing="Installing" verb="Install"
-  [ "$mode" = upgrade ] && { verbing="Upgrading"; verb="Upgrade"; }
-
-  purge_old_gsd_hooks
-  if command -v npx &>/dev/null; then
-    log "${verbing} GSD Redux — interactive, follow prompts..."
-    run_or_dry "run npx @opengsd/get-shit-done-redux@latest" \
-      npx @opengsd/get-shit-done-redux@latest
-  else
-    warn "npx not found. ${verb} GSD manually: https://github.com/open-gsd/get-shit-done-redux"
-  fi
 }
 
 # ------------------------------------------------------------

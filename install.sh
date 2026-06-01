@@ -11,7 +11,7 @@ CODEX_COMMANDS_DIR="${CODEX_HOME_DIR}/prompts"
 log() { printf '[devskills] %s\n' "$1"; }
 warn() { printf '[devskills] WARN: %s\n' "$1" >&2; }
 
-# Shared GSD/RTK/tldt logic (depends on log/warn above and DRY_RUN below).
+# Shared RTK/tldt logic (depends on log/warn above and DRY_RUN below).
 # shellcheck source=scripts/lib/external-tools.sh
 source "${DEVSKILLS_DIR}/scripts/lib/external-tools.sh"
 # shellcheck source=scripts/lib/editors.sh
@@ -46,7 +46,7 @@ for arg in "$@"; do
       echo ""
       echo "  --lang=<profile>    Language profile to write: go|typescript|javascript|rust|python|java|zig"
       echo "  --claude-dir=PATH   Claude config dir (default: \$CLAUDE_CONFIG_DIR or \$HOME/.claude)"
-      echo "  --skip-external     Skip external tool installation (GSD, RTK, tldt)"
+      echo "  --skip-external     Skip external tool installation (RTK, tldt)"
       echo "  --skip-cursor       Skip Cursor rules install into the current project"
       echo "  --skip-vscode       Skip VSCode Copilot instructions install into the current project"
       echo "  --concise           Add a terse-response directive to AGENTS.md (with --lang)"
@@ -90,7 +90,7 @@ if [ -z "$LANG_PROFILE" ] && { [ "$CONCISE" -eq 1 ] || [ "$HINTS" -eq 1 ]; }; th
 fi
 
 # Validate --lang up front, before any install side effects: a bad profile
-# should fail fast, not after GSD/RTK/tldt are already installed.
+# should fail fast, not after RTK/tldt are already installed.
 if [ -n "$LANG_PROFILE" ] && [ ! -f "${DEVSKILLS_DIR}/prompts/language/${LANG_PROFILE}.md" ]; then
   warn "No language profile for '${LANG_PROFILE}'. Available: go, typescript, javascript, rust, python, java, zig"
   exit 1
@@ -267,7 +267,6 @@ fi
 
 if [ "$SKIP_EXTERNAL" -eq 0 ]; then
   log "Installing external tools..."
-  devskills_gsd install
   devskills_rtk install
   devskills_tldt install
 else

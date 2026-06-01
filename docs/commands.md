@@ -7,7 +7,7 @@ Commands come in two shapes:
 - **Modes** stay active for the rest of the session until you turn them off (`/ds-tiger-style-mode`, `/ds-ui-mode`, `/caveman-*`). They change *how* the agent works.
 - **Actions** run once and finish (`/ds-spec`, `/ds-code-quality-review`, `/ds-handoff`, …). They produce an output and return.
 
-Most commands need no external tooling. The only GSD-coupled command is `/ds-workflow`; everything else stands alone.
+No command needs external tooling — every one stands alone.
 
 ---
 
@@ -18,7 +18,7 @@ Most commands need no external tooling. The only GSD-coupled command is `/ds-wor
 Turn a rough description into a structured specification (the WHAT, not the HOW).
 
 - **Args:** an optional description. With one, it proceeds directly; without, it asks three focused questions (primary user action, what success looks like, hard constraints) then writes the spec.
-- **Output:** `SPEC.md` in the current directory (or `.planning/SPEC.md` if that exists), shown inline. Sections: Problem, Scope, Users, Functional/Non-Functional Requirements, Interfaces, Constraints, Acceptance Criteria, Open Questions.
+- **Output:** `.project/SPEC.md` if `.project/` exists, else `SPEC.md` in the current directory, shown inline. Sections: Problem, Scope, Users, Functional/Non-Functional Requirements, Interfaces, Constraints, Acceptance Criteria, Open Questions.
 - **Reach for it when:** you have an idea and want a verifiable contract before any code.
 
 ### `/ds-explore` — action
@@ -45,15 +45,15 @@ Interview you relentlessly about a plan or design until you share the same under
 - **Reach for it when:** a plan feels under-specified, or you want to pressure-test a design (including the approach in a draft PR) before committing to it.
 - **More:** `/ds-grill-me` is unusually versatile — see [grill-me.md](grill-me.md) for a full menu of uses (requirements discovery, design/refactor/architecture, domain terminology, non-coding decisions).
 
-### `/ds-workflow` — action *(uses GSD)*
+### `/ds-workflow` — action
 
-Spec-to-ship orchestration backed by GSD (Get Shit Done). Requires GSD installed separately. If you are not using GSD, use the `/project-*` family below instead.
+A standalone phase-map orchestrator — orients you, then routes each phase (orient → spec → plan → build → clean → review → verify → ship) to its primary command. Works fully on its own. When `.project/` is in use it *also* reads that state to orient faster (`PROJECT.md` for context, `PLAN.md` for where to resume) and surfaces the `/ds-project-*` commands as options — but never requires them; with no plan or no `.project/` it points at `/ds-spec` or `/ds-explore` to begin. The `/ds-project-*` family is optional persistence layered on top, not a dependency.
 
 ---
 
 ## Project memory (`.project/`)
 
-A minimal, file-backed alternative to GSD — persistent description, plan, and state in plain markdown under `.project/`, so any session is safe to `/clear` or end. These are *scribes, not pilots*: they record what you decide, never steer architecture. Walkthrough: [project-workflow.md](project-workflow.md). Worked use cases: [project-recipes.md](project-recipes.md).
+A minimal, file-backed project memory — persistent description, plan, and state in plain markdown under `.project/`, so any session is safe to `/clear` or end. These are *scribes, not pilots*: they record what you decide, never steer architecture. Walkthrough: [project-workflow.md](project-workflow.md). Worked use cases: [project-recipes.md](project-recipes.md).
 
 ### `/ds-project-map` — action
 
@@ -263,7 +263,7 @@ Assess an **existing** codebase's architecture and produce a sequenced refactori
 
 ### `/ds-debug` — action
 
-Find the root cause of a failure with the scientific method, then prove the fix. Reproduce-first, one hypothesis at a time, evidence over intuition — disciplined against the usual AI failure modes (thrashing, changing five things at once, silencing the symptom). Lightweight and stateless — the agent-agnostic counterpart to GSD's heavier `/gsd:debug`.
+Find the root cause of a failure with the scientific method, then prove the fix. Reproduce-first, one hypothesis at a time, evidence over intuition — disciplined against the usual AI failure modes (thrashing, changing five things at once, silencing the symptom). Lightweight and stateless.
 
 - **Args:** the failure to chase — a failing test, error, stack trace, or wrong-behavior description. Refuses a vague "it's broken".
 - **Output:** root cause (`file:line` + why), the minimal fix, before/after evidence, and the `/ds-verify-this` claim to lock it in.

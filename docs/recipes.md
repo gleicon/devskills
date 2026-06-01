@@ -2,7 +2,7 @@
 
 Worked examples of the devskills commands doing real work — and, more usefully, working *together*. These are opinionated suggestions, not the only way. For the dry reference (args, flags, behavior) see [commands.md](commands.md).
 
-Everything here is **GSD-free**: it relies only on the commands, `git`, and `gh`. If you use GSD, these still apply — they're just the smaller, faster moves you reach for between (or instead of) the heavy phases.
+Everything here relies only on the commands, `git`, and `gh` — no external orchestration.
 
 ---
 
@@ -47,7 +47,7 @@ To drop one mid-session, say so ("stop UI mode"); `/ds-caveman-lite-mode` and `/
 
 ## The draft-PR grill loop
 
-Stress-test the *approach* of a change before you ask a human to review it. Works whether or not you use GSD.
+Stress-test the *approach* of a change before you ask a human to review it.
 
 1. **Open a draft PR** from your branch so there's a stable thing to point at:
    ```bash
@@ -145,9 +145,9 @@ Then write the PR description from what you learned and `gh pr ready`. Each step
 
 ---
 
-## A standalone build loop (what GSD does, without GSD)
+## A standalone build loop
 
-For small-to-medium work you don't need the full `.planning/` machinery. This loop covers the same ground — spec, plan, build, verify, ship — using only standalone commands:
+This loop covers the full spec-to-ship ground — spec, plan, build, verify, ship — using only standalone commands:
 
 ```
 /ds-spec                    # 1. WHAT: a SPEC.md with acceptance criteria (optional)

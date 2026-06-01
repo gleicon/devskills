@@ -43,7 +43,7 @@ Signal: user says "I'll continue later", "stopping for now", "handing this off".
 Suggest: `/ds-project-checkpoint` to persist state if `.project/` exists; `/ds-handoff` for a richer context file when another person or a long pause is involved.
 
 **Between sessions (starting fresh)**
-Signal: session just started and `.project/` or `.planning/` exists.
+Signal: session just started and `.project/` exists.
 Suggest: `/ds-project-resume` to read the plan and pick up where it left off.
 
 ## Rules
@@ -51,4 +51,3 @@ Suggest: `/ds-project-resume` to read the plan and pick up where it left off.
 - One Insight block per phase transition — don't repeat suggestions already made this session.
 - Skip the block if the user already knows what to do (they just ran the command, or they explicitly said so).
 - Keep suggestions concrete: name the exact command and what it gives the user, in one line each.
-- Never suggest GSD commands unless `.planning/` exists in the project.
