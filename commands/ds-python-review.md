@@ -50,12 +50,13 @@ Skip this section entirely if `--no-tiger` was passed. Otherwise it is mandatory
 ### Performance
 - [ ] No blocking calls (`time.sleep`, `requests`, sync DB drivers) inside `async def` — use async clients or `asyncio.to_thread`
 - [ ] Every external `await` / network / DB call has a timeout
-- [ ] CPU-bound work uses `ProcessPoolExecutor` (or `InterpreterPoolExecutor`, 3.14+) — threads only parallelize CPU on a free-threaded build (3.14+); the GIL serializes them on a standard build
+- [ ] Concurrent tasks managed with `asyncio.TaskGroup` (scoped lifetime, sibling cancellation, `ExceptionGroup`) over bare `asyncio.gather`
+- [ ] CPU-bound work uses `ProcessPoolExecutor` (or `InterpreterPoolExecutor`, 3.14+) — threads only parallelize CPU on the separate free-threaded build (`python3.14t`); the stock interpreter's GIL serializes them
 - [ ] Database queries not issued inside loops; N+1 patterns absent
 - [ ] Generators/streaming for large data instead of building full lists in memory
 
 ### Security
-- [ ] No string-built SQL (f-string/`%`/`+`) — use parameterized queries / the ORM. Where a library consumes `Template`, t-strings (`t'...'`, PEP 750, 3.14+) are the intended primitive for SQL/shell/HTML interpolation
+- [ ] No string-built SQL (f-string/`%`/`+`) — use parameterized queries / the ORM. (Emerging: a `Template`-aware library can use t-strings, PEP 750, 3.14+, to offer a safe-interpolation API — but a `t'...'` literal sanitizes nothing on its own)
 - [ ] No `subprocess` with `shell=True` on user input; no `eval`/`exec`/`pickle` on untrusted data
 - [ ] `tarfile` extraction passes `filter='data'` (or stricter) — bare `extractall` is a path-traversal/overwrite hazard and errors by default on 3.14+
 - [ ] `yaml.safe_load`, not `yaml.load`; no untrusted deserialization

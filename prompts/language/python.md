@@ -31,7 +31,8 @@ Manage the project with `uv` (or `pip` + a virtualenv if the repo already uses i
 ### Concurrency
 
 - `asyncio` for I/O-bound concurrency; no blocking calls (`time.sleep`, `requests`, sync DB drivers) inside `async def` — use the async client or `asyncio.to_thread`. Every `await` on external I/O has a timeout.
-- CPU-bound work goes to `ProcessPoolExecutor` by default — on a standard build the GIL serializes threads. On a free-threaded build (3.14+, PEP 779, now officially supported) threads run in parallel, but write for both. `concurrent.interpreters` / `InterpreterPoolExecutor` (3.14+, PEP 734) is a stdlib subinterpreter option with process-like isolation and less overhead than processes.
+- `asyncio.TaskGroup` over bare `asyncio.gather` for concurrent tasks — scoped lifetime, automatic cancellation of siblings on failure, and `ExceptionGroup` aggregation.
+- CPU-bound work goes to `ProcessPoolExecutor` by default — the stock interpreter's GIL serializes threads. Only the separate free-threaded build (`python3.14t`; officially supported per PEP 779 but not the default 3.14 interpreter) runs threads in parallel, so keep `ProcessPoolExecutor` as the portable default. `concurrent.interpreters` / `InterpreterPoolExecutor` (3.14+, PEP 734) is a stdlib subinterpreter option with process-like isolation and less overhead than processes.
 - Never mutate shared state across tasks without an `asyncio.Lock`/`threading.Lock` — free-threading makes that data-race discipline matter even for plain threads.
 
 ### Testing

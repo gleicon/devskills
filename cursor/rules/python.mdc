@@ -25,7 +25,8 @@ Target: Python 3.13+. Backend services, APIs, CLIs, data pipelines.
 ## Async
 
 - `asyncio` for I/O-bound work. No blocking calls (`time.sleep`, `requests`, sync DB) inside `async def`.
-- CPU-bound work → `ProcessPoolExecutor` (or `InterpreterPoolExecutor`, 3.14+); threads parallelize CPU only on a free-threaded build (3.14+, PEP 779).
+- `asyncio.TaskGroup` over bare `gather` for concurrent tasks (scoped lifetime, sibling cancellation, `ExceptionGroup`).
+- CPU-bound work → `ProcessPoolExecutor` (or `InterpreterPoolExecutor`, 3.14+); threads parallelize CPU only on the separate free-threaded build (`python3.14t`, PEP 779), not the stock interpreter.
 - Every external `await` has a timeout.
 
 ## Testing
