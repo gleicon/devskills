@@ -159,6 +159,7 @@ you both its origin and its kind: `/ds-tiger-style-mode` is a mode you toggle,
 | Code Quality Review | `/ds-code-quality-review` | Strict maintainability audit: abstraction, sprawl, spaghetti |
 | Doc Quality Review | `/ds-doc-quality-review` | Strict docs audit: accuracy, dead links, bloat (`--comments` audits code comments) |
 | Deslop | `/ds-deslop` | Strip AI-generated slop from the branch diff |
+| Comment Review | `/ds-comment-review` | Bring comments to discipline — WHY-not-WHAT, one-liner default, strip restate/obvious/cruft, keep the rare important long one. Reports by default, `--fix` to apply |
 | Go Review | `/ds-go-review` | Go: idiomatic + security + Tiger Style (`--no-tiger` to skip style) |
 | TS Review | `/ds-ts-review` | TypeScript/Workers: strict mode, React, Cloudflare (`--no-tiger` to skip style) |
 | Rust Review | `/ds-rust-review` | Rust: geiger/unsafe, clippy, audit, Tiger Style (`--no-tiger` to skip style) |

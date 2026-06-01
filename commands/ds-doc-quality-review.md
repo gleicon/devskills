@@ -7,7 +7,7 @@ Like `/ds-code-quality-review`, this produces a prioritized list of what needs f
 ## Arguments
 
 - Treat positional args as scope (files, directories, globs). With no scope, review the documentation changed on the current branch (`README`, `docs/`, `*.md`, and the like).
-- `--comments` — also audit inline **code comments** in scope. Off by default; prose docs only otherwise.
+- `--comments` — also audit inline **code comments** in scope, under the docs-accuracy lens. Off by default; prose docs only otherwise. To impose comment discipline and *apply* the fixes, reach for `/ds-comment-review` instead.
 - Freeform scope ("the whole docs/ tree", "the README") is interpreted reasonably.
 
 ## What to check

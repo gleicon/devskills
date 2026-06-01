@@ -69,7 +69,7 @@ Safety > Performance > Developer Experience. Never trade safety for convenience.
 
 **Comments**
 - No comments that restate what the code does. Code must be readable without them.
-- Comments document WHY: hidden constraints, non-obvious invariants, workarounds for specific bugs.
+- Comments target humans and explain WHY, not WHAT — a hidden constraint, non-obvious invariant, or workaround. One line by default, only where the reason isn't clear from the code; never restate code or cite plan/ticket IDs. A comment past a few lines is rare and signals "this matters" — keep that signal meaningful.
 - Assertions often replace comments: if you want to write "x must be positive here", assert it instead.
 
 ## Technical Debt

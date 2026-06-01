@@ -140,6 +140,14 @@ Strip AI-generated slop from the branch and align it with the surrounding code. 
 - **Output:** the edits applied, plus a 1–3 sentence summary. Behavior preserved.
 - **Reach for it when:** right after generating a batch of code, before review. Cheaper and narrower than `/ds-code-quality-review`.
 
+### `/ds-comment-review` — action
+
+Strict review of code comments under one lens — **does each comment earn its place, and is it as short as it can be?** Comments are for humans and explain **WHY, not WHAT** — one line by default, only where the reason isn't obvious, never restating code or citing plan/ticket IDs; a long comment is rare and signals importance. Unlike `/ds-doc-quality-review --comments` (reports under a docs-accuracy lens) and `/ds-deslop` (branch-diff, matches existing style), this **imposes** the discipline regardless of the codebase's existing habits, works on any scope, and can apply the fix. Comment-only and behavior-preserving — never changes code logic.
+
+- **Args:** treated as scope (files, directories, globs, or the whole codebase); defaults to comments in the code changed on the current branch. `--fix` applies the edits in place instead of only reporting.
+- **Output:** by default a prioritized findings list anchored to `file:line`, grouped delete / tighten / drifted (correctness) / kept-as-important, each with the fix. With `--fix`, the edits applied plus a 1–3 sentence summary.
+- **Reach for it when:** a codebase has accumulated comment bloat, or you want a fresh branch's comments brought to standard. Flags restate-the-code, obvious/ceremonial, planning cruft, and buried WHY; keeps and respects the rare legitimately-long comment.
+
 ---
 
 ## Quality Gate
