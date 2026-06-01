@@ -17,7 +17,7 @@ Profiles (optional):
   javascript        ES2022+ (Workers, vanilla frontend)
   rust              Rust stable (systems programming, large projects)
   python            Python 3.11+ (backend, APIs, CLIs, data)
-  java              Java 21+ LTS (backend services, APIs, CLIs)
+  java              Java 25+ LTS (backend services, APIs, CLIs)
 
 Options:
   --concise         Add a terse-response directive to AGENTS.md

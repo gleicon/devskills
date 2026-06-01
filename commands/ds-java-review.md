@@ -1,6 +1,6 @@
 Review Java code with Tiger Style constraints and Java idioms.
 
-Applies to: Java 21+ (LTS). Backend services, APIs, CLIs.
+Applies to: Java 25+ (LTS). Backend services, APIs, CLIs.
 
 ## Arguments
 
@@ -31,10 +31,12 @@ Skip this section entirely if `--no-tiger` was passed. Otherwise it is mandatory
 - [ ] `sealed` interfaces/classes with exhaustive `switch` pattern matching for closed hierarchies; `switch` expressions over statement chains
 - [ ] Immutability favored: `final` fields, `List.of`/`Map.of`/unmodifiable collections; internal mutable collections not exposed
 - [ ] `Optional` used only as a return type — not as a field or parameter; no `.get()` without a presence check
+- [ ] No `null` returned for collections/arrays/strings — return an empty value; references treated as non-null by default and validated at boundaries (`Objects.requireNonNull`)
 - [ ] Resources closed with try-with-resources, not manual `finally` on `AutoCloseable`
 - [ ] Catch the most specific exception; no `catch (Exception)`/`Throwable` catch-all unless re-raising; cause preserved (`new X("ctx", e)`)
 - [ ] Streams used for transformation without side effects in `map`/`filter` — and a plain loop preferred where a stream would be contorted
 - [ ] `var` only where the right-hand side makes the type obvious
+- [ ] Concurrent fan-out uses `StructuredTaskScope` over manual `Future` juggling, and `ScopedValue` over `ThreadLocal` for per-request context, where the project is on 25 (structured concurrency is preview — `--enable-preview`)
 - [ ] No `static` mutable shared state; constants are `static final`
 
 ### Performance

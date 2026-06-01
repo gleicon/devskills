@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Java Conventions
 
-Target: Java 21+ (LTS). Backend services, APIs, CLIs.
+Target: Java 25+ (LTS). Backend services, APIs, CLIs.
 
 ## Language & Idioms
 
@@ -15,10 +15,11 @@ Target: Java 21+ (LTS). Backend services, APIs, CLIs.
 - Favor immutability: `final` fields, `List.of`/`Map.of`, unmodifiable collections. Don't expose mutable internals.
 - Streams for transformation, but a plain loop beats a contorted stream. No side effects in `map`/`filter`.
 - `Optional` only as a return type — never a field or parameter; no naked `.get()`.
+- No `null` returns for collections/arrays/strings (return empty); references non-null by default, validated with `Objects.requireNonNull` (`@Nullable` via JSpecify if the project adopts it).
 
 ## Errors
 
-- Checked for recoverable, unchecked for programming errors. Don't wrap everything in `RuntimeException`.
+- Prefer unchecked exceptions (they compose with streams/lambdas, don't leak across layers); reserve checked for genuinely recoverable, caller-actionable cases. Don't blanket-wrap in `RuntimeException` to dodge the compiler.
 - Never swallow exceptions (no empty `catch`). Preserve the cause: `new AppException("ctx", e)`.
 - Catch the most specific type; no `catch (Exception)`/`Throwable` unless re-raising.
 
@@ -27,12 +28,13 @@ Target: Java 21+ (LTS). Backend services, APIs, CLIs.
 - Close `AutoCloseable` with try-with-resources, never manual `finally`.
 - Prefer `java.util.concurrent` (`ExecutorService`, `CompletableFuture`, concurrent collections) over raw `Thread`/`synchronized`.
 - Virtual threads (`newVirtualThreadPerTaskExecutor`) for I/O-bound work; don't pool them. Every blocking call has a timeout.
+- Structured concurrency (`StructuredTaskScope.open` + `Joiner`) for succeed-or-fail-together fan-out (preview in 25, `--enable-preview`); `ScopedValue` over `ThreadLocal` for per-request context (Java 25).
 - Guard shared mutable state; prefer immutability and `atomic` types over locks.
 
 ## Testing
 
-- JUnit 5 with `@ParameterizedTest` for variants; AssertJ for assertions.
-- No real network/filesystem in unit tests — fakes/mocks and `@TempDir`. Test through the public API.
+- JUnit 5 built-in assertions; `@ParameterizedTest` for variants (AssertJ only if the project already uses it).
+- No real network/filesystem in unit tests — prefer hand-written fakes and `@TempDir`; mock (Mockito) only where a fake is impractical. Test through the public API.
 - `assertThrows` for error paths; no `Thread.sleep` — await latches/futures with a timeout.
 
 ## Naming & Structure

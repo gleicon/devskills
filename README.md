@@ -212,7 +212,7 @@ Each profile encodes idioms, toolchain defaults, and review constraints for its 
 | `javascript` | ES2022+, Wrangler | Cloudflare Workers, vanilla frontend |
 | `rust` | Rust stable | Systems programming, large projects |
 | `python` | Python 3.11+ | Backend services, APIs, CLIs, data pipelines |
-| `java` | Java 21+ (LTS) | Backend services, APIs, CLIs, systems tooling |
+| `java` | Java 25+ (LTS) | Backend services, APIs, CLIs, systems tooling |
 
 ## Scripts
 
