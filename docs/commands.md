@@ -9,7 +9,7 @@ A command's **suffix tells you its kind**:
 - **`-mode`** — persistent, toggleable session behavior; changes *how* the agent works until you turn it off. *tiger-style, ui, test, tdd, data, git, step, quality-gate, caveman-lite/ultra.*
 - **`-review`** — a findings-list audit. Report-only by default (several take `--fix`); findings are independent and fixable in any order. *bug, security, data, code-quality, doc-quality, test-quality, ui-quality, comment, and the six language reviews.*
 - **`-plan`** — graded, sequenced moves that each carry a trade-off or dependency, so the output is a *plan*, not a verdict. *perf-plan, architecture-plan.*
-- **no suffix** — a one-shot action that produces a result and returns. *spec, roadmap, explore, blueprint, grill-me, handoff, zoom-out, tldt, verify-this, debug, deslop, write-a-command, and the project-\* family.*
+- **no suffix** — a one-shot action that produces a result and returns. *spec, roadmap, explore, blueprint, grill-me, modes, handoff, zoom-out, tldt, verify-this, debug, deslop, write-a-command, and the project-\* family.*
 - **language profiles** — configured per project via `--lang=<x>`, not invoked as slash commands (see the [README](../README.md#language-profiles)).
 
 Everything except `-mode` runs once and finishes; a `-mode` stays on. The per-command headings below tag each one with its kind. No command needs external tooling — every one stands alone.
@@ -82,6 +82,13 @@ Read `.project/PLAN.md` (+ `PROJECT.md`) and report where to pick up. Loads `han
 ---
 
 ## Engineering modes
+
+### `/ds-modes` — action
+
+Quick launcher for the session modes: opens a multi-select of every mode and activates the ones you pick (the chosen set is the active set — unchecked means off). A convenience over typing each `/ds-*-mode` — modes compose, so turn on several at once. The menu is hardcoded for speed (showing it reads nothing); only the selected modes' command files are loaded to apply their exact rules.
+
+- **Output:** an interactive multi-select where the host supports one (else a prose list to reply to), then a one-line confirmation of what's now active.
+- **Reach for it when:** starting a session and you want to flip on your usual stack (e.g. tiger-style + test + git) in one step.
 
 ### `/ds-tiger-style-mode` — mode
 
