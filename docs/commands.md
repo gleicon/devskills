@@ -99,6 +99,12 @@ Senior-engineer commit discipline — commits written **for humans, not LLMs**. 
 
 - **Reach for it when:** any build session where you want clean, honest, human-readable history as you go. Stacks with `/ds-tiger-style-mode` + `/ds-test-mode` (disciplined code *and* disciplined history). It also governs the commit messages the caveman modes deliberately leave "written normally."
 
+### `/ds-step-mode` — mode
+
+User-driven, step-gated execution — deliberately **inverts** the default autonomy, pausing *more*, not less. When active: do the smallest meaningful, reviewable step, **propose before acting and wait** (a free veto before any change), then after the step stop and report concisely (did / changed / next) and yield. Never silently chains steps; granularity is tunable live ("bigger/smaller steps"). The handback rule is the sharp part: **always return control in prose, never via the multiple-choice picker** — options are prose suggestions the user can accept, amend, *or combine*, never a forced single-select. The picker is allowed only for trivial either/or disambiguation ("did you mean file A or B?"), never for "what next." Invoke with a plan — `/ds-step-mode current plan`, a path, or pasted text — to drive an existing plan one step at a time, keeping it honest and offering `/ds-project-checkpoint` at milestones.
+
+- **Reach for it when:** you want to drive the work yourself, keeping control at every decision point. Composes with `/ds-git-mode` (a "step" ≈ a commit unit), `/ds-tiger-style-mode`, `/ds-test-mode`. Unlike `/ds-tdd-mode` (steps for design reasons) or `/ds-grill-me` (interrogates a plan, doesn't execute), this gates *execution* under your control.
+
 ---
 
 ## Test & build

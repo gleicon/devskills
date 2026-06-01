@@ -174,6 +174,7 @@ you both its origin and its kind: `/ds-tiger-style-mode` is a mode you toggle,
 | UI | `/ds-ui-mode` | UI mode: component/state discipline, design craft, a11y, Core Web Vitals |
 | Data | `/ds-data-mode` | Data-engineering discipline as you build pipelines: idempotency, late/out-of-order data, schema drift, replay/backfill safety, data-quality assertions. Tool-agnostic |
 | Git | `/ds-git-mode` | Senior-engineer commit discipline: commit each self-contained working unit, terse Conventional-Commit messages (no LLM bloat), branch-first, never rewrite history |
+| Step | `/ds-step-mode` | User-driven, step-gated execution: smallest step → stop → free-form handback (never a forced picker) → repeat. Drive a plan with `/ds-step-mode current plan` |
 | UI Quality Review | `/ds-ui-quality-review` | Strict UI audit: async-state/fetch correctness, a11y, Core Web Vitals, design craft |
 | Explore | `/ds-explore` | Lay out candidate approaches with trade-offs (`--web` for research) |
 | Blueprint | `/ds-blueprint` | Design a target architecture for a new system — modules, dependency rules, seams, build order. Decisive counterpart to `ds-explore` |

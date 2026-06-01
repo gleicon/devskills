@@ -8,7 +8,7 @@ Everything here is **GSD-free**: it relies only on the commands, `git`, and `gh`
 
 ## Modes stack — run several at once
 
-A **mode** (`/ds-tiger-style-mode`, `/ds-ui-mode`, `/ds-data-mode`, `/ds-test-mode`, `/ds-git-mode`, `/ds-caveman-lite-mode` / `/ds-caveman-ultra-mode`) doesn't do a job and return — it changes *how* the agent works for the rest of the session. Modes **compose**: turn on as many as fit the work. Building a tested UI to a strict bar, committed cleanly as you go, is four at once —
+A **mode** (`/ds-tiger-style-mode`, `/ds-ui-mode`, `/ds-data-mode`, `/ds-test-mode`, `/ds-git-mode`, `/ds-step-mode`, `/ds-caveman-lite-mode` / `/ds-caveman-ultra-mode`) doesn't do a job and return — it changes *how* the agent works for the rest of the session. Modes **compose**: turn on as many as fit the work. Building a tested UI to a strict bar, committed cleanly as you go, is four at once —
 
 ```
 /ds-tiger-style-mode             # safety + explicitness bar
@@ -167,6 +167,21 @@ To carry plan and state *across* sessions (so `/clear` is always safe), layer th
 
 ---
 
+## Drive a plan with full control
+
+When you want to *drive* — approve, steer, or replan at every step instead of letting a long autonomous run unfold — turn an existing plan over to `/ds-step-mode`:
+
+```
+/ds-project-plan                 # (or any plan: a path, or pasted text)
+/ds-step-mode current plan       # work it one step at a time, gated
+   ...for each step: it proposes → you approve/amend/combine/redirect → it does one step → stops...
+/ds-project-checkpoint           # at a milestone, persist state so /clear is safe
+```
+
+The discipline that makes this work: it proposes the next step and **waits** (a free veto before anything changes), does the smallest reviewable unit, then hands control back **in prose** — options are suggestions you can accept *and add to*, never a forced single-select picker. Say "bigger steps" / "smaller steps" to tune granularity live. Stacks with `/ds-git-mode` (each approved step ≈ a commit) for a driven, cleanly-committed build.
+
+---
+
 ## Greenfield: design the architecture before you build
 
 `/ds-spec` and `/ds-explore` get you to *what* and *which options* — but neither commits to a structure. `/ds-blueprint` is the decisive step that does: it takes the requirements and recommends one architecture — modules, dependency rules, seams, build order — then you build the walking skeleton first.
@@ -268,6 +283,7 @@ Two failure modes on long tasks: the context window fills, and prose burns token
 | Keep the core tested as you work (mode) | `/ds-test-mode` |
 | Build a data pipeline correctly as you go (mode) | `/ds-data-mode` |
 | Commit clean, human-readable history as you build (mode) | `/ds-git-mode` |
+| Execute step-by-step, keeping control at every break (mode) | `/ds-step-mode` |
 | Remove AI slop from a fresh branch | `/ds-deslop` |
 | Bring a codebase's comments to discipline | `/ds-comment-review` |
 | Judge structure / find simplifications | `/ds-code-quality-review` |

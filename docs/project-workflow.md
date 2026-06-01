@@ -77,5 +77,6 @@ Every step is engineer-driven and self-contained. The only persistent artifacts 
 - `/ds-spec` writes to `.project/SPEC.md` when `.project/` exists (else its usual location). It defines the WHAT; `/ds-project-plan` turns that into ordered tasks.
 - `/ds-grill-me --record` appends to `.project/DECISIONS.md` when `.project/` exists. Grill a design, then plan it.
 - `/ds-handoff` stays separate and ephemeral (writes to a temp dir, tool-agnostic). The durable handoff is `/ds-project-checkpoint --handoff`.
+- `/ds-step-mode current plan` drives `PLAN.md` one user-gated step at a time — the execution complement to these note-taking commands (they're scribes; it's the pilot you stay in control of). It marks steps done as they complete and offers `/ds-project-checkpoint` at milestones.
 
 Nothing here is required to use the standalone commands — `.project/` is opt-in. Create it with `/ds-project-map` (or just `mkdir .project`) and the workflow switches on.
