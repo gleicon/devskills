@@ -55,7 +55,7 @@ Keep devskills up to date:
 ### install.sh flags
 
 ```
---lang=<profile>     go | typescript | javascript | rust | python | java
+--lang=<profile>     go | typescript | javascript | rust | python | java | zig
 --claude-dir=<path>  Claude config dir (default: $CLAUDE_CONFIG_DIR or ~/.claude)
 --skip-external      skip GSD, RTK, tldt installation
 --skip-cursor        skip Cursor rules
@@ -68,7 +68,7 @@ Keep devskills up to date:
 ### setup.sh flags (per-project)
 
 ```
---lang=<profile>     optional; stacks a language profile (go|typescript|javascript|rust|python|java)
+--lang=<profile>     optional; stacks a language profile (go|typescript|javascript|rust|python|java|zig)
 --concise            add a terse-response directive to AGENTS.md
 --hints              add a devskills tooling reference to AGENTS.md
 --cursor             install Cursor rules into current project
@@ -164,6 +164,7 @@ you both its origin and its kind: `/ds-tiger-style-mode` is a mode you toggle,
 | Rust Review | `/ds-rust-review` | Rust: geiger/unsafe, clippy, audit, Tiger Style (`--no-tiger` to skip style) |
 | Python Review | `/ds-python-review` | Python: idioms, typing, security, Tiger Style (`--no-tiger` to skip style) |
 | Java Review | `/ds-java-review` | Java: idioms, records/sealed types, security, Tiger Style (`--no-tiger` to skip style) |
+| Zig Review | `/ds-zig-review` | Zig: explicit allocators, errors-as-values, safety, Tiger Style (`--no-tiger` to skip style) |
 | Bug Review | `/ds-bug-review` | Language-agnostic correctness audit — hunts real bugs |
 | Security Review | `/ds-security-review` | Language-agnostic security audit — each finding names the attack |
 | UI | `/ds-ui-mode` | UI mode: component/state discipline, design craft, a11y, Core Web Vitals |
@@ -213,6 +214,7 @@ Each profile encodes idioms, toolchain defaults, and review constraints for its 
 | `rust` | Rust stable | Systems programming, large projects |
 | `python` | Python 3.11+ | Backend services, APIs, CLIs, data pipelines |
 | `java` | Java 25+ (LTS) | Backend services, APIs, CLIs, systems tooling |
+| `zig` | Zig 0.14+ | Systems programming, CLIs, embedded (Tiger Style native) |
 
 ## Scripts
 
