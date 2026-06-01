@@ -199,6 +199,12 @@ Language-specific review passes.
 - **Args:** `--no-tiger` skips the Tiger Style section (all of them).
 - **Reach for it when:** reviewing code in that language, or as a pre-PR gate.
 
+---
+
+## Plans
+
+A *plan* is not a findings list. Where the reviews above report independent defects you fix in any order, a plan produces **graded, costed moves** — each tagged by the architectural cost it incurs (L1/L2/L3) and ranked so the cheap, high-impact wins come first. The output is an actionable, trade-off-aware plan; it still changes nothing.
+
 ### `/ds-perf-plan` — action
 
 Language-agnostic performance pass governed by one question — **where is this doing more work than it needs to, and what would each speedup cost?** A *plan*, not a verdict: every candidate move is tagged by the architectural cost of applying it (**L1** free win, **L2** localized restructuring, **L3** architectural/boundary-breaking), and ranked by impact ÷ cost so free wins float up. The spine is the anti-hallucination guardrail: **no finding without a cost model** (Big-O, alloc/IO/query counts, or a measured profile), each labeled `measured` / `reasoned` / `speculative`. Distinct from the language reviews' idiom-level `### Performance` checklist, from `/ds-code-quality-review` (which disclaims micro-opts), and from `/ds-ui-quality-review` (frontend rendering).
