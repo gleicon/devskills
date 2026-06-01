@@ -101,6 +101,8 @@ Every command is namespaced with a `ds-` prefix (short for devskills) so it neve
 
 ### Reviews — findings-list audits (`-review`)
 
+> Tip: `/ds-review` opens a picker to run one of the language-agnostic reviews (the six language reviews you invoke directly).
+
 | Command | Description |
 |---------|-------------|
 | `/ds-bug-review` | Language-agnostic correctness audit — hunts real bugs |
@@ -138,6 +140,7 @@ Every `-review` reports by default and changes nothing; pass `--fix` to apply th
 | `/ds-grill-me` | Relentless plan interview (`--record` logs to DECISIONS.md) |
 | `/ds-workflow` | Standalone phase-map orchestrator — orient, then route each phase to its command (uses `.project/` state when present, never requires it) |
 | `/ds-modes` | Multi-select launcher to activate several session modes at once (hardcoded menu; loads only the modes you pick) |
+| `/ds-review` | Single-select launcher to run one language-agnostic review on the branch diff (bug/security/data/quality/…); forwards scope + flags |
 | `/ds-project-map` | Scan the repo into `.project/PROJECT.md` |
 | `/ds-project-checkpoint` | Persist state to `.project/PLAN.md` (`--handoff` for a full handoff) |
 | `/ds-project-resume` | Restore context from `.project/PLAN.md` |

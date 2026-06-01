@@ -9,7 +9,7 @@ A command's **suffix tells you its kind**:
 - **`-mode`** — persistent, toggleable session behavior; changes *how* the agent works until you turn it off. *tiger-style, ui, test, tdd, data, git, step, quality-gate, caveman-lite/ultra.*
 - **`-review`** — a findings-list audit. Report-only by default (several take `--fix`); findings are independent and fixable in any order. *bug, security, data, code-quality, doc-quality, test-quality, ui-quality, comment, and the six language reviews.*
 - **`-plan`** — graded, sequenced moves that each carry a trade-off or dependency, so the output is a *plan*, not a verdict. *perf-plan, architecture-plan.*
-- **no suffix** — a one-shot action that produces a result and returns. *spec, roadmap, explore, blueprint, grill-me, modes, handoff, zoom-out, tldt, verify-this, debug, deslop, write-a-command, and the project-\* family.*
+- **no suffix** — a one-shot action that produces a result and returns. *spec, roadmap, explore, blueprint, grill-me, modes, review, handoff, zoom-out, tldt, verify-this, debug, deslop, write-a-command, and the project-\* family.*
 - **language profiles** — configured per project via `--lang=<x>`, not invoked as slash commands (see the [README](../README.md#language-profiles)).
 
 Everything except `-mode` runs once and finishes; a `-mode` stays on. The per-command headings below tag each one with its kind. No command needs external tooling — every one stands alone.
@@ -212,6 +212,14 @@ After each pass: shows findings for that pass, asks "accept all / reject all / s
 ## Reviews
 
 The review commands are a **layered gate, not competing alternatives** — cheapest and narrowest first, deepest last: `/ds-deslop` (noise) → `/ds-bug-review` (correctness) → `/ds-security-review` (exploitability) → `/ds-data-review` (data correctness, when the change touches schema/queries/transactions/migrations) → the language review (idioms) → `/ds-code-quality-review` (structure). Each answers a different question, so running several on the same code isn't redundant. The full pre-PR sequence is in [recipes.md](recipes.md#a-pre-pr-quality-gate).
+
+### `/ds-review` — action
+
+Quick launcher for the language-agnostic reviews: opens a single-select of bug / security / data / code-quality / test-quality / doc-quality / ui-quality / comment, and runs the one you pick on the current branch diff (or a scope you pass). A convenience over remembering each name — the per-language reviews stay direct (`/ds-go-review`, …).
+
+- **Args:** any scope or flags (`--fix`, `--pipelines`, `--comments`, a path) are forwarded to the chosen review.
+- **Output:** an interactive single-select where the host supports one (else a prose list), then the chosen review's normal findings. The menu is hardcoded for speed; only the picked review's file is loaded.
+- **Reach for it when:** you want *a* review but don't want to recall the exact command. To run several in order, use `/ds-quality-gate-mode`.
 
 ### `/ds-bug-review` — review
 
