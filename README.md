@@ -105,7 +105,7 @@ Keep plan and state across sessions in plain markdown under `.project/`, so any 
 /ds-project-resume      → restore context from .project/PLAN.md
 ```
 
-These are scribes, not pilots: they record what you decide, never steer architecture. Commit `.project/` as shared memory or add it to `.gitignore` for a local-only scratch space — the workflow doesn't rely on git. Walkthrough: [docs/project-workflow.md](docs/project-workflow.md) · use cases: [docs/project-recipes.md](docs/project-recipes.md)
+These are scribes, not pilots: they record what you decide, never steer architecture — and they're **optional persistence, not a dependency**. The same spec→build→ship loop runs without `.project/` (see the [standalone build loop](docs/recipes.md#a-standalone-build-loop)); `.project/` just carries plan and state across sessions so any `/clear` is safe. Commit it as shared memory or add it to `.gitignore` for a local-only scratch space — the workflow doesn't rely on git. Walkthrough: [docs/project-workflow.md](docs/project-workflow.md) · use cases: [docs/project-recipes.md](docs/project-recipes.md)
 
 **4. Keep quality high between phases**
 
