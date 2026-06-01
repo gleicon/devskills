@@ -18,7 +18,7 @@ Profiles (optional):
   rust              Rust stable (systems programming, large projects)
   python            Python 3.11+ (backend, APIs, CLIs, data)
   java              Java 25+ LTS (backend services, APIs, CLIs)
-  zig               Zig 0.14+ (systems, CLIs, embedded; Tiger Style native)
+  zig               Zig 0.16 (systems, CLIs, embedded; Tiger Style native)
 
 Options:
   --concise         Add a terse-response directive to AGENTS.md

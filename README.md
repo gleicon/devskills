@@ -214,7 +214,7 @@ Each profile encodes idioms, toolchain defaults, and review constraints for its 
 | `rust` | Rust stable | Systems programming, large projects |
 | `python` | Python 3.11+ | Backend services, APIs, CLIs, data pipelines |
 | `java` | Java 25+ (LTS) | Backend services, APIs, CLIs, systems tooling |
-| `zig` | Zig 0.14+ | Systems programming, CLIs, embedded (Tiger Style native) |
+| `zig` | Zig 0.16 | Systems programming, CLIs, embedded (Tiger Style native) |
 
 ## Scripts
 

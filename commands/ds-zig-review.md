@@ -1,6 +1,6 @@
 Review Zig code with Tiger Style constraints and Zig idioms.
 
-Applies to: current stable Zig (0.14+). Systems programming, CLIs, embedded.
+Applies to: Zig 0.16 (current stable). Systems programming, CLIs, embedded.
 
 Zig is Tiger Style's native context (TigerBeetle): explicit allocators, no hidden control flow, and no hidden allocations map almost one-to-one onto the Tiger Style constraints. Lean into that section harder than for other languages.
 
@@ -12,6 +12,16 @@ Scan the invocation for the `--no-tiger` flag. Treat every other argument as rev
 - `--no-tiger` absent → run all sections (default).
 
 Example: `/ds-zig-review --no-tiger src/` reviews `src/` without Tiger Style.
+
+## Automated Checks (run first if tools are available)
+
+```bash
+zig fmt --check .                    # formatting drift
+zig build test                       # tests + std.testing.allocator leak detection
+zig build -Doptimize=ReleaseSafe     # compile + safety-check validation
+```
+
+Run these, report what they surface, then do the manual review below. They are baseline context — anchor findings to the code in scope; don't report pre-existing failures outside the change as if it introduced them.
 
 ## Review Checklist
 
@@ -41,6 +51,7 @@ Skip this section entirely if `--no-tiger` was passed. Otherwise it is mandatory
 
 ### Zig Idioms
 - [ ] `comptime` for generics/compile-time computation rather than runtime reflection workarounds
+- [ ] Closed alternatives modeled as a tagged union (`union(enum)`) with an exhaustive `switch` — no catch-all `else` where the compiler should force handling of new variants
 - [ ] Optionals (`?T`) unwrapped with `orelse` / `if (x) |v|`, not a blind `.?`
 - [ ] No hidden control flow introduced — no reliance on implicit conversions; narrowing casts made visible (`@intCast`, `@truncate`)
 - [ ] Integer overflow intent explicit: `+%`/`+|` only where wrap/saturate is wanted, plain `+`/`-`/`*` otherwise

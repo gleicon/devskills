@@ -1,8 +1,8 @@
 ## Language Profile — Zig
 
-Target: current stable Zig (0.14+). Systems programming, CLIs, embedded, performance-critical code.
+Target: Zig 0.16 (current stable). Systems programming, CLIs, embedded, performance-critical code.
 
-Zig is pre-1.0 and evolves across releases — track the current stable toolchain and pin a `minimum_zig_version` in `build.zig.zon`. Tiger Style originates in this world (TigerBeetle), so the constraints below are native to Zig, not bolted on.
+Zig is pre-1.0 and breaks across releases — code is written against one toolchain version, not a floor. Pin `minimum_zig_version` in `build.zig.zon` and move it deliberately on upgrade. Tiger Style originates in this world (TigerBeetle), so the constraints below are native to Zig, not bolted on.
 
 Apply these conventions to all Zig code in this session.
 
@@ -14,7 +14,7 @@ Build with `zig build` (declare targets and steps in `build.zig`, dependencies i
 
 - No hidden allocations. Every function that allocates takes an `std.mem.Allocator` parameter explicitly — never reach for a global or default allocator.
 - Pair each allocation with `defer`/`errdefer` for release in the same scope. Use an arena (`std.heap.ArenaAllocator`) for batch or request-scoped lifetimes you can free in one shot.
-- Tests run against `std.testing.allocator` — it fails the test on a leak. In debug builds `GeneralPurposeAllocator` catches leaks and use-after-free.
+- Tests run against `std.testing.allocator` — it fails the test on a leak. In debug builds `std.heap.DebugAllocator` (the renamed `GeneralPurposeAllocator`) catches leaks and use-after-free.
 - Prefer slices (`[]T`, bounds-checked) over many-item pointers; pass `[]const T` for read-only views.
 
 ### Error Handling
@@ -26,6 +26,7 @@ Build with `zig build` (declare targets and steps in `build.zig`, dependencies i
 ### Language & Idioms
 
 - `comptime` for generics and compile-time computation instead of macros or runtime reflection — keep logic explicit and traceable.
+- Model closed alternatives as a tagged union (`union(enum)`) and `switch` over it exhaustively — omit the `else` branch when you want the compiler to flag unhandled variants as the type grows.
 - Optionals (`?T`) for "maybe absent"; unwrap with `orelse` or `if (x) |v|`, never a blind `.?` on an uncertain value.
 - No hidden control flow: no operator overloading, no exceptions, no lossy implicit conversions. Make narrowing casts visible (`@intCast`, `@truncate`).
 - Be explicit about integer overflow: `+`/`-`/`*` are checked in safe builds — use the wrapping (`+%`) or saturating (`+|`) operators only when wrap/saturate is the actual intent.

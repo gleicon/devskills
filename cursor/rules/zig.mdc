@@ -6,13 +6,13 @@ alwaysApply: false
 
 # Zig Conventions
 
-Target: current stable Zig (0.14+). Systems programming, CLIs, embedded. Tiger Style is native here (TigerBeetle).
+Target: Zig 0.16 (current stable). Systems programming, CLIs, embedded. Pre-1.0, breaks across releases — pin `minimum_zig_version` in `build.zig.zon`. Tiger Style is native here (TigerBeetle).
 
 ## Memory & Allocators
 
 - No hidden allocations. Every allocating function takes an `std.mem.Allocator` explicitly — no global/default allocator.
 - Pair each allocation with `defer`/`errdefer` in the same scope. Arena (`ArenaAllocator`) for batch/scoped lifetimes.
-- Tests use `std.testing.allocator` (fails on leak); `GeneralPurposeAllocator` in debug catches leaks/use-after-free.
+- Tests use `std.testing.allocator` (fails on leak); `std.heap.DebugAllocator` (formerly `GeneralPurposeAllocator`) in debug catches leaks/use-after-free.
 - Slices (`[]T`, bounds-checked) over many-item pointers; `[]const T` for read-only views.
 
 ## Errors
@@ -24,6 +24,7 @@ Target: current stable Zig (0.14+). Systems programming, CLIs, embedded. Tiger S
 ## Language & Idioms
 
 - `comptime` for generics/compile-time work instead of macros or runtime reflection.
+- Closed alternatives as a tagged union (`union(enum)`); `switch` exhaustively, no `else` when the compiler should flag new unhandled variants.
 - Optionals (`?T`) unwrapped with `orelse` / `if (x) |v|`, never a blind `.?`.
 - No hidden control flow: no operator overloading, no exceptions, no lossy implicit conversions. Visible casts (`@intCast`, `@truncate`).
 - `+`/`-`/`*` are checked in safe builds — use `+%` (wrapping) / `+|` (saturating) only when that's the intent.
@@ -34,6 +35,11 @@ Target: current stable Zig (0.14+). Systems programming, CLIs, embedded. Tiger S
 - `zig build` (steps in `build.zig`, deps in `build.zig.zon`); `zig fmt` is the canonical formatter — keep it in CI.
 - Ship `Debug`/`ReleaseSafe` where safety matters; `ReleaseFast`/`ReleaseSmall` only when measured and justified.
 - `test "..."` blocks colocated; `std.testing.allocator` so leaks fail; `expectError` for error paths.
+
+## Naming & Structure
+
+- `TitleCase` for types (and functions returning a type), `camelCase` for functions, `snake_case` for variables/fields.
+- Files named for their primary type, else `snake_case`. No `util`/`common`/`helpers` grab-bags — name by what it provides.
 
 ## Tiger Style
 
