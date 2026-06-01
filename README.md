@@ -82,8 +82,6 @@ Every command is namespaced with a `ds-` prefix (short for devskills) so it neve
 
 ### Modes — persistent session behavior (`-mode`)
 
-> Tip: `/ds-modes` opens a multi-select to flip several of these on at once.
-
 | Command | Description |
 |---------|-------------|
 | `/ds-tiger-style-mode` | TigerBeetle engineering constraints: safety, performance, experience |
@@ -98,8 +96,6 @@ Every command is namespaced with a `ds-` prefix (short for devskills) so it neve
 | `/ds-caveman-ultra-mode` | Compressed response mode (~75–85% token reduction) |
 
 ### Reviews — findings-list audits (`-review`)
-
-> Tip: `/ds-review` opens a picker to run one of the language-agnostic reviews (the six language reviews you invoke directly).
 
 | Command | Description |
 |---------|-------------|
@@ -137,8 +133,6 @@ Every `-review` reports by default and changes nothing; pass `--fix` to apply th
 | `/ds-blueprint` | Design a target architecture for a new system — modules, dependency rules, seams, build order. Decisive counterpart to `ds-explore` |
 | `/ds-grill-me` | Relentless plan interview (`--record` logs to DECISIONS.md) |
 | `/ds-workflow` | Standalone phase-map orchestrator — orient, then route each phase to its command (uses `.project/` state when present, never requires it) |
-| `/ds-modes` | Multi-select launcher to activate several session modes at once (hardcoded menu; loads only the modes you pick) |
-| `/ds-review` | Single-select launcher to run one language-agnostic review on the branch diff (bug/security/data/quality/…); forwards scope + flags |
 | `/ds-project-map` | Scan the repo into `.project/PROJECT.md` |
 | `/ds-project-checkpoint` | Persist state to `.project/PLAN.md` (`--handoff` for a full handoff) |
 | `/ds-project-resume` | Restore context from `.project/PLAN.md` |

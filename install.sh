@@ -117,10 +117,14 @@ install_file() {
 #   write-a-skill.md -> write-a-command.md (now ds-write-a-command.md)
 #   ds-project-plan.md -> ds-roadmap.md (a plan-generator, not `.project` memory —
 #                         so it left the project-* family; a post-prefix rename)
+#   ds-modes.md, ds-review.md -> removed (no replacement): the host question UI
+#                         caps a picker at four options, but these launchers had
+#                         ten modes / eight reviews, so the picker could never
+#                         render — deleted rather than degraded to a prose menu.
 # Every command was namespaced with a `ds-` prefix (modes also gain a `-mode`
 # suffix); the pre-prefix filenames below are retired here, plus the one
-# post-prefix rename above (`ds-project-plan.md`). New names all carry the `ds-`
-# prefix and none collide with the stale names being removed.
+# post-prefix rename and the two removed launchers above. New names all carry
+# the `ds-` prefix and none collide with the stale names being removed.
 RENAMED_COMMANDS=(
   frontend.md write-a-skill.md
   bug-review.md caveman-lite.md caveman-ultra.md code-quality-review.md
@@ -130,7 +134,7 @@ RENAMED_COMMANDS=(
   security-review.md spec.md tdd.md test-quality-review.md test.md
   tiger-style.md tldt.md ts-review.md ui-quality-review.md ui.md
   verify-this.md workflow.md write-a-command.md zoom-out.md
-  ds-project-plan.md
+  ds-project-plan.md ds-modes.md ds-review.md
 )
 
 purge_renamed_commands() {

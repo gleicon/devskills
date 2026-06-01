@@ -83,13 +83,6 @@ Read `.project/PLAN.md` (+ `PROJECT.md`) and report where to pick up. Loads `han
 
 ## Engineering modes
 
-### `/ds-modes` — action
-
-Quick launcher for the session modes: opens a multi-select of every mode and activates the ones you pick (the chosen set is the active set — unchecked means off). A convenience over typing each `/ds-*-mode` — modes compose, so turn on several at once. The menu is hardcoded for speed (showing it reads nothing); only the selected modes' command files are loaded to apply their exact rules.
-
-- **Output:** an interactive multi-select where the host supports one (else a prose list to reply to), then a one-line confirmation of what's now active.
-- **Reach for it when:** starting a session and you want to flip on your usual stack (e.g. tiger-style + test + git) in one step.
-
 ### `/ds-tiger-style-mode` — mode
 
 Activate [Tiger Style](https://tigerstyle.dev/) engineering constraints for the session: safety, explicitness, bounded everything, assertions, no silent fallbacks. Active during all review commands too.
@@ -212,14 +205,6 @@ After each pass: shows findings for that pass, asks "accept all / reject all / s
 ## Reviews
 
 The review commands are a **layered gate, not competing alternatives** — cheapest and narrowest first, deepest last: `/ds-deslop` (noise) → `/ds-bug-review` (correctness) → `/ds-security-review` (exploitability) → `/ds-data-review` (data correctness, when the change touches schema/queries/transactions/migrations) → the language review (idioms) → `/ds-code-quality-review` (structure). Each answers a different question, so running several on the same code isn't redundant. The full pre-PR sequence is in [recipes.md](recipes.md#a-pre-pr-quality-gate).
-
-### `/ds-review` — action
-
-Quick launcher for the language-agnostic reviews: opens a single-select of bug / security / data / code-quality / test-quality / doc-quality / ui-quality / comment, and runs the one you pick on the current branch diff (or a scope you pass). A convenience over remembering each name — the per-language reviews stay direct (`/ds-go-review`, …).
-
-- **Args:** any scope or flags (`--fix`, `--pipelines`, `--comments`, a path) are forwarded to the chosen review.
-- **Output:** an interactive single-select where the host supports one (else a prose list), then the chosen review's normal findings. The menu is hardcoded for speed; only the picked review's file is loaded.
-- **Reach for it when:** you want *a* review but don't want to recall the exact command. To run several in order, use `/ds-quality-gate-mode`.
 
 ### `/ds-bug-review` — review
 
