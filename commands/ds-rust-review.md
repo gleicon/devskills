@@ -8,7 +8,7 @@ Scan the invocation for the `--no-tiger` and `--fix` flags. Treat every other ar
 
 - `--no-tiger` present → skip the Tiger Style section; run the remaining sections only.
 - `--no-tiger` absent → run all sections (default).
-- `--fix` → after reporting, apply only the violations whose fix is **mechanical and unambiguous** (a rename to the idiom, a missing error check the review is certain about). Anything that changes logic or rests on an unverified assumption — especially security and correctness findings — **stays report-only**. End with a summary of what was applied and what was left.
+- `--fix` → after reporting, apply only the violations whose fix is **mechanical and unambiguous** (a rename to the idiom, a missing error check the review is certain about). Anything that changes logic or rests on an unverified assumption — especially security and correctness findings — **stays report-only**. After applying, re-run any build/test/lint check already in the loop and revert any fix that breaks it — or that touched more than the intended mechanical edit. End with a summary of what was applied and what was left.
 
 The whole-crate metric commands below are baseline context. Anchor findings to the code in scope — don't report pre-existing `unwrap`/`panic` counts outside the change as if the change introduced them.
 

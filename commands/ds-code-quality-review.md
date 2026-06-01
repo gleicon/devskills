@@ -164,7 +164,7 @@ Prioritize findings in this order:
 Anchor each finding to `<file>:<line>` where possible.
 Do not flood the review with low-value nits if there are larger structural issues.
 
-Report-only by default — changes nothing. With `--fix`, apply only the mechanical, behavior-preserving findings and leave the structural ones reported, then summarize what was applied vs. left.
+Report-only by default — changes nothing. With `--fix`, apply only the mechanical, behavior-preserving findings and leave the structural ones reported. After applying, re-run any build/test/lint check already in the loop and revert any fix that breaks it or that touched more than the intended edit; then summarize what was applied vs. left.
 Prefer a smaller number of high-conviction comments over a long list of cosmetic notes.
 
 ## Approval Bar

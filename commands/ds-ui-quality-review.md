@@ -8,7 +8,7 @@ Like `/ds-code-quality-review`, `/ds-doc-quality-review`, and `/ds-test-quality-
 
 - Treat positional args as scope (files, directories, globs). With no scope, review the UI code changed on the current branch.
 - Freeform scope ("the checkout flow", "the settings page") is interpreted reasonably.
-- `--fix` → after reporting, apply only the findings whose fix is **mechanical and unambiguous** — a missing `alt`/`aria-label`, a non-semantic `<div>` that should be a `<button>`, an index-as-key, a missing image dimension that causes layout shift. Anything touching design craft, visual hierarchy, or async/state logic rests on judgment and **stays report-only**. Close with a summary of what was applied and what was left.
+- `--fix` → after reporting, apply only the findings whose fix is **mechanical and unambiguous** — a missing `alt`/`aria-label`, a non-semantic `<div>` that should be a `<button>`, an index-as-key, a missing image dimension that causes layout shift. Anything touching design craft, visual hierarchy, or async/state logic rests on judgment and **stays report-only**. After applying, re-run any build/test/lint check already in the loop and revert any fix that breaks it — or that touched more than the intended mechanical edit. Close with a summary of what was applied and what was left.
 
 ## What to check
 
