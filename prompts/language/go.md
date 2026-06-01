@@ -1,6 +1,6 @@
 ## Language Profile — Go
 
-Target: Go 1.22+. Backend services, CLIs, APIs, systems tooling.
+Target: Go 1.24+. Backend services, CLIs, APIs, systems tooling.
 
 Apply these conventions to all Go code in this session.
 
@@ -11,6 +11,12 @@ Test with `go test -race ./...`. Lint with `golangci-lint run`. Benchmark with `
 ### Project Layout
 
 `cmd/<name>/` for entrypoints, `internal/` for private packages, `pkg/` only for a real library, `api/` for protobuf/OpenAPI. Name packages by what they provide — avoid `util/`, `common/`, `helpers/`.
+
+### Standard Library & Idioms
+
+- Reach for `slices`, `maps`, and `cmp` over hand-rolled helpers; use the `min`/`max`/`clear` builtins. Range over integers with `for i := range n`.
+- Expose sequences as `iter.Seq`/`iter.Seq2` (range-over-func) and prefer `slices.Sorted`/`slices.Collect`/`maps.Keys` over manual accumulation. *(Go 1.23+)*
+- `json:",omitzero"` over `omitempty` when the intent is "omit the zero value" — it handles zero `time.Time` and zero structs correctly.
 
 ### Error Handling
 
@@ -31,13 +37,15 @@ if err := g.Wait(); err != nil { ... }
 
 ### HTTP Services
 
-Always set timeouts: `http.Server` gets `ReadTimeout`/`WriteTimeout`/`IdleTimeout`; `http.Client` gets `Timeout`. Use `net/http/httptest` for handler tests.
+Always set timeouts: `http.Server` gets `ReadTimeout`/`WriteTimeout`/`IdleTimeout`; `http.Client` gets `Timeout`. Use `net/http/httptest` for handler tests. When joining request-controlled input into filesystem paths, open a root with `os.OpenRoot` and use the `*os.Root` methods — they refuse traversal and symlink escapes, unlike manual `filepath.Clean`/prefix checks.
 
 ### Testing
 
 - Table-driven tests with subtests (`t.Run`); `t.Helper()` in helpers.
 - No real network or filesystem in unit tests — use interfaces and fakes.
 - Integration tests behind `//go:build integration`.
+- Benchmarks use `for b.Loop() { ... }`, not `for i := 0; i < b.N; i++` — setup outside the loop runs once and results stay live without `runtime.KeepAlive`.
+- Test time-dependent or concurrent code with `testing/synctest` and its fake clock instead of real `time.Sleep`. *(Go 1.25+; `synctest.Test`)*
 
 ### Tiger Style
 

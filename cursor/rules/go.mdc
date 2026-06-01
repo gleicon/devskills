@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Go Conventions
 
-Target: Go 1.22+. Backend services, CLIs, APIs.
+Target: Go 1.24+. Backend services, CLIs, APIs.
 
 ## Errors
 
@@ -25,12 +25,20 @@ Target: Go 1.22+. Backend services, CLIs, APIs.
 
 - Client and server always have explicit timeouts set.
 - Validate all inputs at handler entry.
+- Filesystem paths from user input go through `os.OpenRoot`/`*os.Root`, not manual sanitization.
+
+## Stdlib & Idioms
+
+- Prefer `slices`/`maps`/`cmp` and `min`/`max`/`clear` over hand-rolled helpers; `for i := range n` for counts.
+- Expose iteration as `iter.Seq`/`iter.Seq2` (Go 1.23+); `json:",omitzero"` over `omitempty` for zero values.
+- Declare tool deps in `go.mod` (`go tool`), not `tools.go`. Modernize with `golangci-lint`'s `modernize` (or `go fix` on Go 1.26+).
 
 ## Testing
 
 - Table-driven tests: `[]struct{ name, input, want }`.
 - Subtests with `t.Run`. Parallel with `t.Parallel()` where safe.
 - No real network in unit tests — use interfaces and fakes.
+- Benchmarks use `for b.Loop()` (Go 1.24); test time-dependent concurrency with `testing/synctest` (Go 1.25+), not `time.Sleep`.
 
 ## Naming
 

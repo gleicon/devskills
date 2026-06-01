@@ -1,6 +1,6 @@
 Review Go code with Tiger Style constraints and Go idioms.
 
-Applies to: Go 1.22+. Backend services, CLIs, APIs.
+Applies to: Go 1.24+. Backend services, CLIs, APIs.
 
 ## Arguments
 
@@ -36,6 +36,11 @@ Skip this section entirely if `--no-tiger` was passed. Otherwise it is mandatory
 - [ ] Prefer table-driven tests
 - [ ] No `init()` functions that have side effects
 - [ ] Struct fields that are sync primitives (Mutex, WaitGroup) are not copied — pointer receivers used
+- [ ] Prefer stdlib `slices`/`maps`/`cmp` and the `min`/`max`/`clear` builtins over hand-rolled equivalents; `for i := range n` for integer counts
+- [ ] Sequences exposed as `iter.Seq`/`iter.Seq2` where iteration is the public API (Go 1.23+)
+- [ ] `json:",omitzero"` (not `omitempty`) when the intent is to omit zero values — notably zero `time.Time`
+- [ ] Tool dependencies declared in `go.mod` (`go get -tool`, run via `go tool`), not a legacy `tools.go` blank-import shim (Go 1.24+)
+- [ ] Legacy idioms a modernizer would rewrite are flagged — pre-`slices`/`maps` helpers, `interface{}` over `any`, manual `b.N` loops (run `golangci-lint`'s `modernize`, or `go fix` on Go 1.26+)
 
 ### Performance
 - [ ] No allocation in request hot path (profile with `go test -benchmem` if critical)
@@ -47,6 +52,7 @@ Skip this section entirely if `--no-tiger` was passed. Otherwise it is mandatory
 ### Security
 - [ ] No `fmt.Sprintf` constructing SQL queries — use parameterized queries
 - [ ] No `exec.Command` with unsanitized user input
+- [ ] Filesystem paths built from user input go through `os.OpenRoot`/`*os.Root`, not manual `filepath.Clean`/prefix checks — blocks traversal and symlink escape (Go 1.24+)
 - [ ] No hardcoded credentials or secrets
 - [ ] HTTP handlers validate and bound all user-controlled inputs
 - [ ] `http.Server` sets ReadTimeout/WriteTimeout/IdleTimeout; `http.Client` sets `Timeout` or uses context deadlines
@@ -54,8 +60,8 @@ Skip this section entirely if `--no-tiger` was passed. Otherwise it is mandatory
 ### Testing
 - [ ] Public surface and error paths have meaningful coverage — flag notable gaps, not every untested accessor
 - [ ] Error paths tested, not just happy path
-- [ ] Benchmarks for performance-critical functions
-- [ ] No `time.Sleep` in tests — use channels or sync primitives
+- [ ] Benchmarks for performance-critical functions, written with `for b.Loop()` rather than a manual `for i := 0; i < b.N` loop (Go 1.24)
+- [ ] No `time.Sleep` in tests — use channels or sync primitives, or `testing/synctest`'s fake clock for time-dependent concurrency (Go 1.25+)
 
 ## Output Format
 

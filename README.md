@@ -206,7 +206,7 @@ Each profile encodes idioms, toolchain defaults, and review constraints for its 
 
 | Profile | Stack | Use case |
 |---------|-------|---------|
-| `go` | Go 1.22+ | Backend services, CLIs, APIs |
+| `go` | Go 1.24+ | Backend services, CLIs, APIs |
 | `typescript` | TypeScript 5+, Wrangler | Cloudflare Workers, Next.js, React |
 | `javascript` | ES2022+, Wrangler | Cloudflare Workers, vanilla frontend |
 | `rust` | Rust stable | Systems programming, large projects |
