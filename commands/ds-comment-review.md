@@ -22,7 +22,7 @@ Doc-comments: where idiomatic (Go doc comments, Python docstrings on public API,
 
 **Default (report):** a prioritized findings list. For each: anchor to `file:line`, quote the comment, name why it fails (restates / obvious / cruft / verbose / drifted), and give the fix — `delete`, or `tighten to: "<one-liner>"`. Group by delete / tighten / drifted (correctness) / kept-as-important. A short high-conviction list beats a long pedantic one.
 
-**With `--fix`:** apply the edits — delete the noise, tighten the verbose to one line, strip the cruft, preserve and (if needed) sharpen the genuine ones — then give a concise 1–3 sentence summary of what changed. Never touch code logic.
+**With `--fix`:** apply the edits — delete the noise, tighten the verbose to one line, strip the cruft, preserve and (if needed) sharpen the genuine ones — then give a concise 1–3 sentence summary of what changed. Never touch code logic. **After applying, confirm the resulting diff touches only comment lines — if any non-comment line changed, that's a bug: revert it.**
 
 Rules:
 

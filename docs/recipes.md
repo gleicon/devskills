@@ -115,7 +115,6 @@ Stitch the quality commands into one gate you run before marking a PR ready:
 
 ```
 /ds-deslop                  # 1. remove slop introduced on the branch
-/ds-comment-review          # 1b. bring the branch's comments to discipline (--fix to apply)
 /ds-code-quality-review     # 2. structure: is the diff making the codebase worse?
 /ds-bug-review              # 3. correctness: real bugs, not style
 /ds-security-review         # 4. exploitability — if it touches input, auth, secrets, or I/O
