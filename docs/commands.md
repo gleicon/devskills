@@ -243,6 +243,14 @@ Language-specific review passes.
 - **Args:** `--no-tiger` skips the Tiger Style section (all of them). `--fix` (all of them) applies the mechanical, unambiguous violations; security and correctness findings stay reported.
 - **Reach for it when:** reviewing code in that language, or as a pre-PR gate.
 
+### `/ds-notebook-review` — review
+
+Jupyter-notebook review for the defects a line-by-line code review structurally can't see — the ones that live in notebook *state* and *structure*, not in the cell source. Audits four areas: **execution & hidden state** (out-of-order/gapped `execution_count`, stale outputs with `null` count, forward references, reliance on manual run order so *Restart & Run All* would fail), **committed outputs & secrets** (outputs committed at all, repo-bloating blobs, and credentials/tokens/PII leaked into code or output cells), **reproducibility** (no seed on a reported result, mid-notebook `%pip install`, ambient-kernel reliance, hardcoded absolute paths), and **data-science correctness** (train/test leakage from pre-split `fit`, target leakage, pandas chained assignment, ambiguous `df` re-binding, merges that silently dup/drop rows). The boundary that keeps it in its lane: cell-code idioms/typing/generic security → `/ds-python-review`; ranked perf → `/ds-perf-plan`; pipeline/ETL correctness → `/ds-data-review --pipelines`. It states those delegations rather than duplicating them.
+
+- **Args:** scope (notebook files, directories, globs); defaults to the `.ipynb` files changed on the current branch. `--fix` applies only mechanical, unambiguous fixes — strip committed outputs, reset `execution_count`, drop a confirmed-dead scratch cell — by editing the notebook JSON directly; anything that changes execution semantics (setting a seed, reordering, rewriting leakage-prone preprocessing) stays report-only.
+- **Output:** prioritized findings anchored to `<file> cell <N>` — critical (committed secret, leakage that invalidates results, irrecoverable loss) → major (hidden-state break that defeats *Restart & Run All*, stale committed outputs, missing seed) → minor (hygiene/structure). Each names the exact condition that triggers it, then the fix.
+- **Reach for it when:** reviewing a `.ipynb` change, or before sharing/committing a notebook. The reproducibility bar is the *Restart & Run All* test. Pair it with `/ds-python-review` on the cell code for the language-level pass.
+
 ---
 
 ## Plans

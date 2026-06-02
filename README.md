@@ -113,6 +113,7 @@ Every command is namespaced with a `ds-` prefix (short for devskills) so it neve
 | `/ds-python-review` | Python: idioms, typing, security, Tiger Style (`--no-tiger` to skip style) |
 | `/ds-java-review` | Java: idioms, records/sealed types, security, Tiger Style (`--no-tiger` to skip style) |
 | `/ds-zig-review` | Zig: explicit allocators, errors-as-values, safety, Tiger Style (`--no-tiger` to skip style) |
+| `/ds-notebook-review` | Jupyter notebooks: execution/hidden-state, committed outputs & secrets, reproducibility, data-science correctness (leakage, chained assignment). Delegates cell-code review to `/ds-python-review` |
 
 Every `-review` reports by default and changes nothing; pass `--fix` to apply the **mechanical, unambiguous** findings in place (correctness and security fixes, and anything resting on judgment, stay reported either way).
 
