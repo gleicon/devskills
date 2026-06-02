@@ -20,7 +20,7 @@ When invoked, audit the `.ipynb` files in scope against one question: **will thi
 
 **5. Notebook hygiene & structure.** Exploration tangled with production logic that should be extracted to an importable module; mega-cells doing many unrelated things; dead scratch cells; top-level mutable globals where a function would isolate state; exceptions silently swallowed in a `try/except` to keep a cell "green".
 
-**6. Delegations — state, don't duplicate.** When the *cell code* warrants a deeper pass, say so and point to the owning command rather than reviewing it here: Python idioms/typing/generic security → `/ds-python-review`; ranked performance → `/ds-perf-plan`; pipeline/ETL correctness → `/ds-data-review --pipelines`.
+**6. Delegations — state, don't duplicate.** When the *cell code* itself warrants a deeper pass — language idioms, ranked perf, ETL correctness — name the gap and route it to the owning command (named above) rather than reviewing it here.
 
 ## Output
 
