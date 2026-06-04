@@ -278,6 +278,11 @@ else
   log "Skipping external tools (--skip-external)"
 fi
 
+# RTK was removed after an upstream supply-chain compromise. Warn (never delete)
+# if an earlier devskills install left it behind. Runs even with --skip-external,
+# since skipping the install does not make an already-present compromised binary safe.
+devskills_rtk_remediate
+
 if [ -n "$LANG_PROFILE" ]; then
   install_lang_profile "$LANG_PROFILE"
 fi

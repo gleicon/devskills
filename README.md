@@ -13,7 +13,7 @@ git clone https://github.com/gleicon/devskills.git ~/.devskills
 ~/.devskills/install.sh
 ```
 
-Commands copy to `~/.claude/commands/`, `~/.opencode/commands/`, and `~/.codex/prompts/` (each installed only when that tool is detected). External tool (tldt) installs automatically when Go is present.
+Commands copy to `~/.claude/commands/`, `~/.opencode/commands/`, and `~/.codex/prompts/` (each installed only when that tool is detected). External tools (osv-scanner, tldt) install automatically when their prerequisites are present (Homebrew or Go).
 
 In Codex, devskills commands are invoked under the `prompts:` namespace — `/ds-debug` becomes `/prompts:ds-debug`. Codex reads a project's `AGENTS.md` natively, so `setup.sh` covers its persistent surface with no extra step.
 

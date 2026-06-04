@@ -8,7 +8,8 @@ If `osv-scanner` is not installed, show installation instructions and stop.
 
 - No args: scan the current directory recursively.
 - `<path>`: scan a specific directory or lockfile.
-- `--fix`: after reporting, attempt to bump vulnerable direct dependencies to the minimum fixed version in the manifest file. Transitive-only findings are reported but not auto-fixed — they require the intermediate package to release a patch.
+- `--fix`: after reporting, bump vulnerable **direct** dependencies to the minimum fixed version by driving the ecosystem's own package manager (see Process step 6). Transitive-only findings are reported but not auto-fixed — they require the intermediate package to release a patch.
+- `--verbose`: expand LOW / informational findings, which are otherwise summarized as a count only.
 
 ## Process
 
@@ -31,15 +32,23 @@ If `osv-scanner` is not installed, show installation instructions and stop.
    - **MEDIUM** — report with context
    - **LOW / informational** — summarize count only unless `--verbose`
 
-4. For each finding report:
+4. Classify each finding as **direct** or **transitive**. A finding is *direct* if its package appears in the manifest's own declared dependency list — e.g. `go.mod` `require`, `package.json` `dependencies`/`devDependencies`, `Cargo.toml` `[dependencies]`/`[dev-dependencies]`, top-level entries in `requirements.txt`. Otherwise it is *transitive*. Determine this by reading the manifest yourself; do not rely on a scanner field, which is not consistently populated across ecosystems.
+
+5. For each finding report:
    - Package name + current version
    - Vulnerability ID (OSV ID and CVE alias if present)
    - Severity + CVSS score if available
    - **Fixed version** (the minimum version that resolves it)
-   - Whether it's a direct or transitive dependency
+   - Whether it's a direct or transitive dependency (from step 4)
    - One-line description of the vulnerability class
 
-5. With `--fix`: for direct dependencies where a fixed version exists, bump the version in the manifest (`package.json`, `go.mod`, `Cargo.toml`, `requirements.txt`, etc.). After each bump, note the change. Do not modify lockfiles — instruct the user to run the package manager's install/update command to regenerate them.
+6. With `--fix`: for **direct** dependencies (per step 4) where a fixed version exists, bump to the **minimum** fixed version by driving the ecosystem's native package-manager command — never by hand-editing manifest text — so the manifest and lockfile stay consistent. Use the upgrade primitive native to the manifest's ecosystem, for example:
+   - Go: `go get <pkg>@<version>`
+   - npm: `npm install <pkg>@<version>`
+   - Cargo: `cargo update -p <pkg> --precise <version>`
+   - …and the equivalent for any other detected ecosystem (PyPI, Maven, RubyGems, NuGet, Composer).
+
+   Where no package-manager primitive cleanly applies (e.g. a raw `requirements.txt` with no pip-tools), fall back to editing the manifest and instruct the user to regenerate the lockfile. Note each change. Transitive-only findings are reported, not auto-fixed.
 
 ## Output
 
@@ -58,7 +67,7 @@ MEDIUM
 LOW/INFO: <N> findings — run with --verbose to expand.
 
 Next steps:
-  <package manager command to update lockfile after --fix>
+  Re-run your build and tests to confirm each bump is compatible.
   Re-run /ds-osv to confirm findings resolved.
 ```
 
@@ -66,7 +75,7 @@ If zero findings: report clean with ecosystem coverage summary (which manifests 
 
 ## Rules
 
-- Never modify lockfiles directly. Only manifest files (`go.mod`, `package.json` `dependencies`/`devDependencies`, `Cargo.toml`, `requirements.txt`).
+- Apply fixes by driving the ecosystem's package manager, not by hand-editing files. Never hand-edit a lockfile; let the package manager update the manifest and lockfile together so they stay consistent.
 - Do not bump a version beyond the stated minimum fixed version — pick the minimum that resolves the CVE.
 - If a finding has no fixed version available, report it clearly and suggest tracking the upstream issue.
 - Transitive-only findings with no direct-dependency path to a fix should be flagged for the user to escalate to the upstream package.

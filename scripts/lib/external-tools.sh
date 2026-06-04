@@ -60,7 +60,50 @@ devskills_osv() {
     return 0
   fi
 
-  warn "osv-scanner: no Homebrew or Go found. ${verb} manually: https://github.com/google/osv-scanner/releases"
+  warn "osv-scanner: needs Homebrew (macOS) or Go. ${verb} from releases: https://github.com/google/osv-scanner/releases"
+}
+
+# ------------------------------------------------------------
+# RTK removal remediation (warn-only)
+# ------------------------------------------------------------
+
+# RTK (rtk-ai token proxy) was removed from devskills after an upstream
+# supply-chain compromise. Earlier devskills versions installed it via the
+# Homebrew tap (macOS) or a binary in ~/.local/bin (Linux). We never auto-delete
+# a binary we can't prove we own, so this detects and warns only — it stays
+# silent when there is nothing to remediate. Runs regardless of --skip-external.
+devskills_rtk_remediate() {
+  if [ "${DRY_RUN:-0}" -eq 1 ]; then
+    log "[dry] would check for a leftover RTK install and warn if found"
+    return 0
+  fi
+
+  # Detection is read-only: `command -v` and `readlink` only. We deliberately do
+  # NOT invoke `brew` — it mutates its cache under $HOME, which would surprise
+  # the user (and breaks dry-run purity).
+  local rtk_path
+  rtk_path="$(command -v rtk 2>/dev/null)" || return 0   # nothing to remediate; stay silent
+
+  warn "SECURITY: RTK was removed from devskills after an upstream supply-chain compromise."
+
+  # If the binary resolves into a Homebrew Cellar it is brew-managed, so the
+  # correct removal is `brew uninstall <formula>`, not `rm` on brew's symlink.
+  # The single-level symlink target (e.g. ../Cellar/rtk/0.42.0/bin/rtk) is enough
+  # to both detect this and recover the formula name, portably (no readlink -f).
+  local target
+  target="$(readlink "$rtk_path" 2>/dev/null || true)"
+  case "${target:-$rtk_path}" in
+    */Cellar/*)
+      local formula="${target##*/Cellar/}"; formula="${formula%%/*}"
+      warn "  A Homebrew-managed RTK is still present (${rtk_path}). Remove it manually:"
+      warn "    brew uninstall ${formula}"
+      ;;
+    *)
+      warn "  A binary named 'rtk' is on your PATH at ${rtk_path}. If devskills installed it, remove it manually:"
+      warn "    rm -f ${rtk_path}"
+      ;;
+  esac
+  return 0
 }
 
 # ------------------------------------------------------------
