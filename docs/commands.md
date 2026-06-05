@@ -372,6 +372,6 @@ Store this session's outcome into recall's knowledge base.
 
 Initialize recall and wire up session-end reminders for Claude Code and OpenCode.
 
-- **Process:** runs `recall map` + `recall recipes seed`, writes a `Stop` hook reminder to `~/.claude/settings.json`, writes an OpenCode `session.idle` JS plugin to `~/.config/opencode/plugins/recall-reminder.js`. Idempotent. Never overwrites unrelated config.
+- **Process:** runs `recall map` + `recall recipes seed`, then delegates host wiring to `recall install-skill --target <assistant>` (claude always; opencode/cursor/codex when their config dir exists). recall owns its own hook and backs up `settings.json`.
 - **Output:** confirms each step: index, seed, Claude Code hook, OpenCode plugin, opt-in preference.
 - **Reach for it when:** first time using recall with devskills, or after reinstalling recall.
