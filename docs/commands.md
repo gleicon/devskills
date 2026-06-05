@@ -373,5 +373,5 @@ Store this session's outcome into recall's knowledge base.
 Initialize recall and wire up session-end reminders for Claude Code and OpenCode.
 
 - **Process:** runs `recall map` + `recall recipes seed`, then delegates host wiring to `recall install-skill --target <assistant>` (claude always; opencode/cursor/codex when their config dir exists). recall owns its own hook and backs up `settings.json`.
-- **Output:** confirms each step: index, seed, Claude Code hook, OpenCode plugin, opt-in preference.
+- **Output:** confirms each step: index, seed, and recall integration install.
 - **Reach for it when:** first time using recall with devskills, or after reinstalling recall.
