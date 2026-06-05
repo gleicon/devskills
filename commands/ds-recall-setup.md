@@ -7,7 +7,7 @@ Sets up [recall](https://github.com/gleicon/recall) for the current project and 
 Verify `recall` is on PATH:
 
 ```bash
-recall --version
+command -v recall
 ```
 
 If missing:
