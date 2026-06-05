@@ -296,7 +296,7 @@ Requires [recall](https://github.com/gleicon/recall). The idea: every session wi
 /ds-recall-setup
 ```
 
-This indexes the current project, seeds default framework recipes (Go, Next.js, Python, Rust, others), and wires a session-end reminder into Claude Code and OpenCode. Run once per project, re-run after major structural changes.
+This indexes the current project, seeds default framework recipes (Go, Next.js, Python, Rust, others), and installs recall's session integration into your AI assistant (via `recall install-skill`). Run once per project, re-run after major structural changes.
 
 ### Starting a session with recall context
 
