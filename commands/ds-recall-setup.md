@@ -26,47 +26,17 @@ Stop. Do not proceed.
 
 ## Process
 
-1. **Index project** — run `recall map` to build the project index.
+1. **Index project** — run `recall map` to build the project map.
 
 2. **Seed recipes** — run `recall recipes seed` to load default framework patterns (Go, Next.js, Python, Rust, and others). This is the cross-project knowledge base kickstart.
 
-3. **Configure Claude Code reminder** — detect if `~/.claude/settings.json` exists. Add a `Stop` hook that prints a reminder when Claude finishes a session:
+3. **Install recall's session integration** — delegate to recall's own installer; do not hand-write host config:
+   - `recall install-skill --target claude` — always.
+   - `recall install-skill --target opencode` — only if `~/.config/opencode/` exists.
+   - `recall install-skill --target cursor` — only if `~/.cursor/` exists.
+   - `recall install-skill --target codex` — only if `~/.codex/` exists.
 
-   ```json
-   {
-     "hooks": {
-       "Stop": [
-         {
-           "matcher": "",
-           "hooks": [
-             {
-               "type": "command",
-               "command": "echo 'recall: run /ds-recall-capture to store this session'"
-             }
-           ]
-         }
-       ]
-     }
-   }
-   ```
-
-   Merge into existing hooks if the file already has them — do not overwrite unrelated config. If `~/.claude/settings.json` does not exist, create it with this content only.
-
-4. **Configure OpenCode reminder** — write a JS plugin to `~/.config/opencode/plugins/recall-reminder.js` that fires on `session.idle`:
-
-   ```js
-   export const RecallReminderPlugin = async ({ $ }) => {
-     return {
-       "session.idle": async () => {
-         await $`echo "recall: run /ds-recall-capture to store this session"`
-       }
-     }
-   }
-   ```
-
-   Create `~/.config/opencode/plugins/` if it does not exist.
-
-5. **Confirm opt-in** — ask once whether to enable automatic capture (writes `.recall/.devskills-capture`). This is the same gate as `/ds-recall-capture`; skip if the file already exists.
+   `install-skill` installs recall's hook and merges the assistant's `settings.json`, backing it up first.
 
 ## Rules
 
