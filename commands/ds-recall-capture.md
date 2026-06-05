@@ -34,7 +34,6 @@ If missing, print install instructions (see `/ds-recall`) and stop.
 
 - Never capture the full session transcript — signal only.
 - If the session had no clear resolution (still in progress, inconclusive debug), report that and skip capture. Do not store partial or speculative outcomes.
-- If `.recall/.devskills-capture` is absent, treat as first invocation and ask.
 - Run this **before** `/clear` or session end, not after — the context is gone once cleared.
 
 ## Output
