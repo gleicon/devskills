@@ -12,16 +12,6 @@ command -v recall
 
 If missing, print install instructions (see `/ds-recall`) and stop.
 
-## Opt-in gate
-
-On the **first invocation**, ask once:
-
-```
-Store session outcomes to recall automatically from now on? (yes/no)
-```
-
-Write the answer to `.recall/.devskills-capture` (create the file if absent). Respect the stored preference on all subsequent runs — never ask again. If the file says no, report "capture disabled" and stop.
-
 ## Process
 
 1. Check binary.
