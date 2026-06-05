@@ -388,4 +388,4 @@ Indexed by *what you want to do*, not by kind — for the suffix taxonomy (`-mod
 | Turn a repeated manual flow into a command | `/ds-write-a-command` |
 | Inject cross-project context before asking | `/ds-recall` |
 | Store this session's outcome for future sessions | `/ds-recall-capture` |
-| Set up recall and wire session-end reminders | `/ds-recall-setup` |
+| Set up recall and install its session integration | `/ds-recall-setup` |
