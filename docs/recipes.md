@@ -286,6 +286,72 @@ Two failure modes on long tasks: the context window fills, and prose burns token
 
 ---
 
+## Context recycling with recall (experimental)
+
+Requires [recall](https://github.com/gleicon/recall). The idea: every session with an AI assistant burns tokens building context from scratch. recall indexes your project locally, accumulates cross-project recipes and insights, and routes questions through a local model before hitting the cloud API — so you reuse what you already paid for.
+
+### First-time setup
+
+```
+/ds-recall-setup
+```
+
+This indexes the current project, seeds default framework recipes (Go, Next.js, Python, Rust, others), and installs recall's session integration into your AI assistant (via `recall install-skill`). Run once per project, re-run after major structural changes.
+
+### Starting a session with recall context
+
+```
+/ds-recall
+```
+
+Always run this at the start of a session on a known project. recall maps the project (idempotent) and injects a context-rich brief — prior patterns, matched recipes, relevant cross-project knowledge. The main LLM receives a pre-enriched context and needs fewer tokens to orient itself.
+
+```
+/ds-recall query "how do I add middleware to this router?"
+```
+
+For a specific question, route it through recall first. If a local model can answer from the indexed recipes, you skip the cloud API entirely. If not, recall returns an enriched brief that reduces the token cost of the cloud call.
+
+```
+/ds-recall brain
+```
+
+Pull the accumulated cross-project knowledge base — patterns and recipes from everything recall has indexed across your projects. Useful when starting work in a new project that shares patterns with ones you've worked on before.
+
+### Capturing a session's outcome
+
+When you resolve something worth keeping — a bug class, a design decision, a framework-specific pattern — store it before clearing the context:
+
+```
+/ds-recall-capture
+```
+
+recall extracts signal only: **goal** (one line), **result** (one line), **insight** (one to three lines). No reasoning chain. No failed attempts. The compact recipe is stored in recall's local knowledge base and becomes available in future sessions across all your projects.
+
+Run this **before** `/clear` — the context is gone after.
+
+### A full session with recall
+
+```
+# session start — orient recall and inject context
+/ds-recall
+
+# ... work, debug, build ...
+
+# before ending
+/ds-recall-capture   # store the outcome
+/ds-project-checkpoint  # update the .project/ plan (if in use)
+/clear
+```
+
+### Token budget framing
+
+recall is a **staged composition**: local context → local model → cloud API. Each stage is only reached if the previous one can't answer. A session that would have cost 50k tokens without context can drop significantly when recall's brief eliminates the orientation pass and routes common questions locally.
+
+The savings are real only when recall has indexed relevant prior work. Seed it early, capture consistently.
+
+---
+
 ## Which command, when
 
 Indexed by *what you want to do*, not by kind — for the suffix taxonomy (`-mode` / `-review` / `-plan`), see [commands.md](commands.md#kinds-of-command).
@@ -320,3 +386,6 @@ Indexed by *what you want to do*, not by kind — for the suffix taxonomy (`-mod
 | Save tokens on a long session | `/ds-caveman-lite-mode` · `/ds-caveman-ultra-mode` |
 | Run the full pre-PR review pipeline with fixes between passes | `/ds-quality-gate-mode` |
 | Turn a repeated manual flow into a command | `/ds-write-a-command` |
+| Inject cross-project context before asking | `/ds-recall` |
+| Store this session's outcome for future sessions | `/ds-recall-capture` |
+| Set up recall and wire session-end reminders | `/ds-recall-setup` |

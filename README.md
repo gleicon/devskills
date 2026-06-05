@@ -78,7 +78,7 @@ Keep devskills up to date:
 
 ## Commands
 
-Every command is namespaced with a `ds-` prefix (short for devskills) so it never collides with a Claude Code or OpenCode built-in, and its **suffix tells you its kind**: `-mode` (persists for the session), `-review` (a findings-list audit), `-plan` (a graded, costed plan), or no suffix (a one-shot action). The tables below are grouped by kind; full taxonomy and per-command detail are in [docs/commands.md](docs/commands.md#kinds-of-command).
+Every command is namespaced with a `ds-` prefix (short for devskills) so it never collides with a Claude Code or OpenCode built-in, and its **suffix tells you its kind**: `-mode` (persists for the session), `-review` (a findings-list audit), `-plan` (a graded, costed plan), or no suffix (a one-shot action). Full taxonomy and per-command detail are in [docs/commands.md](docs/commands.md#kinds-of-command).
 
 ### Modes — persistent session behavior (`-mode`)
 
@@ -86,65 +86,99 @@ Every command is namespaced with a `ds-` prefix (short for devskills) so it neve
 |---------|-------------|
 | `/ds-tiger-style-mode` | TigerBeetle engineering constraints: safety, performance, experience |
 | `/ds-ui-mode` | UI mode: component/state discipline, design craft, a11y, Core Web Vitals |
-| `/ds-data-mode` | Data-engineering discipline as you build pipelines: idempotency, late/out-of-order data, schema drift, replay/backfill safety, data-quality assertions. Tool-agnostic |
-| `/ds-git-mode` | Senior-engineer commit discipline: commit each self-contained working unit, terse Conventional-Commit messages (no LLM bloat), branch-first, never rewrite history |
-| `/ds-step-mode` | User-driven, step-gated execution: smallest step → stop → free-form handback (never a forced picker) → repeat. Drive a plan with `/ds-step-mode current plan` |
+| `/ds-data-mode` | Data-engineering discipline: idempotency, late/out-of-order data, schema drift, replay/backfill safety, data-quality assertions |
+| `/ds-git-mode` | Senior-engineer commit discipline: self-contained units, terse Conventional-Commit messages, branch-first, never rewrite history |
+| `/ds-step-mode` | User-driven, step-gated execution — smallest step → stop → free-form handback → repeat |
 | `/ds-tdd-mode` | Test-first, one vertical slice at a time |
-| `/ds-test-mode` | Pragmatic testing mode — test by risk, not coverage |
-| `/ds-quality-gate-mode` | Seven-pass review pipeline, deslop-bookended (deslop → test → security → bug → data → quality → docs → deslop), implement fixes between passes, toggleable mode |
+| `/ds-test-mode` | Pragmatic testing — test by risk, not coverage |
+| `/ds-quality-gate-mode` | Seven-pass review pipeline (deslop → test → security → bug → data → quality → docs → deslop), fixes between passes |
 | `/ds-caveman-lite-mode` | Compressed response mode (~25–35% token reduction) |
 | `/ds-caveman-ultra-mode` | Compressed response mode (~75–85% token reduction) |
 
 ### Reviews — findings-list audits (`-review`)
+
+Every `-review` reports by default and changes nothing; pass `--fix` to apply the **mechanical, unambiguous** findings in place.
+
+**General**
 
 | Command | Description |
 |---------|-------------|
 | `/ds-bug-review` | Language-agnostic correctness audit — hunts real bugs |
 | `/ds-security-review` | Language-agnostic security audit — each finding names the attack |
 | `/ds-osv` | Scan dependency manifests for known CVEs via OSV Scanner; `--fix` bumps direct deps |
-| `/ds-data-review` | Store-agnostic data audit — schema/integrity, query-result correctness, transactions, migration safety. Each finding names the path to wrong/lost data (`--pipelines` also audits ETL/pipeline code) |
+| `/ds-data-review` | Store-agnostic data audit — schema/integrity, query correctness, transactions, migration safety (`--pipelines` for ETL) |
 | `/ds-code-quality-review` | Strict maintainability audit: abstraction, sprawl, spaghetti |
-| `/ds-doc-quality-review` | Strict docs audit: accuracy, dead links, bloat (`--comments` audits code comments) |
+| `/ds-doc-quality-review` | Strict docs audit: accuracy, dead links, bloat (`--comments` for code comments) |
 | `/ds-test-quality-review` | Strict test audit: is critical code well tested? |
 | `/ds-ui-quality-review` | Strict UI audit: async-state/fetch correctness, a11y, Core Web Vitals, design craft |
-| `/ds-comment-review` | Bring comments to discipline — WHY-not-WHAT, one-liner default, strip restate/obvious/cruft, keep the rare important long one. Reports by default, `--fix` to apply |
-| `/ds-go-review` | Go: idiomatic + security + Tiger Style (`--no-tiger` to skip style) |
-| `/ds-ts-review` | TypeScript/Workers: strict mode, React, Cloudflare (`--no-tiger` to skip style) |
-| `/ds-rust-review` | Rust: geiger/unsafe, clippy, audit, Tiger Style (`--no-tiger` to skip style) |
-| `/ds-python-review` | Python: idioms, typing, security, Tiger Style (`--no-tiger` to skip style) |
-| `/ds-java-review` | Java: idioms, records/sealed types, security, Tiger Style (`--no-tiger` to skip style) |
-| `/ds-zig-review` | Zig: explicit allocators, errors-as-values, safety, Tiger Style (`--no-tiger` to skip style) |
-| `/ds-notebook-review` | Jupyter notebooks: execution/hidden-state, committed outputs & secrets, reproducibility, data-science correctness (leakage, chained assignment). Delegates cell-code review to `/ds-python-review` |
+| `/ds-comment-review` | WHY-not-WHAT comment discipline — strip restate/obvious/cruft, keep the rare important one |
 
-Every `-review` reports by default and changes nothing; pass `--fix` to apply the **mechanical, unambiguous** findings in place (correctness and security fixes, and anything resting on judgment, stay reported either way).
+**Language**
+
+| Command | Description |
+|---------|-------------|
+| `/ds-go-review` | Go: idiomatic + security + Tiger Style (`--no-tiger` to skip style) |
+| `/ds-ts-review` | TypeScript/Workers: strict mode, React, Cloudflare |
+| `/ds-rust-review` | Rust: geiger/unsafe, clippy, audit, Tiger Style |
+| `/ds-python-review` | Python: idioms, typing, security, Tiger Style |
+| `/ds-java-review` | Java: idioms, records/sealed types, security, Tiger Style |
+| `/ds-zig-review` | Zig: explicit allocators, errors-as-values, safety, Tiger Style |
+| `/ds-notebook-review` | Jupyter: execution/hidden-state, committed outputs, reproducibility, data-science correctness |
 
 ### Plans — graded, sequenced moves (`-plan`)
 
 | Command | Description |
 |---------|-------------|
-| `/ds-perf-plan` | Language-agnostic optimization plan — moves tagged by architectural cost (L1/L2/L3), each with a cost model (`--max-level` to clamp, `--no-tiger` to skip style) |
-| `/ds-architecture-plan` | Module/dependency/boundary analysis of an existing codebase → sequenced refactoring plan. Levels L1/L2/L3, `--max-level` to clamp |
+| `/ds-perf-plan` | Optimization plan — moves tagged by architectural cost (L1/L2/L3), each with a cost model |
+| `/ds-architecture-plan` | Module/dependency/boundary analysis → sequenced refactoring plan (L1/L2/L3) |
 
-### Actions — one-shot, produce a result and return
+### Workflow & design
 
 | Command | Description |
 |---------|-------------|
 | `/ds-spec` | Convert a description into a structured specification |
-| `/ds-roadmap` | Ordered `## Roadmap` task list from a goal/spec/findings (`.project/PLAN.md`, or `PLAN.md` without `.project/`) |
+| `/ds-roadmap` | Ordered `## Roadmap` task list from a goal, spec, or findings |
 | `/ds-explore` | Lay out candidate approaches with trade-offs (`--web` for research) |
-| `/ds-blueprint` | Design a target architecture for a new system — modules, dependency rules, seams, build order. Decisive counterpart to `ds-explore` |
+| `/ds-blueprint` | Design a target architecture — modules, dependency rules, seams, build order |
 | `/ds-grill-me` | Relentless plan interview (`--record` logs to DECISIONS.md) |
-| `/ds-workflow` | Standalone phase-map orchestrator — orient, then route each phase to its command (uses `.project/` state when present, never requires it) |
+| `/ds-workflow` | Phase-map orchestrator — orient, then route each phase to its command |
+
+### Project memory (`.project/`)
+
+Minimal file-backed memory — keep state across `/clear` and session ends. Not required; opt-in.
+
+| Command | Description |
+|---------|-------------|
 | `/ds-project-map` | Scan the repo into `.project/PROJECT.md` |
-| `/ds-project-checkpoint` | Persist state to `.project/PLAN.md` (`--handoff` for a full handoff) |
+| `/ds-project-checkpoint` | Persist state to `.project/PLAN.md` (`--handoff` for a full handoff doc) |
 | `/ds-project-resume` | Restore context from `.project/PLAN.md` |
-| `/ds-deslop` | Strip AI-generated slop from the branch diff |
+
+### Debug & verification
+
+| Command | Description |
+|---------|-------------|
 | `/ds-debug` | Root-cause a failure with the scientific method |
 | `/ds-verify-this` | Prove a falsifiable claim with local before/after evidence |
 | `/ds-zoom-out` | Step up a layer — map modules, callers, boundaries |
+
+### Utilities
+
+| Command | Description |
+|---------|-------------|
+| `/ds-deslop` | Strip AI-generated slop from the branch diff |
 | `/ds-handoff` | Compact the conversation into a handoff doc |
 | `/ds-tldt` | Extractive summary of context or a file — no LLM cost |
 | `/ds-write-a-command` | Author a new devskills command in repo conventions |
+
+### Context recycling (experimental — requires [recall](https://github.com/gleicon/recall))
+
+Local-first context engine: indexes your project, accumulates cross-project recipes and insights, and routes questions to a local model before hitting the cloud API. Goal: reuse what you already paid for.
+
+| Command | Description |
+|---------|-------------|
+| `/ds-recall` | Index project + inject a context-rich brief into the session; `query "<q>"` routes locally; `brain` pulls cross-project patterns |
+| `/ds-recall-capture` | Compact this session's outcome (goal + result + insight) and store it in recall's knowledge base |
+| `/ds-recall-setup` | Index project, seed recipes, and install recall's session integration via `recall install-skill` (claude; opencode/cursor/codex when present) |
 
 ## Build your own workflow
 
@@ -217,6 +251,7 @@ devskills ships its own prompt commands based on these upstream sources.
 | [mattpocock/skills](https://github.com/mattpocock/skills) | `/ds-grill-me`, `/ds-handoff`, `/ds-zoom-out`, `/ds-tdd-mode`, `/ds-write-a-command` |
 | [cursor/plugins — cursor-team-kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit/skills) | `/ds-code-quality-review`, `/ds-deslop`, `/ds-verify-this` |
 | [Andrej Karpathy](https://x.com/karpathy/status/2015883857489522876) · [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) | AGENTS.md baseline (`base` block) |
+| [recall](https://github.com/gleicon/recall) | `/ds-recall`, `/ds-recall-capture`, `/ds-recall-setup` |
 
 ## License
 

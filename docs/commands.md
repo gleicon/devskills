@@ -340,3 +340,38 @@ Compress the agent's prose to save tokens. **Lite** drops articles/filler/hedgin
 Author a new devskills command in the repo's conventions, written to `commands/` (install.sh copies it to Claude Code, OpenCode, and Codex), registered in the README table and `docs/commands.md`. Knows both archetypes (action vs. mode) and enforces the one-job-per-command rule.
 
 - **Reach for it when:** a workflow you repeat by hand should become a command.
+
+---
+
+## Context recycling (experimental)
+
+Requires [recall](https://github.com/gleicon/recall) — a local-first context engine. Indexes your projects, accumulates cross-project recipes and insights, and routes questions to a local model before hitting the cloud API. The goal: reuse what you already paid for.
+
+All three commands check for the `recall` binary on invocation. If it's missing, they print install instructions and stop — they never emulate recall's behavior.
+
+### `/ds-recall` — action
+
+Inject context from recall into the current session.
+
+- **Args:**
+  - No args — run `recall map` (always, it's idempotent) then `recall brief`, inject the result.
+  - `query "<question>"` — route through `recall query`: local model first, enriched brief if no local answer.
+  - `brain` — pull cross-project patterns and accumulated recipes via `recall brain`.
+- **Output:** brief injected into context, with a count of matched recipes and prior patterns. If nothing matches, says so — never fabricates context.
+- **Reach for it when:** starting a session in a project recall knows about, or before asking a question you suspect has been solved before.
+
+### `/ds-recall-capture` — action
+
+Store this session's outcome into recall's knowledge base.
+
+- **Process:** extracts signal with `/ds-tldt` (goal + result + insight — no reasoning chain, no failed attempts), then calls `recall run record` and `recall learn`. No opt-in gate — running the command is consent.
+- **Rules:** skips capture if the session is still in progress or inconclusive. Run before `/clear` — the context is gone after.
+- **Reach for it when:** you just resolved something worth keeping — a bug class, a design decision, a framework pattern — and want it available in future sessions across all your projects.
+
+### `/ds-recall-setup` — action
+
+Initialize recall and wire up session-end reminders for Claude Code and OpenCode.
+
+- **Process:** runs `recall map` + `recall recipes seed`, then delegates host wiring to `recall install-skill --target <assistant>` (claude always; opencode/cursor/codex when their config dir exists). recall owns its own hook and backs up `settings.json`.
+- **Output:** confirms each step: index, seed, and recall integration install.
+- **Reach for it when:** first time using recall with devskills, or after reinstalling recall.
