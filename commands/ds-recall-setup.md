@@ -40,10 +40,9 @@ Stop. Do not proceed.
 
 ## Rules
 
-- Do not overwrite unrelated content in `settings.json` — merge the hook, don't replace.
-- Do not install the OpenCode plugin if `~/.config/opencode/` does not exist (OpenCode not installed).
-- The hooks are **reminders only** — they print a message, nothing more. Actual capture requires the user to run `/ds-recall-capture` explicitly.
-- Setup is idempotent: re-running refreshes the index and seeds, but does not duplicate hooks.
+- Let recall own host config — never hand-edit `settings.json` or write plugins; `recall install-skill` does this and backs up `settings.json` first.
+- Only run a `--target` whose assistant config dir exists (`~/.claude`, `~/.config/opencode`, `~/.cursor`, `~/.codex`).
+- Setup is idempotent: re-running refreshes the index and seeds, and `install-skill` is safe to re-run.
 
 ## Output
 
