@@ -44,9 +44,3 @@ recall: stored
   result:  <result line>
   insight: <insight>
 ```
-
-Or, if capture is disabled:
-
-```
-recall: capture disabled — run /ds-recall-capture --enable to turn it on
-```
