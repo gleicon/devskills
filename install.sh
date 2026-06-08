@@ -141,15 +141,20 @@ RENAMED_COMMANDS=(
   ds-project-plan.md ds-modes.md ds-review.md
 )
 
+# $1 dir  $2 extension (default .md) — the file extension this target ships.
+# RENAMED_COMMANDS lists .md names; the Gemini target ships .toml, so it passes
+# .toml and the stale name is matched with its extension swapped. One source
+# list serves every target.
 purge_renamed_commands() {
-  local dir="$1" name
+  local dir="$1" ext="${2:-.md}" name file
   for name in "${RENAMED_COMMANDS[@]}"; do
-    [ -f "${dir}/${name}" ] || continue
+    file="${name%.md}${ext}"
+    [ -f "${dir}/${file}" ] || continue
     if [ "$DRY_RUN" -eq 1 ]; then
-      log "[dry] would remove renamed command ${dir}/${name}"
+      log "[dry] would remove renamed command ${dir}/${file}"
     else
-      rm -f "${dir}/${name}"
-      log "removed renamed command ${dir}/${name}"
+      rm -f "${dir}/${file}"
+      log "removed renamed command ${dir}/${file}"
     fi
   done
 }
@@ -224,6 +229,7 @@ install_gemini() {
   if command -v gemini &>/dev/null || [ -d "${GEMINI_DIR}" ]; then
     log "Installing Gemini CLI commands to ${GEMINI_COMMANDS_DIR}"
     devskills_install_gemini "${GEMINI_COMMANDS_DIR}"
+    purge_renamed_commands "${GEMINI_COMMANDS_DIR}" .toml
   else
     warn "Gemini CLI not detected. Skipping. Install from https://github.com/google-gemini/gemini-cli"
   fi
