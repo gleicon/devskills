@@ -211,6 +211,7 @@ devskills_uninstall() {
   local dir="$1" dry="$2"
   _dsk_remove_blocks "${dir}/AGENTS.md" "$dry" "AGENTS.md" base concise tooling phases language
   _dsk_remove_blocks "${dir}/CLAUDE.md" "$dry" "CLAUDE.md" import
+  _dsk_remove_blocks "${dir}/GEMINI.md" "$dry" "GEMINI.md" import
 
   # Legacy cleanup: older devskills versions recorded the profile in
   # .devskills/language. The profile now lives in AGENTS.md, but sweep up any
