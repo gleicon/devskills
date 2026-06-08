@@ -26,6 +26,10 @@ source "${DEVSKILLS_DIR}/scripts/lib/editors.sh"
 # ------------------------------------------------------------
 
 LANG_PROFILE=""
+SKIP_CLAUDE=0
+SKIP_OPENCODE=0
+SKIP_CODEX=0
+SKIP_GEMINI=0
 SKIP_EXTERNAL=0
 SKIP_CURSOR=0
 SKIP_VSCODE=0
@@ -37,6 +41,10 @@ for arg in "$@"; do
   case "$arg" in
     --lang=*) LANG_PROFILE="${arg#--lang=}" ;;
     --claude-dir=*) CLAUDE_CONFIG_DIR="${arg#--claude-dir=}" ;;
+    --skip-claude) SKIP_CLAUDE=1 ;;
+    --skip-opencode) SKIP_OPENCODE=1 ;;
+    --skip-codex) SKIP_CODEX=1 ;;
+    --skip-gemini) SKIP_GEMINI=1 ;;
     --skip-external) SKIP_EXTERNAL=1 ;;
     --skip-cursor) SKIP_CURSOR=1 ;;
     --skip-vscode) SKIP_VSCODE=1 ;;
@@ -44,10 +52,15 @@ for arg in "$@"; do
     --phases) PHASES=1 ;;
     --dry-run) DRY_RUN=1 ;;
     --help|-h)
-      echo "Usage: install.sh [--lang=go|typescript|javascript|rust|python|java|zig] [--claude-dir=PATH] [--skip-external] [--skip-cursor] [--skip-vscode] [--concise] [--phases] [--dry-run]"
+      echo "Usage: install.sh [--lang=go|typescript|javascript|rust|python|java|zig] [--claude-dir=PATH] [--skip-claude] [--skip-opencode] [--skip-codex] [--skip-gemini] [--skip-external] [--skip-cursor] [--skip-vscode] [--concise] [--phases] [--dry-run]"
       echo ""
       echo "  --lang=<profile>    Language profile to write: go|typescript|javascript|rust|python|java|zig"
       echo "  --claude-dir=PATH   Claude config dir (default: \$CLAUDE_CONFIG_DIR or \$HOME/.claude)"
+      echo "  Command targets install globally into each detected tool; skip any with:"
+      echo "  --skip-claude       Skip Claude Code commands (~/.claude/commands)"
+      echo "  --skip-opencode     Skip OpenCode commands (~/.opencode/commands)"
+      echo "  --skip-codex        Skip Codex prompts (~/.codex/prompts)"
+      echo "  --skip-gemini       Skip Gemini CLI commands (~/.gemini/commands, converted to TOML)"
       echo "  --skip-external     Skip external tool installation (tldt)"
       echo "  --skip-cursor       Skip Cursor rules install into the current project"
       echo "  --skip-vscode       Skip VSCode Copilot instructions install into the current project"
@@ -281,10 +294,10 @@ install_vscode() {
 log "devskills installer"
 log "source: ${DEVSKILLS_DIR}"
 
-install_claude
-install_opencode
-install_codex
-install_gemini
+if [ "$SKIP_CLAUDE" -eq 0 ]; then install_claude; else log "Skipping Claude Code commands (--skip-claude)"; fi
+if [ "$SKIP_OPENCODE" -eq 0 ]; then install_opencode; else log "Skipping OpenCode commands (--skip-opencode)"; fi
+if [ "$SKIP_CODEX" -eq 0 ]; then install_codex; else log "Skipping Codex prompts (--skip-codex)"; fi
+if [ "$SKIP_GEMINI" -eq 0 ]; then install_gemini; else log "Skipping Gemini CLI commands (--skip-gemini)"; fi
 
 if [ "$SKIP_CURSOR" -eq 0 ]; then
   install_cursor
