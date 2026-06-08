@@ -318,7 +318,7 @@ fi
 log ""
 log "Done. Verify with:"
 log "  claude /ds-tiger-style-mode   — in Claude Code"
-log "  /ds-tiger-style-mode          — in Cursor or OpenCode"
+log "  /ds-tiger-style-mode          — in Cursor, OpenCode, or Gemini CLI"
 log "  /prompts:ds-tiger-style-mode  — in Codex"
 log "  osv-scanner --version         — supply-chain vulnerability scanner"
 log "  tldt --version                — text summarizer"
