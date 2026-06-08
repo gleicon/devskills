@@ -1,4 +1,4 @@
-# editors.sh — shared editor-rule installer for devskills (Cursor + VSCode).
+# editors.sh — shared tool-install mechanics for devskills.
 #
 # Sourced by install.sh and scripts/setup.sh. Each script keeps its own
 # decision of *whether* to install (install.sh auto-detects and is opt-out via
@@ -8,6 +8,10 @@
 # Cursor rules are curated, not dumped: always tiger-style and context, plus the
 # single rule matching the language profile (javascript reuses the typescript
 # rule). A project's .cursor/rules/ stays scoped to what it actually uses.
+#
+# Gemini CLI commands are TOML, not raw markdown, so unlike the Claude/OpenCode/
+# Codex command installs (plain copies) they need a conversion step — hence the
+# logic lives here, where gemini.test.sh can source and exercise it directly.
 #
 # Contract: DEVSKILLS_DIR points at the devskills source root. DRY_RUN (0|1)
 # is honored; defaults to 0.
@@ -69,4 +73,40 @@ devskills_install_vscode() {
     { printf '\n## Language-Specific Notes\n\n'; cat "$note"; } >> "$dst"
   fi
   _dske_log "wrote ${dst}$( [ "$has_note" -eq 1 ] && printf ' (+ %s notes)' "$lang" )"
+}
+
+# Convert every commands/*.md into a Gemini CLI custom-command .toml in <dir>.
+# Gemini commands are TOML keyed on `prompt` (not raw markdown): the whole
+# command body becomes a multi-line literal prompt, and line 1 doubles as the
+# /help description. The body uses a '''…''' literal — no escaping, since no
+# command body contains ''' — while the description is a basic "…" string, so
+# its backslashes and double-quotes are escaped. Filenames map straight across
+# (ds-explore.md -> ds-explore.toml -> /ds-explore). Honors DRY_RUN.
+#   $1 target commands dir
+devskills_install_gemini() {
+  local dir="$1"
+  local src="${DEVSKILLS_DIR}/commands"
+  local q="'''"
+  local f base name desc
+  for f in "${src}"/*.md; do
+    base="$(basename "$f")"
+    name="${base%.md}"
+    local dst="${dir}/${name}.toml"
+    if [ "${DRY_RUN:-0}" -eq 1 ]; then
+      _dske_log "[dry] would write ${dst}"
+      continue
+    fi
+    mkdir -p "$dir"
+    desc="$(head -n1 "$f" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g')"
+    {
+      printf 'description = "%s"\n' "$desc"
+      printf 'prompt = %s\n' "$q"
+      cat "$f"
+      # A literal needs the closing ''' on its own line; add a newline only if
+      # the body doesn't already end with one.
+      [ -z "$(tail -c1 "$f")" ] || printf '\n'
+      printf '%s\n' "$q"
+    } > "$dst"
+    _dske_log "wrote ${dst}"
+  done
 }
