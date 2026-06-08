@@ -103,6 +103,22 @@ test_description_escaping() {
   rm -rf "$fix" "$out"
 }
 
+# The TOML body is a ''' literal with no escaping, which is only safe while no
+# command contains that delimiter (a Python '''docstring''' or a TOML example
+# would break it — Gemini then silently refuses to load the file). This is the
+# author-time guard: it fails CI the moment a command introduces ''', long
+# before any user hits the silent load failure.
+test_no_triple_quote_in_commands() {
+  echo "test: no command body contains the ''' TOML delimiter"
+  local offenders; offenders="$(grep -lF "'''" "${REPO}/commands"/*.md 2>/dev/null || true)"
+  if [ -z "$offenders" ]; then
+    pass "no commands/*.md contains '''"
+  else
+    fail "commands contain ''' (breaks the Gemini TOML literal):"
+    printf '       %s\n' $offenders
+  fi
+}
+
 test_purges_stale_toml() {
   echo "test: a real install purges a stale renamed .toml from the Gemini dir"
   local home; home="$(workspace)"
@@ -127,6 +143,7 @@ test_purges_stale_toml() {
 
 echo "editors.sh Gemini conversion tests"
 echo
+test_no_triple_quote_in_commands
 test_converts_every_command
 test_description_matches_first_line
 test_description_escaping

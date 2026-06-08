@@ -14,6 +14,8 @@ A command is a single Markdown file — no YAML frontmatter. Structure:
 
 No companion files. If a command needs more than one file, it is doing too much — split it into separate commands.
 
+Never put three single-quote characters in a row in a command body. The Gemini CLI install converts each command into a TOML literal delimited by that exact sequence, with no escaping — so a Python docstring or a TOML example using it breaks the file and Gemini silently refuses to load it. A repo test (`test/gemini.test.sh`) enforces this.
+
 ## Process
 
 1. Gather the requirement: what task the command automates, and when the user would invoke it.

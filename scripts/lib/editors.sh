@@ -20,6 +20,7 @@
 DEVSKILLS_EDITORS_LIB=1
 
 _dske_log() { printf '[devskills] %s\n' "$1"; }
+_dske_warn() { printf '[devskills] WARN: %s\n' "$1" >&2; }
 
 # Copy one file into place, creating its parent dir. Honors DRY_RUN.
 #   $1 src  $2 dst
@@ -82,6 +83,12 @@ devskills_install_vscode() {
 # command body contains ''' — while the description is a basic "…" string, so
 # its backslashes and double-quotes are escaped. Filenames map straight across
 # (ds-explore.md -> ds-explore.toml -> /ds-explore). Honors DRY_RUN.
+#
+# The no-escaping body literal is safe only while no command contains the '''
+# delimiter; gemini.test.sh asserts that across commands/, and ds-write-a-command
+# forbids it. This loop is the last line of defense for an out-of-tree command
+# (a fork or branch CI never gated): a body with ''' would emit broken TOML that
+# Gemini silently refuses to load, so warn and skip it rather than ship garbage.
 #   $1 target commands dir
 devskills_install_gemini() {
   local dir="$1"
@@ -92,6 +99,10 @@ devskills_install_gemini() {
     base="$(basename "$f")"
     name="${base%.md}"
     local dst="${dir}/${name}.toml"
+    if grep -qF "$q" "$f"; then
+      _dske_warn "skipping ${base}: contains ''' (breaks the Gemini TOML literal)"
+      continue
+    fi
     if [ "${DRY_RUN:-0}" -eq 1 ]; then
       _dske_log "[dry] would write ${dst}"
       continue
