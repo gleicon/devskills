@@ -1,6 +1,6 @@
 # Command Reference
 
-Every devskills command is a single prompt file invoked as `/<name>` in Claude Code, OpenCode, or Cursor (and as `/prompts:<name>` in OpenAI Codex). This is the reference: what each one does, its arguments, and when to reach for it. For worked, multi-step workflows see [recipes.md](recipes.md).
+Every devskills command is a single prompt file invoked as `/<name>` in Claude Code, OpenCode, Cursor, or Gemini CLI (and as `/prompts:<name>` in OpenAI Codex). For Gemini CLI the command is converted to TOML at install time; its name and arguments are unchanged. This is the reference: what each one does, its arguments, and when to reach for it. For worked, multi-step workflows see [recipes.md](recipes.md).
 
 ## Kinds of command
 
@@ -337,7 +337,7 @@ Compress the agent's prose to save tokens. **Lite** drops articles/filler/hedgin
 
 ### `/ds-write-a-command` — action
 
-Author a new devskills command in the repo's conventions, written to `commands/` (install.sh copies it to Claude Code, OpenCode, and Codex), registered in the README table and `docs/commands.md`. Knows both archetypes (action vs. mode) and enforces the one-job-per-command rule.
+Author a new devskills command in the repo's conventions, written to `commands/` (install.sh installs it to Claude Code, OpenCode, and Codex, and converts it to TOML for Gemini CLI), registered in the README table and `docs/commands.md`. Knows both archetypes (action vs. mode) and enforces the one-job-per-command rule.
 
 - **Reach for it when:** a workflow you repeat by hand should become a command.
 

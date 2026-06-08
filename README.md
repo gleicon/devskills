@@ -1,6 +1,6 @@
 # devskills
 
-Installable **command** pack for Claude Code, OpenCode, OpenAI Codex, Cursor, and VSCode Copilot. Opinionated defaults, composable language profiles, a full dev workflow from specification to shipped product.
+Installable **command** pack for Claude Code, OpenCode, OpenAI Codex, Gemini CLI, Cursor, and VSCode Copilot. Opinionated defaults, composable language profiles, a full dev workflow from specification to shipped product.
 
 Despite the name, this is **not** a Skills repo — it ships **commands**, not skills. A Claude Code *Skill* is invoked by the model whenever it decides one applies; a devskills **command** is a slash command *you* invoke, when you choose. That difference is the point: the tools stay under your control. devskills doesn't hand the model more autonomy — it sharpens *your* developer skills with tools you drive directly, and you keep total control over when each one runs.
 
@@ -13,9 +13,11 @@ git clone https://github.com/gleicon/devskills.git ~/.devskills
 ~/.devskills/install.sh
 ```
 
-Commands copy to `~/.claude/commands/`, `~/.opencode/commands/`, and `~/.codex/prompts/` (each installed only when that tool is detected). External tools (osv-scanner, tldt) install automatically when their prerequisites are present (Homebrew or Go).
+Commands copy to `~/.claude/commands/`, `~/.opencode/commands/`, and `~/.codex/prompts/`, and convert to TOML for Gemini CLI in `~/.gemini/commands/` (each installed only when that tool is detected). External tools (osv-scanner, tldt) install automatically when their prerequisites are present (Homebrew or Go).
 
 In Codex, devskills commands are invoked under the `prompts:` namespace — `/ds-debug` becomes `/prompts:ds-debug`. Codex reads a project's `AGENTS.md` natively, so `setup.sh` covers its persistent surface with no extra step.
+
+In Gemini CLI, commands keep their flat name — `/ds-debug` stays `/ds-debug`. Gemini's custom commands are TOML rather than Markdown, so devskills converts each command at install time (the command body becomes the TOML `prompt`). Gemini reads `GEMINI.md`, so `setup.sh --lang` points it at the shared `AGENTS.md` via a `@AGENTS.md` import — no duplicated profile content.
 
 Skip external tools:
 
@@ -59,6 +61,10 @@ Keep devskills up to date:
 ```
 --lang=<profile>     go | typescript | javascript | rust | python | java | zig
 --claude-dir=<path>  Claude config dir (default: $CLAUDE_CONFIG_DIR or ~/.claude)
+--skip-claude        skip Claude Code commands
+--skip-opencode      skip OpenCode commands
+--skip-codex         skip Codex prompts
+--skip-gemini        skip Gemini CLI commands
 --skip-external      skip tldt installation
 --skip-cursor        skip Cursor rules
 --skip-vscode        skip VSCode Copilot instructions
@@ -191,7 +197,7 @@ devskills ships no fixed pipeline. Each command does one job and hands control b
 
 ## Repository Setup
 
-`setup.sh` builds your project's `AGENTS.md` from stacked, independently-managed blocks, and points `CLAUDE.md` at it with a single `@AGENTS.md` import — so Claude Code (which reads `CLAUDE.md`) and OpenCode and OpenAI Codex (which read `AGENTS.md` directly) share the same content with no duplication.
+`setup.sh` builds your project's `AGENTS.md` from stacked, independently-managed blocks, and points `CLAUDE.md` and `GEMINI.md` at it with a single `@AGENTS.md` import — so Claude Code (which reads `CLAUDE.md`), Gemini CLI (which reads `GEMINI.md`), and OpenCode and OpenAI Codex (which read `AGENTS.md` directly) share the same content with no duplication.
 
 | Block | Flag | Contents |
 |-------|------|----------|
@@ -203,7 +209,7 @@ Running `setup.sh` with no flags writes just the baseline. Each block lives betw
 
 `update.sh` refreshes the globally-installed commands, but not a project's `AGENTS.md` — the managed blocks are a point-in-time snapshot. To pull baseline changes into a project after an update, re-run `setup.sh` there (idempotent, so it just refreshes the blocks in place).
 
-The baseline blocks target `AGENTS.md` (Claude Code, OpenCode, and OpenAI Codex). Cursor and VSCode Copilot have their own rule mechanisms — `--cursor` installs `.cursor/rules/*.mdc` and `--vscode` writes `copilot-instructions.md`. Both honor `--lang`: they carry Tiger Style plus the notes for the selected language only (no `--lang` writes Tiger Style alone), but not the `base`/`concise` blocks.
+The baseline blocks target `AGENTS.md` (OpenCode and OpenAI Codex read it directly; Claude Code and Gemini CLI reach it through the `@AGENTS.md` import in `CLAUDE.md`/`GEMINI.md`). Cursor and VSCode Copilot have their own rule mechanisms — `--cursor` installs `.cursor/rules/*.mdc` and `--vscode` writes `copilot-instructions.md`. Both honor `--lang`: they carry Tiger Style plus the notes for the selected language only (no `--lang` writes Tiger Style alone), but not the `base`/`concise` blocks.
 
 To back out, `setup.sh --uninstall` strips the devskills blocks (and removes a file that held *only* devskills content), leaving your own content untouched — a clean install→uninstall round-trip restores the originals exactly.
 
@@ -223,7 +229,7 @@ Each profile encodes idioms, toolchain defaults, and review constraints for its 
 
 ## Scripts
 
-`install.sh` — one-time global install. Copies commands to Claude Code and OpenCode config dirs. Installs external tools. Run from anywhere.
+`install.sh` — one-time global install. Copies commands to the Claude Code, OpenCode, and Codex config dirs and converts them to TOML for Gemini CLI. Installs external tools. Run from anywhere.
 
 `scripts/setup.sh` — per-project configurator. Builds `AGENTS.md` (engineering baseline + optional language/concise blocks) and points `CLAUDE.md` at it via `@AGENTS.md`, optionally installs Cursor rules and VSCode Copilot instructions into the current directory. Run from inside a project. See [Repository Setup](#repository-setup).
 

@@ -9,7 +9,7 @@ usage() {
 Usage: setup.sh [--lang=<profile>] [options]
 
 Writes the devskills baseline (universal engineering principles) to AGENTS.md
-and points CLAUDE.md at it. --lang stacks a language profile on top.
+and points CLAUDE.md and GEMINI.md at it. --lang stacks a language profile on top.
 
 Profiles (optional):
   go                Go 1.22+ backend service
@@ -25,7 +25,7 @@ Options:
   --phases          Add phase-aware Insight suggestions to AGENTS.md
   --cursor          Install Cursor rules into current project
   --vscode          Install VSCode Copilot instructions into current project
-  --uninstall       Remove devskills blocks from AGENTS.md/CLAUDE.md and the marker
+  --uninstall       Remove devskills blocks from AGENTS.md/CLAUDE.md/GEMINI.md and the marker
   --dry-run         Show what would happen without writing files
 
 Example:
@@ -77,7 +77,7 @@ if [ -n "$LANG_PROFILE" ] && [ ! -f "${DEVSKILLS_DIR}/prompts/language/${LANG_PR
   exit 1
 fi
 
-# AGENTS.md baseline (+ optional layers); CLAUDE.md imports it via @AGENTS.md.
+# AGENTS.md baseline (+ optional layers); CLAUDE.md and GEMINI.md import it via @AGENTS.md.
 echo "devskills baseline${LANG_PROFILE:+ + ${LANG_PROFILE} profile}"
 devskills_apply "${DEVSKILLS_DIR}/prompts" "$PWD" "$DRY_RUN" "$LANG_PROFILE" "$DO_CONCISE" "$DO_PHASES"
 
@@ -94,5 +94,5 @@ if [ "$DO_VSCODE" -eq 1 ]; then
 fi
 
 echo ""
-echo "Done. AGENTS.md baseline${LANG_PROFILE:+ + ${LANG_PROFILE} profile} written; CLAUDE.md imports it."
+echo "Done. AGENTS.md baseline${LANG_PROFILE:+ + ${LANG_PROFILE} profile} written; CLAUDE.md and GEMINI.md import it."
 echo "Activate in Claude Code: /ds-tiger-style-mode"
