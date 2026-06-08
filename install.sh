@@ -7,6 +7,10 @@ OPENCODE_COMMANDS_DIR="${HOME}/.opencode/commands"
 # Codex honors CODEX_HOME (default ~/.codex); custom prompts live in prompts/.
 CODEX_HOME_DIR="${CODEX_HOME:-${HOME}/.codex}"
 CODEX_COMMANDS_DIR="${CODEX_HOME_DIR}/prompts"
+# Gemini CLI reads custom commands from ~/.gemini/commands as TOML (converted
+# from commands/*.md at install time — see devskills_install_gemini).
+GEMINI_DIR="${HOME}/.gemini"
+GEMINI_COMMANDS_DIR="${GEMINI_DIR}/commands"
 
 log() { printf '[devskills] %s\n' "$1"; }
 warn() { printf '[devskills] WARN: %s\n' "$1" >&2; }
@@ -209,6 +213,23 @@ install_codex() {
 }
 
 # ------------------------------------------------------------
+# Gemini CLI commands
+# ------------------------------------------------------------
+
+# Gemini commands are TOML, not markdown, so this target converts rather than
+# copies (devskills_install_gemini in editors.sh). Like Claude/OpenCode/Codex
+# it is a global install with no opt-out; detection gates it. The conversion
+# writes nothing under --dry-run and creates the dir per-file on real runs.
+install_gemini() {
+  if command -v gemini &>/dev/null || [ -d "${GEMINI_DIR}" ]; then
+    log "Installing Gemini CLI commands to ${GEMINI_COMMANDS_DIR}"
+    devskills_install_gemini "${GEMINI_COMMANDS_DIR}"
+  else
+    warn "Gemini CLI not detected. Skipping. Install from https://github.com/google-gemini/gemini-cli"
+  fi
+}
+
+# ------------------------------------------------------------
 # Language profile
 # ------------------------------------------------------------
 
@@ -257,6 +278,7 @@ log "source: ${DEVSKILLS_DIR}"
 install_claude
 install_opencode
 install_codex
+install_gemini
 
 if [ "$SKIP_CURSOR" -eq 0 ]; then
   install_cursor
