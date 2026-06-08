@@ -14,7 +14,8 @@
 #   - Never clobbers: existing files are backed up (sibling .bak) before any
 #     change, and only when the content actually changes.
 #   - Idempotent: re-running is a no-op; changing options swaps blocks in
-#     place. CLAUDE.md gets a single `@AGENTS.md` import.
+#     place. CLAUDE.md and GEMINI.md each get a single `@AGENTS.md` import
+#     (Claude Code and Gemini CLI read those files, not AGENTS.md directly).
 
 [ -n "${DEVSKILLS_PROFILE_LIB:-}" ] && return 0
 DEVSKILLS_PROFILE_LIB=1
@@ -131,6 +132,28 @@ _dsk_ensure_claude_import() {
   rm -f "$imp"
 }
 
+# Ensure GEMINI.md imports AGENTS.md (skip if it already does manually).
+# Mirror of _dsk_ensure_claude_import: Gemini CLI reads GEMINI.md, not AGENTS.md,
+# and its @file.md import gives Gemini the same shared profile with no
+# duplicated content. Separate file, so the "import" block id can't collide.
+_dsk_ensure_gemini_import() {
+  local dir="$1" dry="$2"
+  local gemini="${dir}/GEMINI.md"
+  if [ -f "$gemini" ] && grep -qE '^[[:space:]]*@AGENTS\.md' "$gemini" \
+       && ! grep -qF "<!-- BEGIN devskills:import -->" "$gemini"; then
+    _dsk_log "GEMINI.md already imports AGENTS.md; leaving as-is."
+    return 0
+  fi
+  local imp; imp="$(mktemp)"
+  {
+    echo "<!-- BEGIN devskills:import -->"
+    echo "@AGENTS.md"
+    echo "<!-- END devskills:import -->"
+  } > "$imp"
+  _dsk_upsert_block "$gemini" "import" "$imp" "$dry" "GEMINI.md"
+  rm -f "$imp"
+}
+
 # Remove the listed managed blocks from a file. If nothing but our blocks
 # remains, the file is deleted. Backs up (once) before any change.
 #   $1 file  $2 dry-run  $3 label  $4.. block ids
@@ -232,8 +255,9 @@ devskills_apply() {
       "<!-- profile: ${lang} — managed by devskills; edits between these markers are overwritten -->"
   fi
 
-  # 5. CLAUDE.md imports AGENTS.md.
+  # 5. CLAUDE.md and GEMINI.md import AGENTS.md.
   _dsk_ensure_claude_import "$dir" "$dry"
+  _dsk_ensure_gemini_import "$dir" "$dry"
 
   # 6. Flag a legacy inline profile from older devskills versions.
   if [ -f "${dir}/CLAUDE.md" ] && grep -qF "devskills language profile" "${dir}/CLAUDE.md"; then
