@@ -1,4 +1,4 @@
-Review code for single source of truth violations — duplicate implementations, constant drift, parallel-agent conflicts, over-engineered abstractions, and AI slop.
+Review code for single source of truth violations — duplicate implementations, constant drift, parallel-agent conflicts, and unjustified dependencies.
 
 When invoked, diff the current branch against the main branch and report findings. Reports only by default; `--fix` applies the mechanical, unambiguous removals (dead wrappers, redundant helpers, duplicate literals with a clear canonical home). Structural consolidations — merging two implementations, deleting a subsystem — stay reported.
 
@@ -52,27 +52,11 @@ Flag: hand-written functionality already provided by the language or stdlib, non
 
 ---
 
-### Abstraction Audit
-
-Every abstraction must justify itself. Flag: interface with one implementation, factory with one product, strategy with one strategy, repository wrapping repository, configuration never changed, extension point with no extensions.
-
-`abstraction: remove until second implementation exists.`
-
----
-
 ### Dependency Audit
 
 Every dependency must justify itself. Flag: dependency used for one trivial function, dependency replaceable by stdlib, dependency replaceable by platform feature.
 
 `dependency: remove. Use <replacement>.`
-
----
-
-### AI Slop
-
-Flag: excessive comments explaining obvious code, generated helper layers, pass-through wrappers, object hierarchies without behavior, configuration objects with one value, builder patterns without complexity, defensive abstractions without requirements, code that mirrors documentation instead of solving a problem.
-
-`slop: unnecessary generated structure. Remove.`
 
 ## Output
 
@@ -80,6 +64,6 @@ One finding per line, anchored to `file:line` where possible. End with one verdi
 
 - `risk: low` — no significant violations
 - `risk: medium` — minor duplications or drifted constants; addressable without restructuring
-- `risk: high` — duplicate implementations, conflicting abstractions, or multiple sources of truth introduced
+- `risk: high` — duplicate implementations, competing helpers, or multiple sources of truth introduced
 
 If no findings: `Looks consistent. Ship it.`

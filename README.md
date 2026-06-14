@@ -107,7 +107,7 @@ Every `-review` reports by default and changes nothing; pass `--fix` to apply th
 | `/ds-security-review` | Language-agnostic security audit — each finding names the attack |
 | `/ds-osv` | Scan dependency manifests for known CVEs via OSV Scanner; `--fix` bumps direct deps |
 | `/ds-data-review` | Store-agnostic data audit — schema/integrity, query correctness, transactions, migration safety (`--pipelines` for ETL) |
-| `/ds-code-review` | Single-source-of-truth audit — duplicates, constant drift, parallel-agent conflicts, slop |
+| `/ds-code-review` | Single-source-of-truth audit — duplicates, constant drift, parallel-agent conflicts, unjustified dependencies |
 | `/ds-code-quality-review` | Strict maintainability audit: abstraction, sprawl, spaghetti |
 | `/ds-doc-quality-review` | Strict docs audit: accuracy, dead links, bloat (`--comments` for code comments) |
 | `/ds-test-quality-review` | Strict test audit: is critical code well tested? |
