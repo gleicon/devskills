@@ -87,6 +87,7 @@ Every command is namespaced with a `ds-` prefix (short for devskills) so it neve
 | `/ds-tiger-style-mode` | TigerBeetle engineering constraints: safety, performance, experience |
 | `/ds-ui-mode` | UI mode: component/state discipline, design craft, a11y, Core Web Vitals |
 | `/ds-data-mode` | Data-engineering discipline: idempotency, late/out-of-order data, schema drift, replay/backfill safety, data-quality assertions |
+| `/ds-senior-mode` | Write like a super-senior engineer in *everything* — terse, direct, no slop — across code, comments, commits, PRs, docs, and replies; folds in git + test + deslop + step discipline, works in small reviewable steps |
 | `/ds-git-mode` | Senior-engineer commit discipline: self-contained units, terse Conventional-Commit messages, branch-first, never rewrite history |
 | `/ds-step-mode` | User-driven, step-gated execution — smallest step → stop → free-form handback → repeat |
 | `/ds-tdd-mode` | Test-first, one vertical slice at a time |
