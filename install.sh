@@ -44,7 +44,7 @@ for arg in "$@"; do
       echo ""
       echo "  --lang=<profile>    Language profile to write: go|typescript|javascript|rust|python|java|zig"
       echo "  --claude-dir=PATH   Claude config dir (default: \$CLAUDE_CONFIG_DIR or \$HOME/.claude)"
-      echo "  --skip-external     Skip external tool installation (tldt)"
+      echo "  --skip-external     Skip external tool installation (osv-scanner, tldt, ast-grep)"
       echo "  --skip-cursor       Skip Cursor rules install into the current project"
       echo "  --skip-vscode       Skip VSCode Copilot instructions install into the current project"
       echo "  --concise           Add a terse-response directive to AGENTS.md (with --lang)"
@@ -274,6 +274,7 @@ if [ "$SKIP_EXTERNAL" -eq 0 ]; then
   log "Installing external tools..."
   devskills_osv install
   devskills_tldt install
+  devskills_astgrep install
 else
   log "Skipping external tools (--skip-external)"
 fi
@@ -294,6 +295,7 @@ log "  /ds-tiger-style-mode          — in Cursor or OpenCode"
 log "  /prompts:ds-tiger-style-mode  — in Codex"
 log "  osv-scanner --version         — supply-chain vulnerability scanner"
 log "  tldt --version                — text summarizer"
+log "  ast-grep --version            — structural code search (enhances /ds-security-review)"
 log ""
 log "Set language profile in any project:"
 log "  ./install.sh --lang=go"

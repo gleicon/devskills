@@ -8,6 +8,39 @@ When invoked, audit the code in scope against one question: **how would an attac
 - Freeform scope ("the auth handler", "the upload path") is interpreted reasonably.
 - `--fix` → after reporting, apply only the findings whose fix is **mechanical and unambiguous** — a single obvious edit, no design judgment (e.g. removing a secret committed to source, tightening over-permissive file modes). A wrong fix to a security finding is worse than none, so anything that changes behavior or rests on an assumption you couldn't verify **stays report-only**. After applying, re-run any build/test/lint check already in the loop and revert any fix that breaks it — or that touched more than the intended mechanical edit. Close with a summary of what was applied and what was left.
 
+## ast-grep pre-filter (when available)
+
+If `ast-grep` is installed (`command -v ast-grep`), run it first as a structural pre-filter before reading full files. This extracts only the nodes that match dangerous patterns — Claude reviews those nodes instead of entire files, reducing noise and token cost.
+
+Run `ast-grep scan --json --inline-rules` with patterns matched to the languages in scope. Example patterns to emit as inline YAML rules:
+
+**Injection sinks** (adapt `language:` to the file's language):
+```yaml
+id: eval-call
+language: JavaScript
+rule:
+  pattern: eval($INPUT)
+---
+id: exec-call
+language: Python
+rule:
+  any:
+    - pattern: os.system($CMD)
+    - pattern: subprocess.call($CMD, shell=True)
+    - pattern: subprocess.run($CMD, shell=True)
+---
+id: sql-concat
+language: Go
+rule:
+  pattern: fmt.Sprintf($QUERY, $$$ARGS)
+  inside:
+    kind: call_expression
+```
+
+Generate and run the appropriate `--inline-rules` block for the detected languages. Feed the JSON output (`.[].text`, `.[].file`, `.[].range`) into your review — inspect only the matched nodes for exploitability.
+
+**If `ast-grep` is not installed:** proceed with full file read. Note at the start of your output: `ast-grep not found — running full read. For faster, more precise results: brew install ast-grep or npm i -g @ast-grep/cli`
+
 ## What to check
 
 Trace untrusted data from where it enters to where it's used. Most vulnerabilities are an input that reaches a dangerous sink without validation in between.

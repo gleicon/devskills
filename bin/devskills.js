@@ -36,7 +36,7 @@ Commands:
 Language profiles (optional): go, typescript, javascript, rust
 
 Options (pass through to install/setup):
-  --skip-external      Skip external tool installation (tldt)
+  --skip-external      Skip external tool installation (osv-scanner, tldt, ast-grep)
   --upgrade-deps       Also force-upgrade external tools (update)
   --claude-dir=<path>  Claude config dir (default: $CLAUDE_CONFIG_DIR or ~/.claude)
   --skip-cursor        Skip Cursor rules install (install)

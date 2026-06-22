@@ -13,7 +13,7 @@ git clone https://github.com/gleicon/devskills.git ~/.devskills
 ~/.devskills/install.sh
 ```
 
-Commands copy to `~/.claude/commands/`, `~/.opencode/commands/`, and `~/.codex/prompts/` (each installed only when that tool is detected). External tools (osv-scanner, tldt) install automatically when their prerequisites are present (Homebrew or Go).
+Commands copy to `~/.claude/commands/`, `~/.opencode/commands/`, and `~/.codex/prompts/` (each installed only when that tool is detected). External tools (osv-scanner, tldt, ast-grep) install automatically when their prerequisites are present (Homebrew, Go, or npm).
 
 In Codex, devskills commands are invoked under the `prompts:` namespace — `/ds-debug` becomes `/prompts:ds-debug`. Codex reads a project's `AGENTS.md` natively, so `setup.sh` covers its persistent surface with no extra step.
 
@@ -59,7 +59,7 @@ Keep devskills up to date:
 ```
 --lang=<profile>     go | typescript | javascript | rust | python | java | zig
 --claude-dir=<path>  Claude config dir (default: $CLAUDE_CONFIG_DIR or ~/.claude)
---skip-external      skip tldt installation
+--skip-external      skip external tool installation (osv-scanner, tldt, ast-grep)
 --skip-cursor        skip Cursor rules
 --skip-vscode        skip VSCode Copilot instructions
 --concise            add a terse-response directive to AGENTS.md (with --lang)
@@ -241,6 +241,7 @@ Installed by `install.sh`. Managed by `upgrade-deps.sh`.
 |------|---------|
 | [osv-scanner](https://github.com/google/osv-scanner) | Supply-chain vulnerability scan against the OSV/CVE database |
 | [tldt](https://github.com/gleicon/tldt) | Extractive text summarization; no LLM, no cost |
+| [ast-grep](https://github.com/ast-grep/ast-grep) | Structural code search; pre-filters dangerous patterns for `/ds-security-review` (fewer tokens, higher precision) |
 
 ## References
 

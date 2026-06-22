@@ -107,6 +107,44 @@ devskills_rtk_remediate() {
 }
 
 # ------------------------------------------------------------
+# ast-grep (structural code search and rewrite)
+# ------------------------------------------------------------
+
+# Install or upgrade ast-grep. Prefers Homebrew on macOS; falls back to
+# npm when Node is present (works on Linux too).
+#   $1 mode (install|upgrade)
+devskills_astgrep() {
+  local mode="$1" verbing="Installing" verb="Install"
+  [ "$mode" = upgrade ] && { verbing="Upgrading"; verb="Upgrade"; }
+
+  if [ "$mode" = install ] && command -v ast-grep &>/dev/null; then
+    log "ast-grep already installed at $(command -v ast-grep). Skipping."
+    return 0
+  fi
+
+  if [[ "$(uname)" == "Darwin" ]] && command -v brew &>/dev/null; then
+    log "${verbing} ast-grep via Homebrew..."
+    if [ "$mode" = upgrade ]; then
+      run_or_dry "run brew upgrade ast-grep" \
+        brew upgrade ast-grep || brew install ast-grep || warn "ast-grep brew upgrade failed."
+    else
+      run_or_dry "run brew install ast-grep" \
+        brew install ast-grep || warn "ast-grep brew install failed. See: https://github.com/ast-grep/ast-grep"
+    fi
+    return 0
+  fi
+
+  if command -v npm &>/dev/null; then
+    log "${verbing} ast-grep via npm..."
+    run_or_dry "run npm install -g @ast-grep/cli" \
+      npm install -g @ast-grep/cli || warn "ast-grep npm install failed."
+    return 0
+  fi
+
+  warn "ast-grep: needs Homebrew (macOS) or npm. ${verb} from releases: https://github.com/ast-grep/ast-grep/releases"
+}
+
+# ------------------------------------------------------------
 # tldt
 # ------------------------------------------------------------
 
