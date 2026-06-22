@@ -321,6 +321,17 @@ Step up one layer of abstraction and map how an area fits the bigger picture: it
 
 ---
 
+## Documents
+
+### `/ds-typeset` — action
+
+Render a Markdown file into a single self-contained, interactive HTML document — editorial typography, fonts embedded as data URIs (opens offline), a scrollspy TOC, sortable/filterable tables, static-correct charts, and a hardened print stylesheet. With `--pdf`, also paginates a PDF via the locally-installed Chrome (headless Chromium — the only engine that reproduces CSS grid, embedded fonts, and the print rules faithfully; wkhtmltopdf/WeasyPrint mangle grid).
+
+- **Args:** `/ds-typeset <file.md>` writes `<file>.html`. `--theme=<tufte|slate|sepia|dark>` (default `tufte`) picks the visual register; `--no-toc` drops the sidebar; `--pdf` also emits `<file>.pdf` plus a reusable `render-pdf.mjs`; `--paper=Letter` and `--out=<path>` override defaults.
+- **Reach for it when:** turning a report, spec, or any long Markdown into a polished, shareable HTML or PDF deliverable.
+
+---
+
 ## Context & continuity
 
 ### `/ds-handoff` — action

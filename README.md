@@ -170,6 +170,7 @@ Minimal file-backed memory — keep state across `/clear` and session ends. Not 
 | `/ds-deslop` | Strip AI-generated slop from the branch diff |
 | `/ds-handoff` | Compact the conversation into a handoff doc |
 | `/ds-tldt` | Extractive summary of context or a file — no LLM cost |
+| `/ds-typeset` | Turn any Markdown file into a self-contained, interactive editorial HTML document (`--theme`, `--no-toc`; `--pdf` for a paginated PDF) |
 | `/ds-write-a-command` | Author a new devskills command in repo conventions |
 
 ### Context recycling (experimental — requires [recall](https://github.com/gleicon/recall))
