@@ -15,9 +15,10 @@ When invoked, read a `.md` file and produce one self-contained `.html` file: cle
 1. Read the whole Markdown file. Map it to semantic HTML — preserve every section, table, code block, list, link, and footnote. Losing content is a failure; transcribe faithfully.
 2. Build the chrome: a scrollspy sidebar table of contents from the headings, a reading-progress bar, a back-to-top control, and a masthead from the title / front-matter.
 3. Apply the house style below. Detect the document's structure and add only the interactivity the content actually supports.
-4. Embed every asset inline (CSS, vanilla JS, fonts as base64 data URIs) so the file opens offline with no CDN or runtime dependency.
-5. If `--pdf`: write `render-pdf.mjs` beside the output, render with the installed Chrome, then **verify by rasterizing pages and looking** — do not trust the first render.
-6. Report the output path(s), the PDF page count, and anything in the source you could not represent.
+4. Embed every asset inline (CSS, vanilla JS, fonts as base64 data URIs) so the file opens offline with no CDN or runtime dependency. Fetch the body face (ET Book) at generation time to embed it; if that fetch fails, fall back to the system serif stack and note it — never block on the font.
+5. **Read the finished HTML back against the source `.md`** — walk both and confirm nothing was dropped or garbled (a skipped section, a truncated table, a lost list item). Fix any omission before moving on; this is the check that makes "faithful rendering" real, not aspirational.
+6. If `--pdf`: write `render-pdf.mjs` beside the output, render with the installed Chrome, then **verify by rasterizing pages and looking** — do not trust the first render.
+7. Report the output path(s), the PDF page count, and anything in the source you could not represent.
 
 ## House style
 
@@ -48,7 +49,7 @@ A theme swaps only the design tokens — palette and type — never the layout, 
 
 Render with the locally-installed Chrome via headless Chromium — the only engine that reproduces modern CSS (grid), embedded fonts, and the print stylesheet faithfully. Do **not** use wkhtmltopdf or WeasyPrint; they mangle grid layouts.
 
-Write a reusable `render-pdf.mjs` (`puppeteer-core`, `executablePath` pointed at the installed Chrome so no Chromium downloads): load the file, `emulateMediaType('print')`, await `document.fonts.ready`, `printBackground: true`, `preferCSSPageSize: false`, a configurable `format` (A4 default), and a running footer with page numbers. Install with `npm i puppeteer-core` in a scratch dir.
+Write a reusable `render-pdf.mjs` (`puppeteer-core`, `executablePath` pointed at the installed Chrome so no Chromium downloads): load the file, `emulateMediaType('print')`, await `document.fonts.ready`, `printBackground: true`, `preferCSSPageSize: false`, a configurable `format` (A4 default), and a running footer with page numbers. Install with `npm i puppeteer-core` in a scratch dir under `$TMPDIR` — never in the project, so the command leaves no `node_modules/` in the user's repo.
 
 Harden `@media print` — these are the failure modes that bite, in priority order:
 
