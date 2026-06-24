@@ -1,8 +1,9 @@
-# external-tools.sh — shared tldt installer for devskills.
+# external-tools.sh — shared installers for devskills external tools
+# (osv-scanner, tldt, ast-grep).
 #
-# Sourced by install.sh and scripts/upgrade-deps.sh. `go install @latest`
-# always fetches the newest published version, so the command is the same
-# for both install and upgrade modes.
+# Sourced by install.sh and scripts/upgrade-deps.sh. Each tool prefers a
+# package manager (Homebrew on macOS) and falls back to its own toolchain
+# (go install / npm); install and upgrade share one function per tool.
 #
 # Logging: install.sh and upgrade-deps.sh each define log()/warn() with their
 # own prefix; this lib uses theirs (resolved at call time). DRY_RUN (0|1) is
