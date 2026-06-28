@@ -191,6 +191,7 @@ devskills ships no fixed pipeline. Each command does one job and hands control b
 - **[docs/commands.md](docs/commands.md)** — every command: args, behavior, and when to reach for it
 - **[docs/project-workflow.md](docs/project-workflow.md)** · **[docs/project-recipes.md](docs/project-recipes.md)** — the optional `.project/` memory workflow
 - **[docs/grill-me.md](docs/grill-me.md)** · **[docs/tiger-style.md](docs/tiger-style.md)** — the grill playbook and the engineering bar
+- **[docs/ast-grep.md](docs/ast-grep.md)** — the optional ast-grep structural pass for `/ds-security-review`: rule language and a starter cookbook
 
 ## Repository Setup
 
@@ -242,7 +243,7 @@ Installed by `install.sh`. Managed by `upgrade-deps.sh`.
 |------|---------|
 | [osv-scanner](https://github.com/google/osv-scanner) | Supply-chain vulnerability scan against the OSV/CVE database |
 | [tldt](https://github.com/gleicon/tldt) | Extractive text summarization; no LLM, no cost |
-| [ast-grep](https://github.com/ast-grep/ast-grep) | Structural code search; pre-filters dangerous patterns for `/ds-security-review` (fewer tokens, higher precision) |
+| [ast-grep](https://github.com/ast-grep/ast-grep) | Structural code search; widens `/ds-security-review`'s reach by enumerating dangerous patterns to trace ([cookbook](docs/ast-grep.md)) |
 
 ## References
 
