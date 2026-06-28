@@ -152,8 +152,9 @@ Minimal file-backed memory — keep state across `/clear` and session ends. Not 
 | Command | Description |
 |---------|-------------|
 | `/ds-project-map` | Scan the repo into `.project/PROJECT.md` |
-| `/ds-project-checkpoint` | Persist state to `.project/PLAN.md` (`--handoff` for a full handoff doc) |
-| `/ds-project-resume` | Restore context from `.project/PLAN.md` |
+| `/ds-project-config` | Set preferences in `.project/config.md` (modes auto-applied on resume) |
+| `/ds-project-checkpoint` | Sweep the session and route durable context to its owning file (`--handoff` for a full handoff doc) |
+| `/ds-project-resume` | Restore context from `.project/PLAN.md` and apply configured modes (`--no-modes` to skip) |
 
 ### Debug & verification
 
