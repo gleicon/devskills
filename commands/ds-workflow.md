@@ -2,12 +2,17 @@ Enter the development workflow — orient, spec, build, verify, ship.
 
 A standalone phase-map orchestrator: it orients you, then routes each phase to its primary command. It requires nothing else — every phase works on its own. When `.project/` is present it *also* reads that state to orient faster, but the `.project/` commands are optional persistence, never required: you get the same workflow with or without them.
 
+## Arguments
+
+- `--no-modes` — skip applying the modes in `.project/config.md` (still list what's configured). Does not affect the implicit tiger-style activation below, which is workflow's own default.
+
 ## On activation
 
 1. If `.project/` is present, read `.project/PROJECT.md` (context) and `.project/PLAN.md` (where to pick up) when they exist, and report where to resume. If no plan is found — or `.project/` isn't in use — treat it as a fresh start and point at `/ds-spec` (lock the WHAT) or `/ds-explore` (lay out approaches) to begin.
-2. Report current state: what exists, what phase you appear to be in, what's next.
-3. Activate `/ds-tiger-style-mode` implicitly — engineering bar on for the session.
-4. If a language profile is set in `AGENTS.md` (look for `<!-- profile: <lang> -->`), apply its conventions.
+2. Apply configured modes: if `.project/config.md` is present, apply its `## Modes` the way `/ds-project-resume` does — read-and-adopt each mode's installed command file and echo what you applied, spelling out consequential ones (e.g. `ds-git-mode`'s standing authorization to commit). Skip with `--no-modes`, still listing what's configured.
+3. Report current state: what exists, what phase you appear to be in, what's next.
+4. Activate `/ds-tiger-style-mode` implicitly — engineering bar on for the session (it may already be on via config).
+5. If a language profile is set in `AGENTS.md` (look for `<!-- profile: <lang> -->`), apply its conventions.
 
 ## Phase map
 
