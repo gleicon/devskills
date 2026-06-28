@@ -65,19 +65,23 @@ A standalone phase-map orchestrator — orients you, then routes each phase (ori
 
 ## Project memory (`.project/`)
 
-A minimal, file-backed project memory — three commands that keep a durable description, plan, and session state in plain markdown under `.project/`, so any session is safe to `/clear` or end. (The plan's `## Roadmap` is seeded by `/ds-roadmap` above; these maintain and restore it.) These are *scribes, not pilots*: they record what you decide, never steer architecture. Walkthrough: [project-workflow.md](project-workflow.md). Worked use cases: [project-recipes.md](project-recipes.md).
+A minimal, file-backed project memory — four commands that keep a durable description, plan, session state, and preferences in plain markdown under `.project/`, so any session is safe to `/clear` or end. (The plan's `## Roadmap` is seeded by `/ds-roadmap` above; these maintain and restore it.) These are *scribes, not pilots*: they record what you decide, never steer architecture. Walkthrough: [project-workflow.md](project-workflow.md). Worked use cases: [project-recipes.md](project-recipes.md).
 
 ### `/ds-project-map` — action
 
 Scan the repo and write/refresh `.project/PROJECT.md` (overview, stack, repo map, constraints). Facts only — describes what exists. Run once at start; re-run when the repo drifts.
 
+### `/ds-project-config` — action
+
+Create/edit `.project/config.md`, the per-project preferences — today, the **modes** that `/ds-project-resume` and `/ds-workflow` auto-apply. Discovers your installed `ds-*-mode` commands, writes a `## Modes` bullet list (bare names), warns on an unknown name. Touches only `config.md`.
+
 ### `/ds-project-checkpoint` — action
 
-Update `.project/PLAN.md`'s `## Now` (state, next, open questions) and roadmap statuses. Run before `/clear` or end of session. `--handoff` also writes a richer `.project/handoff.md`.
+**Sweep the session and route durable context to its owning file:** decisions append to `DECISIONS.md`, a new structural fact appends to `PROJECT.md` (additive, with approval; broad drift flagged for `/ds-project-map`), a scope change is recorded as a decision and `SPEC.md` flagged stale (never edited). Then ticks roadmap statuses and overwrites `## Now`. Reader-affecting writes are approved one at a time; the `PLAN.md` update is automatic; nothing durable → fast no-op. Run before `/clear` or end of session. `--handoff` also writes a richer `.project/handoff.md`.
 
 ### `/ds-project-resume` — action
 
-Read `.project/PLAN.md` (+ `PROJECT.md`) and report where to pick up. Loads `handoff.md` only if it's newer than the plan (by file time — no git dependency, so `.project/` can be git-ignored), else flags it stale. Read-only.
+Apply any `config.md` modes (read-and-adopt; `--no-modes` skips, still listing them), then read `.project/PLAN.md` (+ `PROJECT.md`), surface `DECISIONS.md` (count + recent few), and report where to pick up. Loads `handoff.md` only if it's newer than the plan (by file time — no git dependency, so `.project/` can be git-ignored), else flags it stale. Doesn't modify `.project/` files.
 
 ---
 

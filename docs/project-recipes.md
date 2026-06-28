@@ -208,11 +208,12 @@ The files have different lifetimes. Knowing which are durable and which are scra
 **`handoff.md` — point-in-time, expires.**
 - Written only by `/ds-project-checkpoint --handoff`. `/ds-project-resume` ignores it once it's older than `PLAN.md`. After a successful resume, `rm .project/handoff.md` so it doesn't linger and confuse — `## Now` is the source of truth, not a past handoff.
 
-**`PROJECT.md` / `DECISIONS.md` — durable, keep.**
+**`PROJECT.md` / `DECISIONS.md` / `config.md` — durable, keep.**
 - `PROJECT.md`: refresh with `/ds-project-map` when the repo's shape drifts; otherwise leave it.
-- `DECISIONS.md`: append-only "why" log. Don't prune it — a long decision history is a feature, not clutter.
+- `DECISIONS.md`: append-only "why" log, fed by `/ds-grill-me --record` and `/ds-project-checkpoint`'s sweep, surfaced by `/ds-project-resume`. Don't prune it — a long decision history is a feature, not clutter.
+- `config.md`: per-project preferences (the modes auto-applied on resume). Hand-edited or via `/ds-project-config`; small and stable. Leave it unless your preferred modes change.
 
-**Git hygiene.** Commit the durable trio (`PROJECT.md`, `PLAN.md`, `DECISIONS.md`) as shared memory; the scratch files don't belong in history. If you commit `.project/`, ignore the scratch:
+**Git hygiene.** Commit the durable set (`PROJECT.md`, `PLAN.md`, `DECISIONS.md`, `config.md`) as shared memory; the scratch files don't belong in history. If you commit `.project/`, ignore the scratch:
 
 ```gitignore
 .project/EXPLORE.md

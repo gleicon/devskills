@@ -16,7 +16,8 @@ Plain markdown. No hidden state, no checksums. Commit it as shared project memor
 .project/
 ├── PROJECT.md     # stable: what it is, stack, repo map, hard constraints
 ├── PLAN.md        # living: ## Roadmap (ordered tasks + status) and ## Now (state, next, open Qs)
-├── DECISIONS.md   # append-only why-log (written by /ds-grill-me --record)
+├── DECISIONS.md   # append-only why-log (written by /ds-grill-me --record and checkpoint's sweep)
+├── config.md      # optional: project preferences — modes auto-applied on resume (/ds-project-config)
 ├── handoff.md     # full handoff, only when you ask (/ds-project-checkpoint --handoff)
 └── SPEC.md        # optional, only if you use /ds-spec in this workflow
 ```
@@ -27,23 +28,27 @@ Plain markdown. No hidden state, no checksums. Commit it as shared project memor
 
 ## The commands
 
-Three keep the `.project/` memory — `/ds-project-map`, `/ds-project-checkpoint`, `/ds-project-resume`; `/ds-roadmap` seeds the plan and works with or without `.project/`.
+Four keep the `.project/` memory — `/ds-project-map`, `/ds-project-config`, `/ds-project-checkpoint`, `/ds-project-resume`; `/ds-roadmap` seeds the plan and works with or without `.project/`.
 
 ### `/ds-project-map` → `PROJECT.md`
 
 Reads the actual code and writes (or refreshes) the stable description: overview, stack, a repo map, and any hard constraints. Facts only — it describes what exists. Run it once at the start; re-run when the shape of the repo drifts.
 
+### `/ds-project-config` → `config.md`
+
+Sets the per-project preferences a session reads at start — today, the **modes** that `/ds-project-resume` (and `/ds-workflow`) apply automatically. It discovers your installed `ds-*-mode` commands so you don't have to remember names, writes a `## Modes` bullet list, and warns on an unknown name. Optional and hand-editable; it only ever touches `config.md`.
+
 ### `/ds-roadmap` → `PLAN.md` (`## Roadmap`)
 
 Turns input into an ordered task checklist. The input can be a goal, a `SPEC.md`, or **pasted output from another command** — drop in `/ds-code-quality-review` findings or a bug list and they become ordered tasks. It sequences and scopes; it does not pick libraries or patterns. Tasks are outcomes (`[ ]` / `[~]` / `[x]`), not implementation instructions. Like `/ds-spec`, it's `.project`-aware: it writes `.project/PLAN.md` here, or `PLAN.md` in the current directory when there's no `.project/`.
 
-### `/ds-project-checkpoint [--handoff]` → `PLAN.md` (`## Now`)
+### `/ds-project-checkpoint [--handoff]` → routes durable context
 
-Run before `/clear` or at end of session. Ticks roadmap statuses and overwrites `## Now` with State / Next / Open questions. `--handoff` additionally writes a richer `.project/handoff.md` (context, what was tried, gotchas) — use it when the next session needs more than the plan, e.g. handing to another person or a long pause.
+Run before `/clear` or at end of session. **Sweeps the conversation** for durable context that only lives in the chat and **routes each piece to its owning file** — resolved decisions append to `DECISIONS.md`, a genuinely new structural fact appends to `PROJECT.md` (additive only, with your approval; broad drift is flagged for `/ds-project-map`), a scope change is recorded as a decision and `SPEC.md` is flagged stale (never edited). It then ticks roadmap statuses and overwrites `## Now` with State / Next / Open questions. Reader-affecting writes (`DECISIONS.md`, `PROJECT.md`) are shown and approved one at a time; the `PLAN.md` update is automatic. If nothing durable turns up, it's a fast no-op — just the `## Now` refresh. `--handoff` additionally writes a richer `.project/handoff.md` (context, what was tried, gotchas) — use it when the next session needs more than the plan, e.g. handing to another person or a long pause.
 
-### `/ds-project-resume` → reads state
+### `/ds-project-resume [--no-modes]` → reads state, applies modes
 
-Run at session start. Reads `PLAN.md` (and `PROJECT.md` for the map), then summarizes where to pick up. If `handoff.md` exists it is loaded **only if it is newer than `PLAN.md`** (by file modification time — no git required) — otherwise it's flagged as stale and ignored, so a forgotten handoff never misleads a fresh session. Read-only.
+Run at session start. First **applies any modes in `config.md`** (read-and-adopt each mode's command file; `--no-modes` skips this but still lists them). Then reads `PLAN.md` (and `PROJECT.md` for the map), lightly surfaces `DECISIONS.md` (count + recent few), and summarizes where to pick up. If `handoff.md` exists it is loaded **only if it is newer than `PLAN.md`** (by file modification time — no git required) — otherwise it's flagged as stale and ignored, so a forgotten handoff never misleads a fresh session. Resume itself doesn't modify `.project/` files; an applied mode then governs the session under its own rules.
 
 ---
 
@@ -52,6 +57,7 @@ Run at session start. Reads `PLAN.md` (and `PROJECT.md` for the map), then summa
 ```
 # first time on a repo
 /ds-project-map                  # PROJECT.md: what + where
+/ds-project-config               # optional: modes to auto-apply on resume → config.md
 
 # starting a piece of work
 /ds-spec                         # optional: WHAT → .project/SPEC.md
@@ -70,7 +76,7 @@ Run at session start. Reads `PLAN.md` (and `PROJECT.md` for the map), then summa
 /ds-project-resume               # pick up exactly where you left off
 ```
 
-Every step is engineer-driven and self-contained. The only persistent artifacts are the four files in `.project/` — readable, diffable, and yours to edit by hand at any time.
+Every step is engineer-driven and self-contained. The only persistent artifacts are the handful of files in `.project/` — readable, diffable, and yours to edit by hand at any time.
 
 ---
 
