@@ -4,7 +4,7 @@ description: "Run a strict review of Jupyter notebooks — find notebook-state, 
 disable-model-invocation: true
 ---
 
-When invoked, audit the `.ipynb` files in scope against one question: **will this notebook reproduce its stated results cleanly, on another machine, without leaking state or secrets?** Code-level Python quality is **not** this command's job — idioms, typing, and generic security in the cell code go to `/ds-python-review`; a ranked, costed optimization plan is `/ds-perf-plan`; pipeline/ETL correctness is `/ds-data-review --pipelines`. Every finding names a concrete failure — a hidden-state break, a committed secret, a leakage path — anchored to a cell, not a vague best-practice. **Do not edit any files unless `--fix` is passed** (see Arguments).
+When invoked, audit the `.ipynb` files in scope against one question: **will this notebook reproduce its stated results cleanly, on another machine, without leaking state or secrets?** Code-level Python quality is **not** this command's job — idioms, typing, and generic security in the cell code go to `/ds-python-review`; a ranked, costed optimization plan is `/ds-perf-plan`; pipeline/ETL correctness is `/ds-data-review --pipelines`. Every finding names a concrete failure — a hidden-state break, a committed secret, a leakage path — anchored to a cell, not a vague best-practice. Report-only by default — no edits unless `--fix` is passed.
 
 ## Arguments
 
@@ -43,4 +43,4 @@ Rules:
 
 - Real defects only. A "best practice" with no demonstrated hazard is noise.
 - A short, high-confidence list beats a long speculative one.
-- Report-only by default — the output is the list. With `--fix`, apply only the mechanical, unambiguous fixes above and leave every semantic or assumption-dependent finding reported; then summarize what was applied vs. left.
+- With `--fix`, additionally summarize what was applied vs. left (mechanics in Arguments).
