@@ -14,31 +14,7 @@ When invoked, audit the code in scope against one question: **how would an attac
 
 ## ast-grep structural pass (when available — experimental)
 
-`ast-grep` is an **additive** aid, never a filter. When it is installed (`command -v ast-grep`), use it to *widen* the review — never to narrow it, shrink what you read, or save tokens. It mechanically enumerates structural matches across the whole scope — dangerous sinks, every call site of a risky API, where an untrusted type flows — so no candidate is skipped by skimming. Each match is **one more branch to investigate**: you still open the surrounding code and trace the data flow in full context, exactly as you would without it. Never judge a match in isolation.
-
-Author rules for the languages and risky APIs actually in scope, run them inline, and read the matches back with `jq`:
-
-```bash
-ast-grep scan --inline-rules '
-id: py-shell-exec
-language: Python
-rule:
-  any:
-    - pattern: os.system($CMD)
-    - pattern: subprocess.run($CMD, shell=True)
-' --json=stream . | jq -c '{file, line: .range.start.line, text}'
-# ranges are 0-based; open each file at that line and trace the flow in full context
-```
-
-The rule above only illustrates the **rule language** — it is not the scan scope. The pieces for building your own:
-
-- **Metavariables** — `$VAR` captures one node, `$$$ARGS` a variadic list (e.g. `pattern: eval($INPUT)` in JavaScript).
-- **`any:` composite** — OR several sink shapes into one rule (the block above); `all:` and `not:` compose the same way.
-- **Relational rules** — constrain a match by its surroundings with `inside:` / `has:` (add `stopBy: end` to search past immediate neighbors) — e.g. a `fmt.Sprintf($Q, $$$ARGS)` (Go) `inside:` a database-query call.
-
-Generate rules for whatever is in scope; full rule reference: <https://ast-grep.github.io/reference/rule.html>.
-
-**If `ast-grep` is not installed:** review normally — the full read is the baseline and nothing changes. To add the structural pass: `brew install ast-grep` or `npm i -g @ast-grep/cli`.
+When `ast-grep` is installed (`command -v ast-grep`), read the companion **`ast-grep.md`** (same directory as this file) and run a structural pass. It's an **additive** aid: it mechanically enumerates known-dangerous patterns — injection sinks, risky-API call sites, untrusted-type flows — that a skim of a large diff can miss, turning each match into one more branch to trace in full context. It never narrows what you read, and a match is a lead, not a verdict. If ast-grep isn't installed, review normally — the full read is the baseline.
 
 ## What to check
 
