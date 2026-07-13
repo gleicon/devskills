@@ -4,7 +4,7 @@ description: "Drive implementation with tests, one vertical slice at a time."
 disable-model-invocation: true
 ---
 
-When invoked, build the feature test-first. Each test verifies observable behavior through a public interface — never implementation details.
+When active, build the feature test-first. Each test verifies observable behavior through a public interface — never implementation details.
 
 ## Anti-pattern: horizontal slicing
 
@@ -43,3 +43,5 @@ A test that breaks on a behavior-preserving refactor is coupled to implementatio
 ## Output
 
 For each slice: the test, then the implementation. Report which behaviors remain untested.
+
+Confirm activation with "TDD mode active." Activating a mode only turns on this posture; it is not approval to begin work — continue with whatever the user already asked for, or wait for their next instruction.

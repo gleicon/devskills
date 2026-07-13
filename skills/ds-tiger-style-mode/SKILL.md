@@ -82,30 +82,8 @@ Safety > Performance > Developer Experience. Never trade safety for convenience.
 - If a fix cannot be done now, file a tracked issue with a deadline. Do not leave TODO comments without a ticket.
 - Shortcuts taken now cost exponentially more in production.
 
-## Review Checklist
+## Reporting
 
-When reviewing code under Tiger Style, check:
+When flagging a violation during review, name the rule category, the `file:line`, what the code does, and the fix — enough for the author to act.
 
-1. Does every function have at least 2 assertions?
-2. Are all loops bounded with explicit limits?
-3. Is there any dynamic allocation post-initialization?
-4. Are all errors explicitly handled?
-5. Does any function exceed 70 lines?
-6. Are variable names precise (include units, qualifiers)?
-7. Is there any recursion without formal termination proof?
-8. Does any new external dependency appear without justification?
-9. Are performance-critical paths allocation-free?
-10. Is each error path tested?
-
-## Reporting Format
-
-When flagging Tiger Style violations during review, use:
-
-```
-tiger-style violation: <rule category>
-location: <file>:<line>
-violation: <what the code does>
-fix: <what it should do instead>
-```
-
-This command remains active for the current session. Respond with "Tiger Style active." to confirm activation. Activating a mode only turns on this posture; it is not approval to begin work — continue with whatever the user already asked for, or wait for their next instruction.
+Confirm activation with "Tiger Style active." Activating a mode only turns on this posture; it is not approval to begin work — continue with whatever the user already asked for, or wait for their next instruction.

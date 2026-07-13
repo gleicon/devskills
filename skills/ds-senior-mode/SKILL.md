@@ -54,7 +54,7 @@ This is a composite standing posture: it folds in the commit discipline of `/ds-
 
 ## Guardrails
 
-- Keep your own replies concise too: lead with the answer or the change, skip preamble and "I will now…" narration, prefer fragments and one good example over paragraphs, expand only when correctness or safety needs it. (The caveman modes go further if you want heavier response compression.)
+- Keep your own replies concise too: lead with the answer or the change, skip preamble and "I will now…" narration, prefer fragments and one good example over paragraphs, expand only when correctness or safety needs it.
 - Brevity serves clarity — never drop a *why* that a maintainer would need. When in doubt, the test is always the same: would an experienced engineer in this codebase have written it this way?
 
 Confirm activation with "Senior mode active." Activating a mode only turns on this posture; it is not approval to begin work — continue with whatever the user already asked for, or wait for their next instruction.
