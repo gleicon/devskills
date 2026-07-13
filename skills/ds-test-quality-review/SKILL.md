@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 When invoked, audit the tests in scope against one governing principle: **test what matters, and test it well.** Coverage is not the goal — a percentage says nothing about whether a test would catch a real failure, or whether it pins the code in place. Hunt two failures with equal energy: critical code that is *under-tested* (the bug waiting to ship) and tests that are *bad* (present and green, but worthless or actively harmful — they lock the design and tax every change).
 
-Like `/ds-code-quality-review` and `/ds-doc-quality-review`, this produces a prioritized list. It's the after-the-fact audit; to write tests this way from the start, use `/ds-test-mode` (alongside normal work) or `/ds-tdd-mode` (test-first). **Do not edit any files unless `--fix` is passed** (see Arguments).
+Report-only by default — the output is a prioritized list, no edits unless `--fix` is passed. This is the after-the-fact audit; to write tests this way from the start, use `/ds-test-mode` (alongside normal work) or `/ds-tdd-mode` (test-first).
 
 ## Arguments
 
@@ -54,4 +54,4 @@ Rules:
 
 - A short high-conviction list beats a long pedantic one. Don't pad it with low-value nits.
 - Judge by risk, not count. The question is always "would this catch a real failure, and does it survive a refactor?"
-- Report-only by default — the output is the list. With `--fix`, apply only the mechanical, unambiguous findings above and leave the judgment-dependent ones reported; then summarize what was applied vs. left.
+- With `--fix`, additionally summarize what was applied vs. left (mechanics in Arguments).
