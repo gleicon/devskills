@@ -4,7 +4,7 @@ description: "Run a strict security review of code changes — find exploitable 
 disable-model-invocation: true
 ---
 
-When invoked, audit the code in scope against one question: **how would an attacker abuse this?** Look for the weaknesses that lead to real compromise — injection, broken access control, leaked secrets, untrusted input trusted too far. This is the portable, cross-language pass; for deeper language specifics, `/ds-go-review`, `/ds-ts-review`, and `/ds-rust-review` carry their own Security sections. Every finding names the attack that exploits it. **Do not edit any files unless `--fix` is passed** (see Arguments).
+When invoked, audit the code in scope against one question: **how would an attacker abuse this?** Look for the weaknesses that lead to real compromise — injection, broken access control, leaked secrets, untrusted input trusted too far. This is the portable, cross-language pass; for deeper language specifics, `/ds-go-review`, `/ds-ts-review`, and `/ds-rust-review` carry their own Security sections. Every finding names the attack that exploits it. Report-only by default — no edits unless `--fix` is passed.
 
 ## Arguments
 
@@ -78,4 +78,4 @@ Rules:
 
 - Exploitable findings over theoretical ones. Name a path from attacker-controlled input to impact; a "weakness" on a fully-trusted internal path is hardening at most.
 - A short, high-confidence list beats a long speculative one.
-- Report-only by default — the output is the list. With `--fix`, apply only the mechanical, unambiguous findings above and leave every judgment- or assumption-dependent one reported; then summarize what was applied vs. left.
+- With `--fix`, additionally summarize what was applied vs. left (mechanics in Arguments).
