@@ -13,7 +13,7 @@
 set -uo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PROMPTS="${REPO}/prompts"
+AGENTS_MD="${REPO}/agents-md"
 
 # shellcheck source=../scripts/lib/profile.sh
 source "${REPO}/scripts/lib/profile.sh"
@@ -43,7 +43,7 @@ test_create_new() {
   echo "test: create new project files"
   reset_state
   local ws; ws="$(workspace)"
-  devskills_apply "$PROMPTS" "$ws" 0 go 0 0 >/dev/null 2>&1
+  devskills_apply "$AGENTS_MD" "$ws" 0 go 0 0 >/dev/null 2>&1
   assert_exists "$ws/AGENTS.md" "AGENTS.md created"
   assert_exists "$ws/CLAUDE.md" "CLAUDE.md created"
   assert_grep "$ws/AGENTS.md" "<!-- BEGIN devskills:base -->" "base block present"
@@ -60,10 +60,10 @@ test_idempotent() {
   echo "test: re-run is byte-identical and writes no new backups"
   reset_state
   local ws; ws="$(workspace)"
-  devskills_apply "$PROMPTS" "$ws" 0 go 0 0 >/dev/null 2>&1
+  devskills_apply "$AGENTS_MD" "$ws" 0 go 0 0 >/dev/null 2>&1
   cp "$ws/AGENTS.md" "$ws/agents.snapshot"
   cp "$ws/CLAUDE.md" "$ws/claude.snapshot"
-  devskills_apply "$PROMPTS" "$ws" 0 go 0 0 >/dev/null 2>&1
+  devskills_apply "$AGENTS_MD" "$ws" 0 go 0 0 >/dev/null 2>&1
   assert_identical "$ws/AGENTS.md" "$ws/agents.snapshot" "AGENTS.md byte-identical after re-run"
   assert_identical "$ws/CLAUDE.md" "$ws/claude.snapshot" "CLAUDE.md byte-identical after re-run"
   assert_count "$(count_baks "$ws")" 0 "no .bak spam on idempotent re-run"
@@ -74,8 +74,8 @@ test_option_stacking() {
   echo "test: --concise/--phases stack blocks without duplicating base"
   reset_state
   local ws; ws="$(workspace)"
-  devskills_apply "$PROMPTS" "$ws" 0 go 0 0 >/dev/null 2>&1
-  devskills_apply "$PROMPTS" "$ws" 0 go 1 1 >/dev/null 2>&1
+  devskills_apply "$AGENTS_MD" "$ws" 0 go 0 0 >/dev/null 2>&1
+  devskills_apply "$AGENTS_MD" "$ws" 0 go 1 1 >/dev/null 2>&1
   assert_grep "$ws/AGENTS.md" "<!-- BEGIN devskills:concise -->" "concise block added on re-run"
   assert_grep "$ws/AGENTS.md" "<!-- BEGIN devskills:phases -->" "phases block added on re-run"
   assert_count "$(grep -cF "<!-- BEGIN devskills:base -->" "$ws/AGENTS.md")" 1 "base block not duplicated"
@@ -88,7 +88,7 @@ test_preserve_and_backup_once() {
   local ws; ws="$(workspace)"
   printf '%s' "$USER_CONTENT" > "$ws/AGENTS.md"
   printf '%s' "$USER_CONTENT" > "$ws/expected.orig"
-  devskills_apply "$PROMPTS" "$ws" 0 "" 0 0 >/dev/null 2>&1   # base only
+  devskills_apply "$AGENTS_MD" "$ws" 0 "" 0 0 >/dev/null 2>&1   # base only
   assert_grep "$ws/AGENTS.md" "# My Project" "user heading preserved"
   assert_grep "$ws/AGENTS.md" "Hand-written notes the user owns." "user body preserved"
   assert_grep "$ws/AGENTS.md" "<!-- BEGIN devskills:base -->" "devskills block appended"
@@ -103,7 +103,7 @@ test_uninstall_preserves_user() {
   reset_state
   local ws; ws="$(workspace)"
   printf '%s' "$USER_CONTENT" > "$ws/AGENTS.md"
-  devskills_apply "$PROMPTS" "$ws" 0 go 0 0 >/dev/null 2>&1
+  devskills_apply "$AGENTS_MD" "$ws" 0 go 0 0 >/dev/null 2>&1
   devskills_uninstall "$ws" 0 >/dev/null 2>&1
   assert_exists "$ws/AGENTS.md" "AGENTS.md survives uninstall (had user content)"
   assert_grep "$ws/AGENTS.md" "# My Project" "user heading survives uninstall"
@@ -117,7 +117,7 @@ test_uninstall_pure_devskills() {
   echo "test: uninstall deletes files that held only devskills content"
   reset_state
   local ws; ws="$(workspace)"
-  devskills_apply "$PROMPTS" "$ws" 0 go 0 0 >/dev/null 2>&1
+  devskills_apply "$AGENTS_MD" "$ws" 0 go 0 0 >/dev/null 2>&1
   devskills_uninstall "$ws" 0 >/dev/null 2>&1
   assert_absent "$ws/AGENTS.md" "pure-devskills AGENTS.md removed"
   assert_absent "$ws/CLAUDE.md" "pure-devskills CLAUDE.md removed"
@@ -128,7 +128,7 @@ test_uninstall_dry_run_deletes_nothing() {
   echo "test: dry-run uninstall touches nothing (the deletion safety rail)"
   reset_state
   local ws; ws="$(workspace)"
-  devskills_apply "$PROMPTS" "$ws" 0 go 0 0 >/dev/null 2>&1
+  devskills_apply "$AGENTS_MD" "$ws" 0 go 0 0 >/dev/null 2>&1
   cp "$ws/AGENTS.md" "$ws/agents.snapshot"
   cp "$ws/CLAUDE.md" "$ws/claude.snapshot"
   devskills_uninstall "$ws" 1 >/dev/null 2>&1
@@ -144,7 +144,7 @@ test_dry_run_writes_nothing() {
   echo "test: --dry-run writes nothing to disk"
   reset_state
   local ws; ws="$(workspace)"
-  devskills_apply "$PROMPTS" "$ws" 1 go 0 0 >/dev/null 2>&1
+  devskills_apply "$AGENTS_MD" "$ws" 1 go 0 0 >/dev/null 2>&1
   assert_absent "$ws/AGENTS.md" "dry-run does not create AGENTS.md"
   assert_absent "$ws/CLAUDE.md" "dry-run does not create CLAUDE.md"
   rm -rf "$ws"
@@ -156,7 +156,7 @@ test_manual_import_untouched() {
   local ws; ws="$(workspace)"
   printf '# Notes\n\n@AGENTS.md\n' > "$ws/CLAUDE.md"
   cp "$ws/CLAUDE.md" "$ws/claude.orig"
-  devskills_apply "$PROMPTS" "$ws" 0 "" 0 0 >/dev/null 2>&1
+  devskills_apply "$AGENTS_MD" "$ws" 0 "" 0 0 >/dev/null 2>&1
   assert_identical "$ws/CLAUDE.md" "$ws/claude.orig" "manual CLAUDE.md import left byte-identical"
   assert_no_grep "$ws/CLAUDE.md" "<!-- BEGIN devskills:import -->" "no managed import block injected over a manual one"
   rm -rf "$ws"

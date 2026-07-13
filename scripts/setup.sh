@@ -72,14 +72,14 @@ if [ "$DO_UNINSTALL" -eq 1 ]; then
 fi
 
 # Validate the language profile up front (if one was requested).
-if [ -n "$LANG_PROFILE" ] && [ ! -f "${DEVSKILLS_DIR}/prompts/language/${LANG_PROFILE}.md" ]; then
+if [ -n "$LANG_PROFILE" ] && [ ! -f "${DEVSKILLS_DIR}/agents-md/language/${LANG_PROFILE}.md" ]; then
   echo "Error: no profile for '${LANG_PROFILE}'. Available: go, typescript, javascript, rust, python, java, zig"
   exit 1
 fi
 
 # AGENTS.md baseline (+ optional layers); CLAUDE.md imports it via @AGENTS.md.
 echo "devskills baseline${LANG_PROFILE:+ + ${LANG_PROFILE} profile}"
-devskills_apply "${DEVSKILLS_DIR}/prompts" "$PWD" "$DRY_RUN" "$LANG_PROFILE" "$DO_CONCISE" "$DO_PHASES"
+devskills_apply "${DEVSKILLS_DIR}/agents-md" "$PWD" "$DRY_RUN" "$LANG_PROFILE" "$DO_CONCISE" "$DO_PHASES"
 
 # Cursor rules
 if [ "$DO_CURSOR" -eq 1 ]; then

@@ -111,7 +111,7 @@ fi
 
 # Validate --lang up front, before any install side effects: a bad profile
 # should fail fast, not after tldt is already installed.
-if [ -n "$LANG_PROFILE" ] && [ ! -f "${DEVSKILLS_DIR}/prompts/language/${LANG_PROFILE}.md" ]; then
+if [ -n "$LANG_PROFILE" ] && [ ! -f "${DEVSKILLS_DIR}/agents-md/language/${LANG_PROFILE}.md" ]; then
   warn "No language profile for '${LANG_PROFILE}'. Available: go, typescript, javascript, rust, python, java, zig"
   exit 1
 fi
