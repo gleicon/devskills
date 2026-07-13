@@ -4,7 +4,7 @@ description: "Review Rust code for safety metrics, error handling, and idiomatic
 disable-model-invocation: true
 ---
 
-Applies to: Rust stable. Systems programming, CLI tools, services.
+Applies to: Rust stable, edition 2024. Systems programming, CLI tools, services.
 
 ## Arguments
 
@@ -80,6 +80,7 @@ Skip this section entirely if `--no-tiger` was passed. Otherwise it is mandatory
 - [ ] Unsafe is confined to the smallest possible scope
 - [ ] Each unsafe block has a corresponding test exercising the unsafe path
 - [ ] No raw pointer arithmetic without bounds assertions
+- [ ] Edition 2024: `extern` blocks are declared `unsafe extern`, and `no_mangle`/`link_section`/`export_name` use the `#[unsafe(...)]` wrapper
 
 ### Panic and Unwrap
 - [ ] No `.unwrap()` in library code (crates without `main.rs`)
@@ -112,6 +113,8 @@ Skip this section entirely if `--no-tiger` was passed. Otherwise it is mandatory
 - [ ] Field order only matters for `#[repr(C)]`/FFI types — don't flag ordering on ordinary `repr(Rust)` structs (the compiler reorders them)
 - [ ] `#[derive]` used where applicable (Debug, Clone, PartialEq)
 - [ ] No custom `Display` that just re-emits the `Debug` output — if `Display` adds nothing over `{:?}`, drop it
+- [ ] Async closures (`async || …`, stable since 1.85) instead of `|| async { … }` where a closure must return a future
+- [ ] Edition 2024: `impl Trait` return types capture every in-scope generic lifetime — narrow with `+ use<...>` where the wider capture is unwanted
 
 ### Performance
 _Idiom-level checks only — for a ranked, costed optimization plan, use `/ds-perf-plan`._
