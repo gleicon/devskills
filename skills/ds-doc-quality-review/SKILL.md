@@ -6,14 +6,13 @@ disable-model-invocation: true
 
 When invoked, audit the documentation in scope against one governing principle: **documentation earns its length.** Readers skim; they don't read. Every sentence that doesn't help someone do something is noise that hides the sentences that do. So hunt two failures with equal energy — docs that are *wrong* (drifted from the code) and docs that are *bloated* (true, but nobody will read them). Be ambitious about cutting: the best fix is often to delete three paragraphs, not to polish them.
 
-Like `/ds-code-quality-review`, this produces a prioritized list of what needs fixing. **Do not edit any files unless `--fix` is passed** (see Arguments).
+Report-only by default — the output is a prioritized list of what needs fixing, no edits unless `--fix` is passed. Inline **code comments** are out of scope; `/ds-comment-review` owns comment discipline.
 
 ## Arguments
 
 - Treat positional args as scope (files, directories, globs). With no scope, review the documentation changed on the current branch (`README`, `docs/`, `*.md`, and the like).
-- `--comments` — also audit inline **code comments** in scope, under the docs-accuracy lens. Off by default; prose docs only otherwise. To impose comment discipline and *apply* the fixes, reach for `/ds-comment-review` instead.
 - Freeform scope ("the whole docs/ tree", "the README") is interpreted reasonably.
-- `--fix` → after reporting, apply the findings whose fix is **mechanical and unambiguous** — a fixable dead link, a stale count, a clearly-drifted line, a bloat-cut that loses no information; leave anything resting on a judgment call (a rewrite, a restructure, a coverage gap to fill) as report-only. For inline **comment** fixes, defer to `/ds-comment-review --fix`. After applying, re-run any build/test/lint check already in the loop and revert any fix that breaks it — or that touched more than the intended mechanical edit. Close with a summary of what was applied and what was left.
+- `--fix` → after reporting, apply the findings whose fix is **mechanical and unambiguous** — a fixable dead link, a stale count, a clearly-drifted line, a bloat-cut that loses no information; leave anything resting on a judgment call (a rewrite, a restructure, a coverage gap to fill) as report-only. After applying, re-run any build/test/lint check already in the loop and revert any fix that breaks it — or that touched more than the intended mechanical edit. Close with a summary of what was applied and what was left.
 
 ## What to check
 
@@ -47,12 +46,6 @@ Verify mechanically wherever you can — resolve links against the filesystem, c
 - Undefined jargon, vague nouns ("the system handles this"), ambiguous antecedents.
 - Where the doc is too *terse*: a step that assumes context the reader lacks, an example that needs one line of "why". This is the rare case where more words help — call it out specifically so it isn't lost among the cut-this findings.
 
-**6. Code comments** *(only with `--comments`)*.
-- Comments that restate what the code plainly says (`// increment i`). Delete-worthy.
-- Wordy or meandering comments that bury the one useful sentence.
-- Comments that have drifted — they describe behavior the code no longer has. Treat as accuracy bugs.
-- Missing comments *only* where the "why" is genuinely non-obvious (a workaround, a non-local invariant, a surprising constraint). Do not ask for comments on self-explanatory code — that violates the same brevity principle.
-
 ## Output
 
 A prioritized findings list, in this order:
@@ -62,7 +55,6 @@ A prioritized findings list, in this order:
 3. Missing documentation a reader genuinely needs
 4. Bloat — what to cut
 5. Clarity and wording (including the rare "needs more")
-6. Code-comment findings (if `--comments`)
 
 For each finding:
 
@@ -75,4 +67,4 @@ Rules:
 - Don't flood the list with cosmetic nits when there are real accuracy or coverage problems. A short high-conviction list beats a long pedantic one.
 - Judge length against payload, not a word count. A long doc that's all signal is fine; a short doc that's all padding is not.
 - Be direct about bloat. "This section can be deleted" is more useful than "this could be tightened".
-- Report-only by default — the output is the list. With `--fix`, apply only the mechanical, unambiguous findings above and leave the judgment-dependent ones reported; then summarize what was applied vs. left.
+- With `--fix`, additionally summarize what was applied vs. left (mechanics in Arguments).
