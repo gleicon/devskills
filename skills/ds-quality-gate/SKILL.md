@@ -4,7 +4,7 @@ description: "Run the review pipeline against the current branch or feature as a
 disable-model-invocation: true
 ---
 
-When active, the quality gate runs an eight-pass review pipeline in sequence, **bookended by `/ds-deslop`** — run first to clean the incoming diff, and again last to strip any slop the between-pass fixes introduced. Each pass surfaces findings, you accept or reject them, the agent implements the accepted ones, then the next pass runs. This is a mode — it stays on until you say "stop quality gate" or "/ds-quality-gate-mode off".
+When active, the quality gate runs a seven-pass review pipeline in sequence, **bookended by `/ds-deslop`** — run first to clean the incoming diff, and again last to strip any slop the between-pass fixes introduced. Each pass surfaces findings, you accept or reject them, the agent implements the accepted ones, then the next pass runs. This is a mode — it stays on until you say "stop quality gate" or "/ds-quality-gate-mode off".
 
 Scope: the changed files on the current branch (same as `/ds-code-quality-review` with no argument). Scope can be narrowed: `/ds-quality-gate-mode src/handlers/` limits every pass to that path.
 
@@ -12,14 +12,13 @@ Scope: the changed files on the current branch (same as `/ds-code-quality-review
 
 ```
 1. /ds-deslop              — strip narrating comments, defensive overkill, type escape hatches (clean the incoming diff)
-2. /ds-code-review         — single source of truth: duplicates, constant drift, parallel-agent conflicts, dead abstractions
+2. /ds-code-quality-review — single source of truth + structure: delete duplicates, competing implementations, and dead abstractions, then is the diff making the codebase worse? (run early, so later passes don't audit code that should have been deleted)
 3. /ds-test-quality-review — is the risky logic covered with real, non-trivial tests?
 4. /ds-security-review     — exploitability: input, auth, secrets, I/O, injection
 5. /ds-bug-review          — correctness: real bugs, not style
 6. /ds-data-review         — data correctness: schema, queries, transactions, migrations. Only when the change touches one of those; otherwise skip with a note
-7. /ds-code-quality-review — structure: is the diff making the codebase worse?
-8. /ds-doc-quality-review  — is the public API, config, and non-obvious behavior documented?
-9. /ds-deslop              — final cleanup: re-run to strip any slop the between-pass fixes introduced
+7. /ds-doc-quality-review  — is the public API, config, and non-obvious behavior documented?
+8. /ds-deslop              — final cleanup: re-run to strip any slop the between-pass fixes introduced
 ```
 
 Each pass answers a **different question**. They do not overlap. The order matters: strip noise *first* so the structural and correctness passes see signal, not slop — and strip it *again last*, because this gate implements accepted fixes between passes, and those fixes are themselves freshly-generated code that can carry slop.
