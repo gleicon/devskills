@@ -4,7 +4,7 @@ description: "Run a strict review of code comments — flag the comments that do
 disable-model-invocation: true
 ---
 
-When invoked, audit the comments in scope against one question: **does each comment earn its place, and is it as short as it can be?** The discipline: comments are for humans and explain **WHY, not WHAT** — one line by default, only where the reason isn't obvious from the code, never restating code or citing plan/ticket IDs; a long comment is rare and signals importance. This is **not** `/ds-doc-quality-review --comments` (which reports comments under a docs-accuracy/consistency lens) and **not** `/ds-deslop` (branch-diff, matches existing style) — this command's only lens is comment discipline, it works on any scope, and it **imposes the standard regardless of the codebase's existing comment habits**. **Comment-only and behavior-preserving: never change code logic.**
+When invoked, audit the comments in scope against one question: **does each comment earn its place, and is it as short as it can be?** The discipline: comments are for humans and explain **WHY, not WHAT**, in domain terms a reader with only the code can follow — one line by default, only where the reason isn't obvious, never restating the code and never pointing into planning artifacts (decision IDs, roadmap/step/spec references); a long comment is rare and signals importance. This is **not** `/ds-deslop` (branch-diff, matches existing style) — this command's only lens is comment discipline, it works on any scope, and it **imposes the standard regardless of the codebase's existing comment habits**. **Comment-only and behavior-preserving: never change code logic.**
 
 ## Arguments
 
@@ -15,7 +15,7 @@ When invoked, audit the comments in scope against one question: **does each comm
 
 1. **Restating code** — comments that narrate what the code plainly does (`// increment i`, `// loop over users`). Delete.
 2. **Obvious / ceremonial** — section banners, `// constructor`, getter/setter narration, docstrings that just repeat the signature. Delete.
-3. **Planning cruft** — references to plan/ticket/step IDs, "as per step 3", author-stamped noise, a commit message pasted as a comment. Strip.
+3. **Planning-artifact references** — pointers into the project's planning trail: decision IDs (`D-12`), `DECISIONS.md`/roadmap/step/spec-requirement citations ("as per step 3"), author-stamped notes, a commit message pasted as a comment. A comment must stand on the code alone — these rot by design as housekeeping archives and renumbers those artifacts. Strip.
 4. **Buried WHY** — a genuine reason wrapped in five lines of prose. Tighten to one line.
 5. **Drifted** — comments describing behavior the code no longer has. Treat as a correctness issue: fix or delete.
 6. **Keep — and respect — the rare legitimately-long comment**: a non-obvious algorithm, a subtle invariant, a hard-won workaround. Don't cut these; they are the signal. Make sure they still read as important.
