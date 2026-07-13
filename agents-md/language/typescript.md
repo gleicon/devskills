@@ -1,6 +1,6 @@
 ## Language Profile — TypeScript
 
-Target: TypeScript 5+. Cloudflare Workers, Next.js, React, edge runtimes.
+Target: TypeScript 5.5+. Cloudflare Workers, Next.js, React, edge runtimes.
 
 Apply these conventions to all TypeScript/JavaScript code in this session.
 
@@ -61,6 +61,8 @@ type Result<T, E = Error> =
 
 - Functional components, named exports. Derive everything derivable from props.
 - Effects only for synchronization with external systems (timers, subscriptions, DOM) — not data fetching. Use Tanstack Query or SWR.
+- React 19: read promises/context with the `use` hook; `ref` is a plain prop (drop `forwardRef`). Manage form/mutation state with Actions (`useActionState`, `useOptimistic`, `useFormStatus`).
+- With the React Compiler on, skip manual `useMemo`/`useCallback`/`React.memo` — let it memoize; add them only where profiling shows a gap.
 - No prop drilling past 2 levels — context or co-location.
 
 ### Module Conventions
