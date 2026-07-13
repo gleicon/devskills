@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 When invoked, audit the code in scope against one question: **will this misbehave at runtime?** Not "is it clean" (that's `/ds-code-quality-review`), not "is it idiomatic" (that's the language reviews) — *is it correct.* Find the defects that would actually fire: wrong logic, mishandled edges, ignored failures, races, leaks. Every finding must name the condition that triggers it; a bug nobody can reach is noise.
 
-Like `/ds-code-quality-review` and `/ds-doc-quality-review`, this produces a prioritized list. **Do not edit any files unless `--fix` is passed** (see Arguments). When a finding is confirmed, `/ds-debug` root-causes the fix and `/ds-verify-this` proves it.
+Report-only by default — the output is a prioritized findings list, no edits unless `--fix` is passed. When a finding is confirmed, `/ds-debug` root-causes it and `/ds-verify-this` proves the fix.
 
 ## Arguments
 
@@ -48,6 +48,6 @@ For each finding:
 
 Rules:
 
-- Real defects only. No "could theoretically be null" without a path that reaches it — that's how false positives bury the real ones.
+- Real defects only: every finding names a reachable path. A "could theoretically be null" with no path to reach it is noise — the false positives that bury the real ones.
 - A short, high-confidence list beats a long speculative one.
-- Report-only by default — the output is the list. With `--fix`, apply only the mechanical, unambiguous findings above and leave every judgment- or assumption-dependent one reported; then summarize what was applied vs. left.
+- With `--fix`, additionally summarize what was applied vs. left (mechanics in Arguments).
