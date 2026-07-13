@@ -4,7 +4,7 @@ description: "Review Java code with Tiger Style constraints and Java idioms."
 disable-model-invocation: true
 ---
 
-Applies to: Java 25+ (LTS). Backend services, APIs, CLIs.
+Applies to: Java 21+ (LTS). Backend services, APIs, CLIs.
 
 ## Arguments
 
@@ -41,7 +41,7 @@ Skip this section entirely if `--no-tiger` was passed. Otherwise it is mandatory
 - [ ] Catch the most specific exception; no `catch (Exception)`/`Throwable` catch-all unless re-raising; cause preserved (`new X("ctx", e)`)
 - [ ] Streams used for transformation without side effects in `map`/`filter` — and a plain loop preferred where a stream would be contorted
 - [ ] `var` only where the right-hand side makes the type obvious
-- [ ] Concurrent fan-out uses `StructuredTaskScope` over manual `Future` juggling, and `ScopedValue` over `ThreadLocal` for per-request context, where the project is on 25 (structured concurrency is preview — `--enable-preview`)
+- [ ] Blocking per-request work runs on virtual threads (`Thread.ofVirtual`/`Executors.newVirtualThreadPerTaskExecutor`, final in 21), not a tuned bounded platform-thread pool — virtual threads aren't pooled; on 21–23 a `synchronized` block held across a blocking call pins the carrier (use `ReentrantLock`), which JDK 24+ removes (JEP 491)
 - [ ] No `static` mutable shared state; constants are `static final`
 
 ### Performance
@@ -64,6 +64,10 @@ _Idiom-level checks only — for a ranked, costed optimization plan, use `/ds-pe
 - [ ] Error paths tested with `assertThrows`, not just the happy path
 - [ ] Input variants parametrized (`@ParameterizedTest`) rather than copy-pasted
 - [ ] No real network/filesystem in unit tests — fakes/mocks and `@TempDir`; no `Thread.sleep` to coordinate — await latches/futures with a timeout
+
+## Version-specific checks
+
+Read the target version from the build (`release` in Gradle/Maven, or the toolchain). Run the checklist above for every project. **If it targets Java 25 or newer, also read `25.md` in this skill directory and apply its checks on top.** If the version can't be determined, run the base and note that version-specific checks were skipped.
 
 ## Output Format
 
