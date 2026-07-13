@@ -63,6 +63,8 @@ case "$CLAUDE_CONFIG_DIR" in
   "~/"*) CLAUDE_CONFIG_DIR="${HOME}/${CLAUDE_CONFIG_DIR#"~/"}" ;;
 esac
 CLAUDE_COMMANDS_DIR="${CLAUDE_CONFIG_DIR}/commands"
+CLAUDE_SKILLS_DIR="${CLAUDE_CONFIG_DIR}/skills"
+DEVSKILLS_SKILLS_DIR="${DEVSKILLS_DIR}/skills"
 
 # Auto-skip project-local installers when run from inside the devskills
 # source repo — otherwise they write contributor files into the repo itself.
@@ -109,6 +111,22 @@ install_file() {
   log "installed $dst"
 }
 
+# Install one skill directory (SKILL.md + any companion files) as a plain copy.
+# rm -rf before copy keeps it idempotent and avoids cp -R nesting a stale tree
+# inside itself on a re-run; a companion dropped upstream doesn't linger.
+install_skill_dir() {
+  local src="$1"  # .../skills/<name>
+  local dst="$2"  # <target>/skills/<name>
+  if [ "$DRY_RUN" -eq 1 ]; then
+    log "[dry] would install skill $(basename "$src") -> $dst"
+    return
+  fi
+  rm -rf "$dst"
+  mkdir -p "$(dirname "$dst")"
+  cp -R "$src" "$dst"
+  log "installed skill $dst"
+}
+
 # Commands removed or renamed in past releases. install only ever copies, so
 # without this the old name lingers next to its replacement forever (e.g. after
 # update.sh). Remove the known stale files from a target commands dir; only
@@ -150,19 +168,59 @@ purge_renamed_commands() {
   done
 }
 
+# The frozen pre-overhaul command catalog: the 51 ds-*.md files that shipped as
+# commands before the skills migration. install now ships skills/ only, so any of
+# these left in a harness's legacy command/prompt dir is stale and shadows or
+# duplicates the new skill — remove it on upgrade. This set is history and never
+# grows again (no new commands are authored). Combined with RENAMED_COMMANDS
+# (pre-prefix and earlier-removed names) it covers every devskills file a legacy
+# command dir could hold; it never names a user-authored command.
+LEGACY_COMMANDS=(
+  ds-architecture-plan.md ds-blueprint.md ds-bug-review.md
+  ds-caveman-lite-mode.md ds-caveman-ultra-mode.md ds-code-quality-review.md
+  ds-code-review.md ds-comment-review.md ds-data-mode.md ds-data-review.md
+  ds-debug.md ds-deslop.md ds-doc-quality-review.md ds-explore.md ds-git-mode.md
+  ds-go-review.md ds-grill-me.md ds-handoff.md ds-java-review.md
+  ds-notebook-review.md ds-osv.md ds-perf-plan.md ds-project-checkpoint.md
+  ds-project-config.md ds-project-map.md ds-project-resume.md ds-python-review.md
+  ds-quality-gate-mode.md ds-recall-capture.md ds-recall-setup.md ds-recall.md
+  ds-roadmap.md ds-rust-review.md ds-security-review.md ds-senior-mode.md
+  ds-spec.md ds-step-mode.md ds-tdd-mode.md ds-test-mode.md
+  ds-test-quality-review.md ds-tiger-style-mode.md ds-tldt.md ds-ts-review.md
+  ds-typeset.md ds-ui-mode.md ds-ui-quality-review.md ds-verify-this.md
+  ds-workflow.md ds-write-a-command.md ds-zig-review.md ds-zoom-out.md
+)
+
+# Full purge for a harness migrated to skills: remove the whole legacy command
+# catalog plus historically renamed names from its old command/prompt dir.
+purge_legacy_commands() {
+  local dir="$1" name
+  [ -d "$dir" ] || return 0
+  for name in "${LEGACY_COMMANDS[@]}" "${RENAMED_COMMANDS[@]}"; do
+    [ -f "${dir}/${name}" ] || continue
+    if [ "$DRY_RUN" -eq 1 ]; then
+      log "[dry] would remove legacy command ${dir}/${name}"
+    else
+      rm -f "${dir}/${name}"
+      log "removed legacy command ${dir}/${name}"
+    fi
+  done
+}
+
 # ------------------------------------------------------------
 # Claude Code commands
 # ------------------------------------------------------------
 
 install_claude() {
   if command -v claude &>/dev/null || [ -d "${CLAUDE_CONFIG_DIR}" ]; then
-    log "Installing Claude Code commands to ${CLAUDE_COMMANDS_DIR}"
-    # install_file makes the dir on real copies; guard so --dry-run leaves none.
-    [ "$DRY_RUN" -eq 1 ] || mkdir -p "${CLAUDE_COMMANDS_DIR}"
-    for f in "${DEVSKILLS_DIR}/commands/"*.md; do
-      install_file "$f" "${CLAUDE_COMMANDS_DIR}/$(basename "$f")"
+    log "Installing Claude Code skills to ${CLAUDE_SKILLS_DIR}"
+    # install_skill_dir makes the dir on real copies; guard so --dry-run leaves none.
+    [ "$DRY_RUN" -eq 1 ] || mkdir -p "${CLAUDE_SKILLS_DIR}"
+    for d in "${DEVSKILLS_SKILLS_DIR}/"*/; do
+      install_skill_dir "${d%/}" "${CLAUDE_SKILLS_DIR}/$(basename "$d")"
     done
-    purge_renamed_commands "${CLAUDE_COMMANDS_DIR}"
+    # Skills replace commands: drop any devskills ds-*.md left in the old dir.
+    purge_legacy_commands "${CLAUDE_COMMANDS_DIR}"
   else
     warn "Claude Code not detected. Skipping. Install from https://claude.ai/code"
   fi
