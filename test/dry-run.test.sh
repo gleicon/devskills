@@ -40,10 +40,15 @@ sandbox_home() {
   printf '%s' "$home"
 }
 
+# Sandbox every harness path under $home, including XDG_CONFIG_HOME (OpenCode's
+# skills root) so a real dev-machine XDG setting can't leak the install out of the
+# sandbox. --skip-agy on every call: agy installs into its own store via an
+# external binary that can't be sandboxed under $HOME.
 run_install() {
   local home="$1"; shift
   HOME="$home" CLAUDE_CONFIG_DIR="${home}/.claude" CODEX_HOME="${home}/.codex" \
-    bash "${REPO}/install.sh" "$@" >/dev/null 2>&1
+    XDG_CONFIG_HOME="${home}/.config" \
+    bash "${REPO}/install.sh" --skip-agy "$@" >/dev/null 2>&1
 }
 
 # A stable fingerprint of a directory tree: every path plus a hash of each file's
@@ -63,60 +68,71 @@ fingerprint() {
 }
 
 test_command_paths() {
-  echo "test: --dry-run creates no command/skill dirs (names the bug)"
+  echo "test: --dry-run creates no skill dirs anywhere (names the bug)"
   local home; home="$(sandbox_home)"
 
   run_install "$home" --dry-run --skip-external --skip-cursor --skip-vscode
 
-  [ ! -d "${home}/.opencode/commands" ] \
-    && pass "~/.opencode/commands not created" \
-    || fail "~/.opencode/commands created in dry-run"
+  [ ! -d "${home}/.config/opencode/skills" ] \
+    && pass "~/.config/opencode/skills not created" \
+    || fail "~/.config/opencode/skills created in dry-run"
   [ ! -d "${home}/.claude/skills" ] \
     && pass "~/.claude/skills not created" \
     || fail "~/.claude/skills created in dry-run"
-  [ ! -d "${home}/.codex/prompts" ] \
-    && pass "~/.codex/prompts not created" \
-    || fail "~/.codex/prompts created in dry-run"
+  [ ! -d "${home}/.codex/skills" ] \
+    && pass "~/.codex/skills not created" \
+    || fail "~/.codex/skills created in dry-run"
 
-  echo "test: a real run installs Claude skills, OpenCode/Codex commands"
-  # Claude now installs skill dirs; OpenCode/Codex still install commands until
-  # their own migration lands.
-  local exp_cmds; exp_cmds="$(ls "${REPO}/commands"/*.md | wc -l | tr -d ' ')"
+  echo "test: a real run installs skills to every harness and purges legacy dirs"
   local exp_skills; exp_skills="$(ls -d "${REPO}/skills"/*/ | wc -l | tr -d ' ')"
 
-  # Seed the old Claude commands dir with legacy devskills files (must be purged)
-  # plus a user-authored command (must survive).
-  mkdir -p "${home}/.claude/commands"
-  : > "${home}/.claude/commands/ds-code-review.md"   # removed in overhaul
-  : > "${home}/.claude/commands/ds-workflow.md"      # renamed -> ds
-  : > "${home}/.claude/commands/ds-git-mode.md"      # now a skill
-  : > "${home}/.claude/commands/my-notes.md"         # user-authored, keep
+  # Seed each harness's legacy command/prompt dir with devskills files (must be
+  # purged) plus a user-authored file (must survive).
+  mkdir -p "${home}/.claude/commands" "${home}/.opencode/commands" "${home}/.codex/prompts"
+  : > "${home}/.claude/commands/ds-code-review.md"        # removed in overhaul
+  : > "${home}/.claude/commands/ds-workflow.md"           # renamed -> ds
+  : > "${home}/.claude/commands/my-notes.md"              # user-authored, keep
+  : > "${home}/.opencode/commands/ds-caveman-lite-mode.md"
+  : > "${home}/.opencode/commands/keep-me.md"             # user-authored, keep
+  : > "${home}/.codex/prompts/ds-quality-gate-mode.md"    # renamed -> ds-quality-gate
+  : > "${home}/.codex/prompts/user-prompt.md"             # user-authored, keep
 
   run_install "$home" --skip-external --skip-cursor --skip-vscode
-  local oc; oc="$(ls "${home}/.opencode/commands"/*.md 2>/dev/null | wc -l | tr -d ' ')"
-  local cc; cc="$(ls -d "${home}/.claude/skills"/*/ 2>/dev/null | wc -l | tr -d ' ')"
-  local cx; cx="$(ls "${home}/.codex/prompts"/*.md 2>/dev/null | wc -l | tr -d ' ')"
-  [ "$oc" = "$exp_cmds" ] \
-    && pass "~/.opencode/commands has all ${exp_cmds} commands" \
-    || fail "~/.opencode/commands has ${oc}, expected ${exp_cmds}"
+
+  local oc cc cx
+  oc="$(ls -d "${home}/.config/opencode/skills"/*/ 2>/dev/null | wc -l | tr -d ' ')"
+  cc="$(ls -d "${home}/.claude/skills"/*/ 2>/dev/null | wc -l | tr -d ' ')"
+  cx="$(ls -d "${home}/.codex/skills"/*/ 2>/dev/null | wc -l | tr -d ' ')"
   [ "$cc" = "$exp_skills" ] \
     && pass "~/.claude/skills has all ${exp_skills} skills" \
     || fail "~/.claude/skills has ${cc}, expected ${exp_skills}"
-  [ "$cx" = "$exp_cmds" ] \
-    && pass "~/.codex/prompts has all ${exp_cmds} commands" \
-    || fail "~/.codex/prompts has ${cx}, expected ${exp_cmds}"
+  [ "$oc" = "$exp_skills" ] \
+    && pass "~/.config/opencode/skills has all ${exp_skills} skills" \
+    || fail "~/.config/opencode/skills has ${oc}, expected ${exp_skills}"
+  [ "$cx" = "$exp_skills" ] \
+    && pass "~/.codex/skills has all ${exp_skills} skills" \
+    || fail "~/.codex/skills has ${cx}, expected ${exp_skills}"
 
-  # Legacy purge: every seeded devskills command is gone, the user file stays.
+  # Codex sidecar (AC-6): generated, pins user-only invocation.
+  local sc="${home}/.codex/skills/ds-git-mode/agents/openai.yaml"
+  { [ -f "$sc" ] && grep -q "allow_implicit_invocation: false" "$sc"; } \
+    && pass "Codex sidecar sets allow_implicit_invocation: false" \
+    || fail "Codex sidecar missing or wrong"
+
+  # Full legacy purge across all three harnesses; user files survive.
   local purged=1
-  for stale in ds-code-review.md ds-workflow.md ds-git-mode.md; do
-    [ -e "${home}/.claude/commands/${stale}" ] && purged=0
-  done
+  [ -e "${home}/.claude/commands/ds-code-review.md" ] && purged=0
+  [ -e "${home}/.claude/commands/ds-workflow.md" ] && purged=0
+  [ -e "${home}/.opencode/commands/ds-caveman-lite-mode.md" ] && purged=0
+  [ -e "${home}/.codex/prompts/ds-quality-gate-mode.md" ] && purged=0
   [ "$purged" = 1 ] \
-    && pass "legacy devskills commands purged from ~/.claude/commands" \
-    || fail "legacy devskills commands survived in ~/.claude/commands"
-  [ -e "${home}/.claude/commands/my-notes.md" ] \
-    && pass "user-authored command left untouched" \
-    || fail "user-authored command was deleted by purge"
+    && pass "legacy devskills commands purged from all harnesses" \
+    || fail "legacy devskills commands survived"
+  { [ -e "${home}/.claude/commands/my-notes.md" ] \
+      && [ -e "${home}/.opencode/commands/keep-me.md" ] \
+      && [ -e "${home}/.codex/prompts/user-prompt.md" ]; } \
+    && pass "user-authored files left untouched" \
+    || fail "a user-authored file was deleted by purge"
 
   rm -rf "$home"
 }
@@ -135,8 +151,11 @@ test_nothing_written() {
   proj_before="$(fingerprint "$proj")"
 
   # cursor + vscode enabled (not skipped); --lang exercises the AGENTS.md path.
+  # XDG_CONFIG_HOME sandboxes OpenCode's skills root; --skip-agy since agy's store
+  # can't be sandboxed under $HOME (its dry-run path is a plain no-op regardless).
   HOME="$home" CLAUDE_CONFIG_DIR="${home}/.claude" CODEX_HOME="${home}/.codex" \
-    bash -c "cd '$proj' && bash '${REPO}/install.sh' --dry-run --lang=go --skip-external" \
+    XDG_CONFIG_HOME="${home}/.config" \
+    bash -c "cd '$proj' && bash '${REPO}/install.sh' --dry-run --lang=go --skip-external --skip-agy" \
     >/dev/null 2>&1
 
   local home_after proj_after

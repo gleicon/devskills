@@ -3,10 +3,19 @@ set -euo pipefail
 
 DEVSKILLS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLAUDE_CONFIG_DIR="${CLAUDE_CONFIG_DIR:-${HOME}/.claude}"
+# OpenCode reads global skills from $XDG_CONFIG_HOME/opencode/skills (default
+# ~/.config/opencode/skills). The legacy ~/.opencode/commands dir is purged.
+OPENCODE_CONFIG_DIR="${XDG_CONFIG_HOME:-${HOME}/.config}/opencode"
+OPENCODE_SKILLS_DIR="${OPENCODE_CONFIG_DIR}/skills"
 OPENCODE_COMMANDS_DIR="${HOME}/.opencode/commands"
-# Codex honors CODEX_HOME (default ~/.codex); custom prompts live in prompts/.
+# Codex honors CODEX_HOME (default ~/.codex). Skills live in skills/ (codex
+# reads $CODEX_HOME/skills, marker-managed); the legacy prompts/ dir is purged.
 CODEX_HOME_DIR="${CODEX_HOME:-${HOME}/.codex}"
+CODEX_SKILLS_DIR="${CODEX_HOME_DIR}/skills"
 CODEX_COMMANDS_DIR="${CODEX_HOME_DIR}/prompts"
+
+# Parsed from package.json (bash-only, no node) for the agy plugin manifest.
+DEVSKILLS_VERSION="$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "${DEVSKILLS_DIR}/package.json" | head -1)"
 
 log() { printf '[devskills] %s\n' "$1"; }
 warn() { printf '[devskills] WARN: %s\n' "$1" >&2; }
@@ -25,6 +34,10 @@ LANG_PROFILE=""
 SKIP_EXTERNAL=0
 SKIP_CURSOR=0
 SKIP_VSCODE=0
+SKIP_CLAUDE=0
+SKIP_OPENCODE=0
+SKIP_CODEX=0
+SKIP_AGY=0
 CONCISE=0
 PHASES=0
 DRY_RUN=0
@@ -36,15 +49,23 @@ for arg in "$@"; do
     --skip-external) SKIP_EXTERNAL=1 ;;
     --skip-cursor) SKIP_CURSOR=1 ;;
     --skip-vscode) SKIP_VSCODE=1 ;;
+    --skip-claude) SKIP_CLAUDE=1 ;;
+    --skip-opencode) SKIP_OPENCODE=1 ;;
+    --skip-codex) SKIP_CODEX=1 ;;
+    --skip-agy) SKIP_AGY=1 ;;
     --concise) CONCISE=1 ;;
     --phases) PHASES=1 ;;
     --dry-run) DRY_RUN=1 ;;
     --help|-h)
-      echo "Usage: install.sh [--lang=go|typescript|javascript|rust|python|java|zig] [--claude-dir=PATH] [--skip-external] [--skip-cursor] [--skip-vscode] [--concise] [--phases] [--dry-run]"
+      echo "Usage: install.sh [--lang=go|typescript|javascript|rust|python|java|zig] [--claude-dir=PATH] [--skip-external] [--skip-claude] [--skip-opencode] [--skip-codex] [--skip-agy] [--skip-cursor] [--skip-vscode] [--concise] [--phases] [--dry-run]"
       echo ""
       echo "  --lang=<profile>    Language profile to write: go|typescript|javascript|rust|python|java|zig"
       echo "  --claude-dir=PATH   Claude config dir (default: \$CLAUDE_CONFIG_DIR or \$HOME/.claude)"
       echo "  --skip-external     Skip external tool installation (osv-scanner, tldt, ast-grep)"
+      echo "  --skip-claude       Skip Claude Code skills install"
+      echo "  --skip-opencode     Skip OpenCode skills install"
+      echo "  --skip-codex        Skip Codex skills install"
+      echo "  --skip-agy          Skip Antigravity (agy) plugin install"
       echo "  --skip-cursor       Skip Cursor rules install into the current project"
       echo "  --skip-vscode       Skip VSCode Copilot instructions install into the current project"
       echo "  --concise           Add a terse-response directive to AGENTS.md (with --lang)"
@@ -125,6 +146,33 @@ install_skill_dir() {
   mkdir -p "$(dirname "$dst")"
   cp -R "$src" "$dst"
   log "installed skill $dst"
+}
+
+# Generate the Codex per-skill sidecar. allow_implicit_invocation: false keeps
+# the skill out of the model's default context — user-invoked only via $name,
+# never auto-fired — which is devskills' whole identity. Codex documents this
+# field; it is generated at stage time, never committed to the repo.
+emit_codex_sidecar() {
+  local skill_dir="$1"
+  [ "$DRY_RUN" -eq 1 ] && return
+  mkdir -p "${skill_dir}/agents"
+  printf 'policy:\n  allow_implicit_invocation: false\n' > "${skill_dir}/agents/openai.yaml"
+}
+
+# Copy every skill dir under skills/ into a target skills root. With sidecar=codex
+# each installed skill also gets its generated agents/openai.yaml.
+install_skills_to() {
+  local target_root="$1" sidecar="${2:-}"
+  [ "$DRY_RUN" -eq 1 ] || mkdir -p "$target_root"
+  local d name
+  for d in "${DEVSKILLS_SKILLS_DIR}/"*/; do
+    name="$(basename "$d")"
+    install_skill_dir "${d%/}" "${target_root}/${name}"
+    if [ "$sidecar" = "codex" ]; then
+      emit_codex_sidecar "${target_root}/${name}"
+    fi
+  done
+  return 0
 }
 
 # Commands removed or renamed in past releases. install only ever copies, so
@@ -214,11 +262,7 @@ purge_legacy_commands() {
 install_claude() {
   if command -v claude &>/dev/null || [ -d "${CLAUDE_CONFIG_DIR}" ]; then
     log "Installing Claude Code skills to ${CLAUDE_SKILLS_DIR}"
-    # install_skill_dir makes the dir on real copies; guard so --dry-run leaves none.
-    [ "$DRY_RUN" -eq 1 ] || mkdir -p "${CLAUDE_SKILLS_DIR}"
-    for d in "${DEVSKILLS_SKILLS_DIR}/"*/; do
-      install_skill_dir "${d%/}" "${CLAUDE_SKILLS_DIR}/$(basename "$d")"
-    done
+    install_skills_to "${CLAUDE_SKILLS_DIR}"
     # Skills replace commands: drop any devskills ds-*.md left in the old dir.
     purge_legacy_commands "${CLAUDE_COMMANDS_DIR}"
   else
@@ -227,43 +271,70 @@ install_claude() {
 }
 
 # ------------------------------------------------------------
-# OpenCode commands
+# OpenCode skills
 # ------------------------------------------------------------
 
+# OpenCode discovers skills from ~/.config/opencode/skills (and the shared
+# ~/.claude, ~/.agents dirs). It ignores unknown frontmatter, so the single
+# SKILL.md installs as-is. Note: OpenCode skills are model-invocable — it has no
+# per-skill user-only flag — so disable-model-invocation is silently ignored here.
 install_opencode() {
-  if command -v opencode &>/dev/null || [ -d "${HOME}/.opencode" ]; then
-    log "Installing OpenCode commands to ${OPENCODE_COMMANDS_DIR}"
-    # install_file makes the dir on real copies; guard so --dry-run leaves none.
-    [ "$DRY_RUN" -eq 1 ] || mkdir -p "${OPENCODE_COMMANDS_DIR}"
-    for f in "${DEVSKILLS_DIR}/commands/"*.md; do
-      install_file "$f" "${OPENCODE_COMMANDS_DIR}/$(basename "$f")"
-    done
-    purge_renamed_commands "${OPENCODE_COMMANDS_DIR}"
+  if command -v opencode &>/dev/null || [ -d "${OPENCODE_CONFIG_DIR}" ] || [ -d "${HOME}/.opencode" ]; then
+    log "Installing OpenCode skills to ${OPENCODE_SKILLS_DIR}"
+    install_skills_to "${OPENCODE_SKILLS_DIR}"
+    purge_legacy_commands "${OPENCODE_COMMANDS_DIR}"
   else
     warn "OpenCode not detected. Skipping."
   fi
 }
 
 # ------------------------------------------------------------
-# OpenAI Codex prompts
+# OpenAI Codex skills
 # ------------------------------------------------------------
 
 # Codex reads project AGENTS.md natively (built by setup.sh/profile.sh), so only
-# the command surface needs installing. Custom prompts are plain .md files in
-# ${CODEX_HOME}/prompts, invoked namespaced as /prompts:<filename>. Like Claude
-# and OpenCode, this is a global target with no opt-out — detection gates it.
+# the skill surface needs installing. Skills live in ${CODEX_HOME}/skills, each
+# with a generated agents/openai.yaml pinning allow_implicit_invocation: false
+# (user-invoked via $name). Custom prompts were removed in Codex 0.117.0; the old
+# prompts/ dir is purged. Global target with no opt-out beyond --skip-codex.
 install_codex() {
   if command -v codex &>/dev/null || [ -d "${CODEX_HOME_DIR}" ]; then
-    log "Installing Codex prompts to ${CODEX_COMMANDS_DIR}"
-    # install_file makes the dir on real copies; guard so --dry-run leaves none.
-    [ "$DRY_RUN" -eq 1 ] || mkdir -p "${CODEX_COMMANDS_DIR}"
-    for f in "${DEVSKILLS_DIR}/commands/"*.md; do
-      install_file "$f" "${CODEX_COMMANDS_DIR}/$(basename "$f")"
-    done
-    purge_renamed_commands "${CODEX_COMMANDS_DIR}"
+    log "Installing Codex skills to ${CODEX_SKILLS_DIR}"
+    install_skills_to "${CODEX_SKILLS_DIR}" codex
+    purge_legacy_commands "${CODEX_COMMANDS_DIR}"
   else
     warn "Codex not detected. Skipping. Install from https://developers.openai.com/codex"
   fi
+}
+
+# ------------------------------------------------------------
+# Antigravity (agy) plugin
+# ------------------------------------------------------------
+
+# agy has no stable skills dir to copy into; it ingests a plugin directory
+# (plugin.json + skills/) via `agy plugin install`, which copies it into agy's
+# own store. Stage the whole skills tree in a temp plugin dir and hand it over.
+install_agy() {
+  if ! command -v agy &>/dev/null; then
+    warn "Antigravity (agy) not detected. Skipping."
+    return
+  fi
+  log "Installing Antigravity plugin via agy plugin install"
+  if [ "$DRY_RUN" -eq 1 ]; then
+    log "[dry] would stage devskills plugin and run: agy plugin install <staged dir>"
+    return
+  fi
+  local stage
+  stage="$(mktemp -d "${TMPDIR:-/tmp}/devskills-agy.XXXXXX")"
+  printf '{\n  "name": "devskills",\n  "version": "%s",\n  "description": "devskills user-invoked skills"\n}\n' \
+    "${DEVSKILLS_VERSION:-0.0.0}" > "${stage}/plugin.json"
+  cp -R "${DEVSKILLS_SKILLS_DIR}" "${stage}/skills"
+  if agy plugin install "$stage" >/dev/null 2>&1; then
+    log "installed devskills plugin into agy"
+  else
+    warn "agy plugin install failed; skills not installed for Antigravity"
+  fi
+  rm -rf "$stage"
 }
 
 # ------------------------------------------------------------
@@ -312,9 +383,10 @@ install_vscode() {
 log "devskills installer"
 log "source: ${DEVSKILLS_DIR}"
 
-install_claude
-install_opencode
-install_codex
+if [ "$SKIP_CLAUDE" -eq 0 ]; then install_claude; else log "Skipping Claude Code (--skip-claude)"; fi
+if [ "$SKIP_OPENCODE" -eq 0 ]; then install_opencode; else log "Skipping OpenCode (--skip-opencode)"; fi
+if [ "$SKIP_CODEX" -eq 0 ]; then install_codex; else log "Skipping Codex (--skip-codex)"; fi
+if [ "$SKIP_AGY" -eq 0 ]; then install_agy; else log "Skipping Antigravity (--skip-agy)"; fi
 
 if [ "$SKIP_CURSOR" -eq 0 ]; then
   install_cursor
@@ -347,10 +419,11 @@ if [ -n "$LANG_PROFILE" ]; then
 fi
 
 log ""
-log "Done. Verify with:"
-log "  claude /ds-tiger-style-mode   — in Claude Code"
-log "  /ds-tiger-style-mode          — in Cursor or OpenCode"
-log "  /prompts:ds-tiger-style-mode  — in Codex"
+log "Done. Verify a skill is installed, e.g. ds-tiger-style-mode:"
+log "  Claude Code:  /ds-tiger-style-mode"
+log "  OpenCode:     ds-tiger-style-mode (via the skill tool)"
+log "  Codex:        \$ds-tiger-style-mode"
+log "  Antigravity:  /ds-tiger-style-mode"
 log "  osv-scanner --version         — supply-chain vulnerability scanner"
 log "  tldt --version                — text summarizer"
 log "  ast-grep --version            — structural code search (enhances /ds-security-review)"
