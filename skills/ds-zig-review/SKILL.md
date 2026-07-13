@@ -61,6 +61,8 @@ Skip this section entirely if `--no-tiger` was passed. Otherwise it is mandatory
 - [ ] No hidden control flow introduced — no reliance on implicit conversions; narrowing casts made visible (`@intCast`, `@truncate`)
 - [ ] Integer overflow intent explicit: `+%`/`+|` only where wrap/saturate is wanted, plain `+`/`-`/`*` otherwise
 - [ ] `defer`/`errdefer` declared next to the acquisition they release
+- [ ] Blocking system access (filesystem, net, timers) goes through the injected `std.Io` interface (0.16) — passed explicitly like the allocator, not reached for globally; direct `std.posix` calls are largely gone
+- [ ] New buffered `Writer`/`Reader` (0.16) get an explicit buffer and are flushed deliberately; a pointer to the writer is passed downstream, never a copy
 
 ### Performance
 _Idiom-level checks only — for a ranked, costed optimization plan, use `/ds-perf-plan`._
