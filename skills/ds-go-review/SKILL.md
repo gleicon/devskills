@@ -45,6 +45,7 @@ Skip this section entirely if `--no-tiger` was passed. Otherwise it is mandatory
 - [ ] Sequences exposed as `iter.Seq`/`iter.Seq2` where iteration is the public API (Go 1.23+)
 - [ ] `json:",omitzero"` (not `omitempty`) when the intent is to omit zero values — notably zero `time.Time`
 - [ ] Tool dependencies declared in `go.mod` (`go get -tool`, run via `go tool`), not a legacy `tools.go` blank-import shim (Go 1.24+)
+- [ ] Structured logging via stdlib `log/slog` (Go 1.21+), not the unstructured `log` package or a third-party logger pulled in out of habit
 - [ ] Legacy idioms a modernizer would rewrite are flagged — pre-`slices`/`maps` helpers, `interface{}` over `any`, manual `b.N` loops (run `golangci-lint`'s `modernize`, or `go fix` on Go 1.26+)
 
 ### Performance
@@ -52,6 +53,7 @@ _Idiom-level checks only — for a ranked, costed optimization plan, use `/ds-pe
 - [ ] No allocation in request hot path (profile with `go test -benchmem` if critical)
 - [ ] Slice pre-allocated with `make([]T, 0, knownCap)` where capacity is known
 - [ ] `sync.Pool` used for frequently allocated/freed objects in hot paths
+- [ ] No manual `runtime.GOMAXPROCS` tuning or `automaxprocs` in containers — Go 1.25+ honors the cgroup CPU quota automatically
 - [ ] Database queries not issued inside loops
 - [ ] N+1 query patterns absent
 
@@ -68,6 +70,10 @@ _Idiom-level checks only — for a ranked, costed optimization plan, use `/ds-pe
 - [ ] Error paths tested, not just happy path
 - [ ] Benchmarks for performance-critical functions, written with `for b.Loop()` rather than a manual `for i := 0; i < b.N` loop (Go 1.24)
 - [ ] No `time.Sleep` in tests — use channels or sync primitives, or `testing/synctest`'s fake clock for time-dependent concurrency (Go 1.25+)
+
+## Version-specific checks
+
+Read the target Go version from `go.mod` (the `go` directive). Run the checklist above for every project. **If it targets Go 1.26 or newer, also read `1.26.md` in this skill directory and apply its checks on top.** If the version can't be determined, run the base and note that version-specific checks were skipped.
 
 ## Output Format
 
