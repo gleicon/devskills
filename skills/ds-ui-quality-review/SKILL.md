@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 When invoked, audit the UI in scope against one governing principle: **a UI is judged on both halves — it works and it's crafted.** Correct rendering is the floor, not the bar. Hunt the failures that ship broken or generic interfaces with equal energy: components that mishandle state and async edges (the bug a user hits), and interfaces that are inaccessible, slow, or generic-by-default (the experience nobody chose). Framework-agnostic — apply it whether the stack is React, Svelte, Vue, Solid, or plain HTML, on any runtime.
 
-Like `/ds-code-quality-review`, `/ds-doc-quality-review`, and `/ds-test-quality-review`, this produces a prioritized list. It's the after-the-fact audit; to build UI to this standard from the start, use `/ds-ui-mode` (mode). **Do not edit any files unless `--fix` is passed** (see Arguments).
+Report-only by default — the output is a prioritized list, no edits unless `--fix` is passed. This is the after-the-fact audit; to build UI to this standard from the start, use `/ds-ui-mode`.
 
 ## Arguments
 
@@ -62,4 +62,4 @@ Rules:
 
 - A short high-conviction list beats a long pedantic one. Don't pad it with subjective styling nits — design findings must point to a concrete, defensible problem (broken hierarchy, missing token system), not personal taste.
 - Respect the project's conventions and stack. Never recommend a new library or pattern where the codebase already has one.
-- Report-only by default — the output is the list. With `--fix`, apply only the mechanical, unambiguous findings above and leave the judgment-dependent ones reported; then summarize what was applied vs. left.
+- With `--fix`, additionally summarize what was applied vs. left (mechanics in Arguments).
