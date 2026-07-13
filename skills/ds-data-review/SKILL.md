@@ -4,7 +4,7 @@ description: "Run a strict data review of code changes — find data-correctness
 disable-model-invocation: true
 ---
 
-When invoked, audit the code in scope against one question: **is the data correct, consistent, and well-modeled?** Not "can it be injected" (that's `/ds-security-review` — assume queries are parameterized here), not "is the query fast" (that's `/ds-perf-plan`; the line is *consequence* — a slow query is perf, a query that returns *wrong or duplicate data* is here), not general code logic (that's `/ds-bug-review`). Every finding names the concrete condition that produces wrong, lost, or inconsistent data; a "best practice" with no demonstrated hazard is noise. Adapt to the store — don't demand relational constructs from a document database. **Do not edit any files unless `--fix` is passed** (see Arguments). When a finding is confirmed, `/ds-verify-this` proves the fix against real before/after data.
+When invoked, audit the code in scope against one question: **is the data correct, consistent, and well-modeled?** Not "can it be injected" (that's `/ds-security-review` — assume queries are parameterized here), not "is the query fast" (that's `/ds-perf-plan`; the line is *consequence* — a slow query is perf, a query that returns *wrong or duplicate data* is here), not general code logic (that's `/ds-bug-review`). Every finding names the concrete condition that produces wrong, lost, or inconsistent data; a "best practice" with no demonstrated hazard is noise. Adapt to the store — don't demand relational constructs from a document database. Report-only by default — no edits unless `--fix` is passed. When a finding is confirmed, `/ds-verify-this` proves the fix against real before/after data.
 
 ## Arguments
 
@@ -50,4 +50,4 @@ Rules:
 - Real data hazards only. Name the path to wrong, lost, or inconsistent data; a "weakness" with no such path is hardening at most.
 - Store-agnostic: don't flag the absence of relational constructs in a document store — judge against *that* store's correctness model.
 - A short, high-confidence list beats a long speculative one.
-- Report-only by default — the output is the list. With `--fix`, apply only the mechanical, unambiguous findings above and leave every judgment- or assumption-dependent one reported; then summarize what was applied vs. left.
+- With `--fix`, additionally summarize what was applied vs. left (mechanics in Arguments).
