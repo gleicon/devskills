@@ -203,19 +203,6 @@ RENAMED_COMMANDS=(
   ds-project-plan.md ds-modes.md ds-review.md
 )
 
-purge_renamed_commands() {
-  local dir="$1" name
-  for name in "${RENAMED_COMMANDS[@]}"; do
-    [ -f "${dir}/${name}" ] || continue
-    if [ "$DRY_RUN" -eq 1 ]; then
-      log "[dry] would remove renamed command ${dir}/${name}"
-    else
-      rm -f "${dir}/${name}"
-      log "removed renamed command ${dir}/${name}"
-    fi
-  done
-}
-
 # The frozen pre-overhaul command catalog: the 51 ds-*.md files that shipped as
 # commands before the skills migration. install now ships skills/ only, so any of
 # these left in a harness's legacy command/prompt dir is stale and shadows or

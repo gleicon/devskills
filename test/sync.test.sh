@@ -1,25 +1,33 @@
 #!/usr/bin/env bash
-# sync.test.sh — commands/ is the single source; all .md files must be non-empty.
+# sync.test.sh — skills/ is the single source. Every skill is a directory with a
+# non-empty SKILL.md carrying the required frontmatter (name matching the dir,
+# a description, and disable-model-invocation: true — the user-invoked contract).
 set -uo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-CMDS="${REPO}/commands"
+SKILLS="${REPO}/skills"
 
-echo "commands/ source integrity"
+echo "skills/ source integrity"
 
-if [ ! -d "$CMDS" ]; then
-  echo "  FAIL commands/ directory missing"
+if [ ! -d "$SKILLS" ]; then
+  echo "  FAIL skills/ directory missing"
   exit 1
 fi
 
 fail=0
-for f in "${CMDS}"/*.md; do
-  [ -s "$f" ] || { echo "  FAIL empty: $(basename "$f")"; fail=1; }
+count=0
+for d in "${SKILLS}"/*/; do
+  name="$(basename "$d")"
+  f="${d}SKILL.md"
+  count=$((count + 1))
+  [ -s "$f" ] || { echo "  FAIL missing/empty SKILL.md: ${name}"; fail=1; continue; }
+  grep -q "^name: ${name}$" "$f" || { echo "  FAIL ${name}: frontmatter name mismatch"; fail=1; }
+  grep -qE "^description: .+" "$f" || { echo "  FAIL ${name}: missing description"; fail=1; }
+  grep -q "^disable-model-invocation: true$" "$f" || { echo "  FAIL ${name}: not marked user-invoked"; fail=1; }
 done
 
 if [ "$fail" -eq 0 ]; then
-  count=$(ls "${CMDS}"/*.md 2>/dev/null | wc -l | tr -d ' ')
-  echo "  ok   ${count} commands found, all non-empty"
+  echo "  ok   ${count} skills found, all valid"
   exit 0
 fi
 exit 1

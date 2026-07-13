@@ -33,7 +33,7 @@
   },
   "files": [
     "bin/",
-    "commands/",
+    "skills/",
     "cursor/",
     "vscode/",
     "prompts/",
