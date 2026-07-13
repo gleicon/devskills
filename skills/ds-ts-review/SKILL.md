@@ -4,7 +4,7 @@ description: "Review TypeScript code with Tiger Style constraints and TypeScript
 disable-model-invocation: true
 ---
 
-Applies to: TypeScript 5+. Cloudflare Workers, Next.js, React, edge runtimes.
+Applies to: TypeScript 5.5+. Cloudflare Workers, Next.js, React, edge runtimes.
 
 ## Arguments
 
@@ -32,11 +32,13 @@ Skip this section entirely if `--no-tiger` was passed. Otherwise it is mandatory
 ### TypeScript
 - [ ] `strict: true` in tsconfig — no `any` unless explicitly justified with comment
 - [ ] No `as Type` casts that bypass runtime checks — validate at boundaries
+- [ ] `satisfies` to check a value against a type without widening it, instead of an annotation that erases the literal type or an `as` cast
 - [ ] Discriminated unions used for state modeling, not boolean flags
 - [ ] No optional chaining (`?.`) used to hide missing error handling
 - [ ] Prefer unions of string literals over enums entirely (`const enum` breaks under `isolatedModules`/`verbatimModuleSyntax` and most bundlers)
 - [ ] Return types explicit on all exported functions
 - [ ] No `namespace` — use ES modules
+- [ ] `using`/`await using` for scoped cleanup (TS 5.2) where a resource implements `[Symbol.dispose]`/`[Symbol.asyncDispose]`, instead of hand-written try/finally
 
 ### Cloudflare Workers (when applicable)
 - [ ] No Node.js-only APIs (`fs`, `path`, `crypto` with Node semantics) — use Web APIs
@@ -47,10 +49,12 @@ Skip this section entirely if `--no-tiger` was passed. Otherwise it is mandatory
 - [ ] `wrangler.toml` bindings match runtime `Env` interface
 
 ### React / Frontend (when applicable)
-- [ ] No state mutation — `setState` or dispatch with new object
-- [ ] `useEffect` dependencies array complete — no stale closure bugs
-- [ ] No inline object/function creation in JSX props that cause unnecessary re-renders
-- [ ] Data fetching co-located with loading/error state
+- [ ] No state mutation — `setState` or dispatch with a new object
+- [ ] `useEffect` dependency arrays complete — no stale-closure bugs — and effects reserved for real external synchronization, not derived state
+- [ ] With the React Compiler enabled, hand-written `useMemo`/`useCallback`/`React.memo` are dropped in new code — kept only where a measured need survives the compiler
+- [ ] `ref` passed as an ordinary prop (React 19) — no `forwardRef` wrapper
+- [ ] Promises/context read with `use()` where it fits; forms built on `useActionState`/`useFormStatus` rather than a bespoke state library
+- [ ] Data fetching co-located with its loading/error state
 - [ ] Unsafe HTML rendering avoided; content sanitized before DOM insertion
 - [ ] Keys on lists are stable identifiers, not array indices
 
