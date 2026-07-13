@@ -1,16 +1,16 @@
 ---
 name: ds-code-quality-review
-description: "Run an extremely strict maintainability review of code changes — abstraction quality, file sprawl, and spaghetti-condition growth. Reports findings by default; `--fix` applies the mechanical, unambiguous ones — structural/code-judo restructurings rest on judgment and stay reported."
+description: "Run an extremely strict maintainability + single-source-of-truth review of code changes — abstraction quality, file sprawl, spaghetti-condition growth, and duplicate/competing implementations. Reports findings by default; `--fix` applies the mechanical, unambiguous ones — structural/code-judo restructurings rest on judgment and stay reported."
 disable-model-invocation: true
 ---
 
-When invoked, perform a deep code-quality audit focused on implementation quality, maintainability, abstraction quality, and overall codebase health. Be **ambitious** about structure: do not merely identify local cleanup opportunities — actively search for "code judo" moves that preserve behavior while making the implementation dramatically simpler, smaller, more direct, and more elegant. This works at the file/function/abstraction altitude, *within* the existing architecture — whether the architecture itself is sound is `/ds-architecture-plan`'s question, not this one.
+When invoked, perform a deep code-quality audit focused on implementation quality, maintainability, abstraction quality, single source of truth, and overall codebase health. Be **ambitious** about structure: do not merely identify local cleanup opportunities — actively search for "code judo" moves that preserve behavior while making the implementation dramatically simpler, smaller, more direct, and more elegant. This works at the file/function/abstraction altitude, *within* the existing architecture — whether the architecture itself is sound is `/ds-architecture-plan`'s question, not this one.
 
 ## Arguments
 
 Treat every argument as review scope (files or directories). If no scope is given, review the changed files on the current branch.
 
-`--fix` → after reporting, apply only the findings whose fix is **mechanical and unambiguous** (a single obvious, behavior-preserving edit). The structural and code-judo restructurings this review favors rest on judgment, so they **stay report-only**. Summarize what was applied vs. left.
+`--fix` → after reporting, apply only the findings whose fix is **mechanical and unambiguous** (a single obvious, behavior-preserving edit — e.g. deleting a dead wrapper or redundant helper, or pointing a duplicated literal at its canonical definition). The structural and code-judo restructurings this review favors — and structural consolidations like merging two implementations or deleting a subsystem — rest on judgment, so they **stay report-only**. Summarize what was applied vs. left.
 
 ## Core Prompt
 
@@ -134,6 +134,18 @@ When you identify a code-quality problem, prefer suggestions like:
 Do not be satisfied with "maybe rename this" feedback when the real issue is structural.
 Do not be satisfied with a merely cleaner version of the same messy idea if there is a plausible path to a much simpler idea.
 
+## Single source of truth
+
+A second lens on the same diff: **prefer existing code over new code; prefer deletion over addition.** The maintainability rules above ask "is this the simplest structure?"; this asks "does this already exist, and is it now the *only* copy?" Assume parallel agents may have touched the tree, so watch for the same concept solved twice.
+
+Flag, anchored to `file:line`:
+
+- **Duplication** — functionality that already exists elsewhere: a second HTTP client, retry, cache, validation layer, serializer, config system, logging wrapper, or feature-flag mechanism. → reuse the existing implementation.
+- **Constant drift** — a literal, limit, timeout, path, env var, regex, or protocol value duplicated instead of referenced from its canonical definition.
+- **Competing implementations** — one concept built two ways: rival helpers, multiple utility files for the same problem, naming divergence for an identical concept. → consolidate into one.
+- **Unjustified dependencies** — a dependency added for one trivial function, or replaceable by the stdlib or a platform feature. → drop it, name the replacement.
+- **Reinvented idioms & drifting patterns** — hand-rolled functionality the language or stdlib already provides, or a new pattern/architecture style where the project already has an established one. → follow the existing convention.
+
 ## Review Tone
 
 Be direct, serious, and demanding about quality.
@@ -158,12 +170,13 @@ Good phrases:
 Prioritize findings in this order:
 
 1. Structural code-quality regressions
-2. Missed opportunities for dramatic simplification / code-judo restructuring
-3. Spaghetti / branching complexity increases
-4. Boundary / abstraction / type-contract problems that make the code harder to reason about
-5. File-size and decomposition concerns
-6. Modularity and abstraction issues
-7. Legibility and maintainability concerns
+2. Single-source-of-truth violations (duplicate or competing implementations, drifted constants, unjustified dependencies)
+3. Missed opportunities for dramatic simplification / code-judo restructuring
+4. Spaghetti / branching complexity increases
+5. Boundary / abstraction / type-contract problems that make the code harder to reason about
+6. File-size and decomposition concerns
+7. Modularity and abstraction issues
+8. Legibility and maintainability concerns
 
 Anchor each finding to `<file>:<line>` where possible.
 Do not flood the review with low-value nits if there are larger structural issues.
@@ -182,7 +195,7 @@ The bar for approval is:
 - no obvious spaghetti-growth from special-case branching
 - no obviously hacky or magical abstraction that makes the code harder to reason about
 - no unnecessary wrapper/cast/optionality churn obscuring the real design
-- no clear architecture-boundary leak or avoidable canonical-helper duplication
+- no clear architecture-boundary leak, avoidable canonical-helper duplication, or new duplicate/competing source of truth
 - no missed opportunity for an obvious decomposition that would materially improve maintainability
 
 Treat these as presumptive blockers unless the author can justify them clearly:
@@ -192,78 +205,6 @@ Treat these as presumptive blockers unless the author can justify them clearly:
 - the change adds ad-hoc branching that makes an existing flow more tangled
 - the change solves a local problem by scattering feature checks across shared code
 - the change adds an unnecessary abstraction, wrapper, or cast-heavy contract that makes the design more indirect
-- the change duplicates an existing helper or puts logic in the wrong layer when there is a clear canonical home
+- the change duplicates an existing helper or puts logic in the wrong layer when there is a clear canonical home, drifts a constant away from its canonical definition, introduces a competing implementation of an existing concept, or pulls in an unjustified dependency
 
 If those conditions are not met, leave explicit, actionable feedback and push for a cleaner decomposition.
-
-## Single source of truth (merged from ds-code-review — pending integration)
-
-> Carried verbatim from the retired `ds-code-review`. Integrate into a first-class SSOT findings section during the content rewrite; do not ship as a duplicate.
-
-When invoked, diff the current branch against the main branch and report findings. Reports only by default; `--fix` applies the mechanical, unambiguous removals (dead wrappers, redundant helpers, duplicate literals with a clear canonical home). Structural consolidations — merging two implementations, deleting a subsystem — stay reported.
-
-One goal: **maintain a single source of truth.** Prefer existing code over new code. Prefer deletion over addition.
-
-## Arguments
-
-Treat any argument as scope (files or directories). With no scope, review the branch diff against the main branch.
-
-`--fix` → after reporting, apply only the mechanical and behavior-preserving findings. Re-run any build/test/lint check already in the loop; revert any fix that breaks it. Summarize applied vs. left.
-
-## Review Checks
-
-### Duplication
-
-Flag when functionality already exists elsewhere: second HTTP client, second retry, second cache, second validation layer, second serializer, second configuration system, second logging wrapper, second feature flag mechanism.
-
-`duplicate: existing implementation already covers this. Reuse <location>.`
-
----
-
-### Constant Drift
-
-Flag duplicated literals, configuration values, limits, timeouts, paths, feature flags, environment variables, regexes, or protocol values.
-
-`constant: value duplicated. Reuse <location>.`
-
----
-
-### Parallel Agent Conflicts
-
-Assume multiple agents may have modified the codebase. Flag: same concept implemented differently in multiple places, competing helpers, multiple utility files solving the same problem, naming divergence for identical concepts.
-
-`conflict: competing implementation exists at <location>. Consolidate.`
-
----
-
-### Pattern Violations
-
-Prefer project conventions over generic best practices. Flag: new patterns where the project already has one, new architecture style in a different-style codebase, introducing repositories/services/factories when not already used, introducing frameworks for already-solved problems.
-
-`pattern: existing project pattern is <location>. Follow it.`
-
----
-
-### Idiomatic Usage
-
-Flag: hand-written functionality already provided by the language or stdlib, non-idiomatic loops, unnecessary wrappers, unnecessary interfaces, unnecessary generics, unnecessary inheritance, unnecessary dependency usage.
-
-`idiom: replace with standard language construct.`
-
----
-
-### Dependency Audit
-
-Every dependency must justify itself. Flag: dependency used for one trivial function, dependency replaceable by stdlib, dependency replaceable by platform feature.
-
-`dependency: remove. Use <replacement>.`
-
-## Output
-
-One finding per line, anchored to `file:line` where possible. End with one verdict:
-
-- `risk: low` — no significant violations
-- `risk: medium` — minor duplications or drifted constants; addressable without restructuring
-- `risk: high` — duplicate implementations, competing helpers, or multiple sources of truth introduced
-
-If no findings: `Looks consistent. Ship it.`
