@@ -111,6 +111,9 @@ Escalate findings when you see:
 - Logic added in the wrong layer/package when it should live somewhere more central.
 - Sequential async flow where obviously independent work could stay simpler and clearer with parallel execution.
 - Partial-update logic that leaves state less atomic than necessary.
+- Feature envy — a method using another object's data more than its own; move it to where the data lives.
+- Data clumps — the same few fields or params that always travel together; bundle them into a type.
+- Divergent change — one module repeatedly edited for several unrelated reasons; split it by reason.
 
 ## Preferred Remedies
 
@@ -182,6 +185,7 @@ Prioritize findings in this order:
 
 Anchor each finding to `<file>:<line>` where possible.
 Do not flood the review with low-value nits if there are larger structural issues.
+Skip anything a linter or formatter already enforces — spend the review on the structural findings tools can't see.
 
 Report-only by default — changes nothing. With `--fix`, apply only the mechanical, behavior-preserving findings and leave the structural ones reported. After applying, re-run any build/test/lint check already in the loop and revert any fix that breaks it or that touched more than the intended edit; then summarize what was applied vs. left.
 Prefer a smaller number of high-conviction comments over a long list of cosmetic notes.
