@@ -92,4 +92,3 @@ Durable context across sessions. The workflow runs fine without any of these.
 - `/ds-recall-capture` — store this session's outcome into recall's knowledge base.
 - `/ds-recall-setup` — initialize recall and its session integration.
 - `/ds-tldt` — extractive summary of a long doc before it enters context.
-- `/ds-typeset` — turn a Markdown file into a self-contained, themed HTML document.
