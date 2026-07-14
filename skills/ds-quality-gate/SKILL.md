@@ -4,9 +4,9 @@ description: "Run the review pipeline against the current branch or feature as a
 disable-model-invocation: true
 ---
 
-When active, the quality gate runs a seven-pass review pipeline in sequence, **bookended by `/ds-deslop`** — run first to clean the incoming diff, and again last to strip any slop the between-pass fixes introduced. Each pass surfaces findings, you accept or reject them, the agent implements the accepted ones, then the next pass runs. This is a mode — it stays on until you say "stop quality gate" or "/ds-quality-gate-mode off".
+When invoked, run the quality gate: six strict review passes in sequence, **bookended by `/ds-deslop`** — run first to clean the incoming diff, and again last to strip any slop the between-pass fixes introduced. Each pass surfaces findings, you accept or reject them, the agent implements the accepted ones, then the next pass runs. The gate is **finite** — it runs once through the passes and finishes, not a standing mode. Say "stop" or "skip the rest" at any point to end it early.
 
-Scope: the changed files on the current branch (same as `/ds-code-quality-review` with no argument). Scope can be narrowed: `/ds-quality-gate-mode src/handlers/` limits every pass to that path.
+Scope: the changed files on the current branch (same as `/ds-code-quality-review` with no argument). Narrow it by passing a path — `/ds-quality-gate src/handlers/` limits every pass to that path.
 
 ## The pipeline (in order)
 
@@ -23,7 +23,7 @@ Scope: the changed files on the current branch (same as `/ds-code-quality-review
 
 Each pass answers a **different question**. They do not overlap. The order matters: strip noise *first* so the structural and correctness passes see signal, not slop — and strip it *again last*, because this gate implements accepted fixes between passes, and those fixes are themselves freshly-generated code that can carry slop.
 
-## Loop behavior (when active)
+## Per-pass loop
 
 After each pass:
 1. Show findings for that pass only.
@@ -33,15 +33,14 @@ After each pass:
 
 If a pass finds nothing: say so in one line and move on. Do not pad.
 
-## Activation
+## Invocation
 
 ```
-/ds-quality-gate-mode              # run the full pipeline on branch changes
-/ds-quality-gate-mode src/api/     # scope every pass to a path
-/ds-quality-gate-mode off          # deactivate; resume normal behavior
+/ds-quality-gate              # run the full pipeline on branch changes
+/ds-quality-gate src/api/     # scope every pass to a path
 ```
 
-After the final pass, report a one-paragraph summary: what was fixed, what was skipped, and whether the branch is ready for `/ds-verify-this`.
+Say "stop" or "skip the rest" at any point to end the gate early. After the final pass, report a one-paragraph summary: what was fixed, what was skipped, and whether the branch is ready for `/ds-verify-this`.
 
 ## Rules
 
