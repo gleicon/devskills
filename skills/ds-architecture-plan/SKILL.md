@@ -36,6 +36,8 @@ Build the picture from evidence — the dependency/import graph, and (when avail
 
 **7. Architectural-style fit (L3).** Does the style (or its absence) match the system's actual needs and scale? Only with strong evidence — this is where cargo-culting hides.
 
+**8. Module depth.** Shallow modules whose interface is nearly as complex as what they hide (thin pass-throughs, wrappers that don't encapsulate); logic extracted only for testability where the real bugs live in how it's *called*, not in the unit. Diagnostic — the **deletion test**: imagine deleting the module. If complexity vanishes, it was a pass-through; if it reappears across N callers, it was earning its keep.
+
 ## Output
 
 A sequenced refactoring roadmap.
@@ -48,12 +50,15 @@ Then **ordered steps**, ranked by leverage (impact ÷ risk-effort) within orderi
 - **The symptom it fixes** — anchored to evidence: `file:line`, an import-cycle path, or the set of files that co-change. No symptom → not a step.
 - **Why now / what it unblocks** — the ordering rationale.
 - **Blast radius & risk.**
+- **Confidence**: `Strong` / `Worth exploring` / `Speculative` — how sure the problem is real and worth fixing, separate from the level's blast-radius risk.
 - **Safety**: whether characterization tests are needed at the seam *before* the move (point to `/ds-test-mode` or `/ds-tdd-mode`); confirm observable behavior is preserved.
 
 Rules:
 
 - **No recommendation without a concrete symptom in this codebase.** Generic best-practice with no local evidence is banned.
+- Before proposing a change, check `.project/DECISIONS.md` (if present) so you don't re-litigate a decision already settled there; if a proposal would override one, say so explicitly.
 - **Simplicity first** — prefer the change that removes structure over the one that adds it; resist speculative generality.
+- Weight impact by **churn** — a fix in a frequently-changed hot spot (`git log`) pays off more than the same fix in stable code.
 - Behavior-preserving: refactors keep observable behavior; recommend characterization tests before risky moves.
 - `Safety > Performance > Developer Experience`.
 - Each step independently shippable where possible.
