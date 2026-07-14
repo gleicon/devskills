@@ -13,7 +13,7 @@ When invoked, create or update `.project/config.md`, the per-project preferences
 ## Process
 
 1. Resolve the file: `.project/config.md` if `.project/` exists, else `config.md` in the current directory. Do not create `.project/` itself.
-2. **Discover available modes** — list `ds-*-mode` files in your assistant's command directory (`~/.claude/commands/`, `$CLAUDE_CONFIG_DIR/commands/`, `~/.codex/prompts/`, `~/.opencode/commands/`). These are the valid choices.
+2. **Discover available modes** — list the `ds-*-mode` skills installed under your assistant's skills directory (`~/.claude/skills/`, `$CLAUDE_CONFIG_DIR/skills/`, `~/.codex/skills/`, `~/.config/opencode/skills/`) — each is a `ds-*-mode/SKILL.md` directory. These are the valid choices.
 3. Read the current `## Modes` list if the file already exists.
 4. **Determine the desired modes:**
    - From the arguments, if given.
@@ -23,7 +23,7 @@ When invoked, create or update `.project/config.md`, the per-project preferences
 
 ## Rules
 
-- Bare names only (`ds-git-mode`), matching the installed command's file stem — no slash prefix.
+- Bare names only (`ds-git-mode`), matching the installed skill's directory name — no slash prefix.
 - Manage the `## Modes` section only. Preserve any other section a human added; the file is general-purpose and may grow.
 - Never auto-detect "active" modes from the session — the user chooses explicitly.
 - Touch only `config.md`. This command does not read or write `PLAN.md`, `PROJECT.md`, or any other `.project/` file.

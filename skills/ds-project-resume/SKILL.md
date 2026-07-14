@@ -12,7 +12,7 @@ When invoked, read the project's persisted state and report where to pick up —
 
 ## Process
 
-1. **Apply configured modes** (unless `--no-modes`). If `.project/config.md` exists, read its `## Modes` list and, for each mode, read that mode's installed command file from your assistant's command directory (`~/.claude/commands/`, `$CLAUDE_CONFIG_DIR/commands/`, `~/.codex/prompts/`, `~/.opencode/commands/`) and adopt its rules for the rest of the session (read-and-adopt). Echo which modes you applied; for a mode that grants an authorization or destructive-ish behavior — e.g. `ds-git-mode`'s standing authorization to commit without asking — spell out that consequence in the echo so it is never a surprise. If a listed mode can't be found, say so and tell the user to apply it manually — never silently skip. With `--no-modes`, don't apply them but still list what `config.md` configures. If `.project/config.md` is absent, drop a one-line hint that the user can create one with `/ds-project-config` to auto-apply modes.
+1. **Apply configured modes** (unless `--no-modes`). If `.project/config.md` exists, read its `## Modes` list and, for each mode, read that mode's installed skill file — `<name>/SKILL.md` under your assistant's skills directory (`~/.claude/skills/`, `$CLAUDE_CONFIG_DIR/skills/`, `~/.codex/skills/`, `~/.config/opencode/skills/`) — and adopt its rules for the rest of the session (read-and-adopt). Echo which modes you applied; for a mode that grants an authorization or destructive-ish behavior — e.g. `ds-git-mode`'s standing authorization to commit without asking — spell out that consequence in the echo so it is never a surprise. If a listed mode can't be found, say so and tell the user to apply it manually — never silently skip. With `--no-modes`, don't apply them but still list what `config.md` configures. If `.project/config.md` is absent, drop a one-line hint that the user can create one with `/ds-project-config` to auto-apply modes.
 2. If `.project/PLAN.md` does not exist, say so and suggest `/ds-project-map` then `/ds-roadmap`. Stop.
 3. Read `.project/PLAN.md` — focus on `## Now` (state, next, open questions) and the `## Roadmap` status.
 4. Read `.project/PROJECT.md` if present, for the repo map and constraints.
@@ -26,7 +26,7 @@ When invoked, read the project's persisted state and report where to pick up —
 ## Rules
 
 - Resume does not modify `.project/` files — it reads them. Applying a configured mode is part of resume; once applied, that mode governs the session under its own rules.
-- Apply modes via read-and-adopt only — never assume a mode is active without reading its command file.
+- Apply modes via read-and-adopt only — never assume a mode is active without reading its `SKILL.md`.
 - Trust `## Now` over a stale `handoff.md`.
 
 ## Output
