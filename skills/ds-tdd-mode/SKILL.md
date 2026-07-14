@@ -30,6 +30,7 @@ Bad tests — red flags:
 - Assert on call counts or call order
 - Test private methods
 - Verify through a side channel (e.g. a raw DB query) instead of the interface
+- Recompute the expected value the way the code does (`assert add(a, b) == a + b`) — the test can never disagree with the code. Draw expected values from an independent source: a known-good literal, a worked example, or the spec.
 - Break during refactoring when behavior has not changed
 
 A test that breaks on a behavior-preserving refactor is coupled to implementation. Rewrite it against the interface.
@@ -39,6 +40,7 @@ A test that breaks on a behavior-preserving refactor is coupled to implementatio
 - **Inject dependencies** — accept them as parameters; do not construct them inside the unit.
 - **Prefer pure functions** — return results rather than mutating shared state.
 - **Keep the API surface small** — fewer methods and parameters mean fewer test scenarios. Deep modules (small interface, substantial hidden implementation) test better than shallow ones.
+- **Mock only at system boundaries** — external APIs, the database, time, randomness, the filesystem. Never mock your own classes or internal collaborators; prefer a real or in-memory implementation (mocking internals couples the test to the design).
 
 ## Output
 

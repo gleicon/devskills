@@ -27,6 +27,7 @@ Identify the code worth testing first, then judge the tests against it. Run the 
 - mock internal collaborators, or assert on call counts / call order
 - reach through a side channel (raw DB query, private method) instead of the interface
 - assert nothing meaningful — a real break would still pass them
+- recompute the expected value the way the code does (`assert add(a, b) == a + b`) — the test can't disagree with the code, so a real break still passes
 - are non-deterministic: depend on wall-clock, network, or test order
 
 **4. Tests that lock the design (worse than no test).** A test coupled to implementation breaks on every refactor that changes nothing observable. It doesn't prevent failures — it taxes change and trains people to ignore red. Mock-the-world, snapshot-everything, and internals-asserting tests belong here. Recommend rewriting against the interface, or deleting.

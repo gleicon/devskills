@@ -21,6 +21,7 @@ Skip the trivia — getters, glue code, framework behavior, the obvious. A test 
 - Exercises real behavior through the public interface — not internals.
 - Survives a behavior-preserving refactor unchanged. If it breaks when nothing observable changed, it was testing the wrong thing.
 - One logical assertion; a name that states the behavior; deterministic (no wall-clock, network, or test-order dependence).
+- Checks its result against an independent expected value — a known-good literal, a worked example, the spec — not a value recomputed the way the code does (a test that mirrors the code can't fail).
 
 ## Don't lock the design
 
