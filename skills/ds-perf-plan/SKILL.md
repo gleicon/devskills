@@ -9,6 +9,7 @@ When invoked, analyze the code in scope against one question: **where is this do
 ## Arguments
 
 - Treat positional args as scope (files, directories, globs). With no scope, review the code changed on the current branch.
+- `--full` → analyze the entire codebase instead of just the branch's changes. Explicit positional scope still wins; `--full` only replaces the no-scope default.
 - `--max-level=<1|2|3>` (or freeform "no architecture changes", "free wins only") → clamp: suppress findings above that tier. Default: report all tiers, tagged.
 - `--no-tiger` → skip the Tiger Style section; run the hotspot hunt and cost models only.
 
