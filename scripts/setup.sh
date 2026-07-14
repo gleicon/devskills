@@ -23,22 +23,18 @@ Profiles (optional):
 Options:
   --concise         Add a terse-response directive to AGENTS.md
   --phases          Add phase-aware Insight suggestions to AGENTS.md
-  --cursor          Install Cursor rules into current project
-  --vscode          Install VSCode Copilot instructions into current project
   --uninstall       Remove devskills blocks from AGENTS.md/CLAUDE.md and the marker
   --dry-run         Show what would happen without writing files
 
 Example:
   setup.sh                              # baseline only
-  setup.sh --lang=go --cursor
+  setup.sh --lang=go
   setup.sh --lang=typescript --concise --phases
   setup.sh --uninstall                  # back out devskills changes
 EOF
 }
 
 LANG_PROFILE=""
-DO_CURSOR=0
-DO_VSCODE=0
 DO_CONCISE=0
 DO_PHASES=0
 DO_UNINSTALL=0
@@ -47,9 +43,7 @@ DRY_RUN=0
 for arg in "$@"; do
   case "$arg" in
     --lang=*) LANG_PROFILE="${arg#--lang=}" ;;
-    --claude-dir=*|--skip-cursor|--skip-vscode|--skip-external) ;;  # install-only flags; ignored here
-    --cursor) DO_CURSOR=1 ;;
-    --vscode) DO_VSCODE=1 ;;
+    --claude-dir=*|--skip-external) ;;  # install-only flags; ignored here
     --concise) DO_CONCISE=1 ;;
     --phases) DO_PHASES=1 ;;
     --uninstall) DO_UNINSTALL=1 ;;
@@ -61,8 +55,6 @@ done
 
 # shellcheck source=lib/profile.sh
 source "${DEVSKILLS_DIR}/scripts/lib/profile.sh"
-# shellcheck source=lib/editors.sh
-source "${DEVSKILLS_DIR}/scripts/lib/editors.sh"
 
 if [ "$DO_UNINSTALL" -eq 1 ]; then
   echo "Removing devskills from ${PWD}"
@@ -80,18 +72,6 @@ fi
 # AGENTS.md baseline (+ optional layers); CLAUDE.md imports it via @AGENTS.md.
 echo "devskills baseline${LANG_PROFILE:+ + ${LANG_PROFILE} profile}"
 devskills_apply "${DEVSKILLS_DIR}/agents-md" "$PWD" "$DRY_RUN" "$LANG_PROFILE" "$DO_CONCISE" "$DO_PHASES"
-
-# Cursor rules
-if [ "$DO_CURSOR" -eq 1 ]; then
-  echo "Cursor rules:"
-  devskills_install_cursor "$PWD" "$LANG_PROFILE"
-fi
-
-# VSCode Copilot
-if [ "$DO_VSCODE" -eq 1 ]; then
-  echo "VSCode Copilot:"
-  devskills_install_vscode "$PWD" "$LANG_PROFILE"
-fi
 
 echo ""
 echo "Done. AGENTS.md baseline${LANG_PROFILE:+ + ${LANG_PROFILE} profile} written; CLAUDE.md imports it."

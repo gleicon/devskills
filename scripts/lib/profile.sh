@@ -201,10 +201,6 @@ devskills_uninstall() {
       _dsk_log "removed legacy .devskills/language"
     fi
   fi
-
-  if [ -d "${dir}/.cursor/rules" ] || [ -f "${dir}/.github/copilot-instructions.md" ]; then
-    _dsk_warn "Cursor rules / VSCode Copilot instructions (if any) were left in place — remove manually if unwanted."
-  fi
 }
 
 # Apply the devskills baseline (and optional layers) to a project.

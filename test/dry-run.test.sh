@@ -13,10 +13,10 @@
 #                             under --dry-run, and a real run still copies
 #                             every command.
 #   2. test_nothing_written — the broader invariant: a near-full --dry-run
-#                             (--lang + cursor + vscode enabled) writes nothing
-#                             ANYWHERE under $HOME or PWD. Catches future leaks
-#                             at the install.sh orchestration layer, where the
-#                             mkdir bug actually lived. --external stays skipped
+#                             (--lang enabled) writes nothing ANYWHERE under
+#                             $HOME or PWD. Catches future leaks at the
+#                             install.sh orchestration layer, where the mkdir
+#                             bug actually lived. --external stays skipped
 #                             (it touches brew/curl/network; its own dry guards
 #                             are covered by external-tools.test.sh).
 #
@@ -71,7 +71,7 @@ test_command_paths() {
   echo "test: --dry-run creates no skill dirs anywhere (names the bug)"
   local home; home="$(sandbox_home)"
 
-  run_install "$home" --dry-run --skip-external --skip-cursor --skip-vscode
+  run_install "$home" --dry-run --skip-external
 
   [ ! -d "${home}/.config/opencode/skills" ] \
     && pass "~/.config/opencode/skills not created" \
@@ -97,7 +97,7 @@ test_command_paths() {
   : > "${home}/.codex/prompts/ds-quality-gate-mode.md"    # renamed -> ds-quality-gate
   : > "${home}/.codex/prompts/user-prompt.md"             # user-authored, keep
 
-  run_install "$home" --skip-external --skip-cursor --skip-vscode
+  run_install "$home" --skip-external
 
   local oc cc cx
   oc="$(ls -d "${home}/.config/opencode/skills"/*/ 2>/dev/null | wc -l | tr -d ' ')"
@@ -141,18 +141,16 @@ test_nothing_written() {
   echo "test: a near-full --dry-run writes nothing anywhere (HOME or PWD)"
   local home; home="$(sandbox_home)"
   # A project dir OUTSIDE the repo, so install.sh's in-repo auto-skip block
-  # does not fire and --lang is honored. Seed .cursor/.vscode so the editor
-  # install paths actually execute regardless of what's on PATH.
+  # does not fire and --lang is honored.
   local proj; proj="$(mktemp -d "${TMPDIR:-/tmp}/dsk-dryrun-proj.XXXXXX")"
-  mkdir -p "${proj}/.cursor" "${proj}/.vscode"
 
   local home_before proj_before
   home_before="$(fingerprint "$home")"
   proj_before="$(fingerprint "$proj")"
 
-  # cursor + vscode enabled (not skipped); --lang exercises the AGENTS.md path.
-  # XDG_CONFIG_HOME sandboxes OpenCode's skills root; --skip-agy since agy's store
-  # can't be sandboxed under $HOME (its dry-run path is a plain no-op regardless).
+  # --lang exercises the AGENTS.md path. XDG_CONFIG_HOME sandboxes OpenCode's
+  # skills root; --skip-agy since agy's store can't be sandboxed under $HOME
+  # (its dry-run path is a plain no-op regardless).
   HOME="$home" CLAUDE_CONFIG_DIR="${home}/.claude" CODEX_HOME="${home}/.codex" \
     XDG_CONFIG_HOME="${home}/.config" \
     bash -c "cd '$proj' && bash '${REPO}/install.sh' --dry-run --lang=go --skip-external --skip-agy" \

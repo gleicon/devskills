@@ -23,8 +23,6 @@ warn() { printf '[devskills] WARN: %s\n' "$1" >&2; }
 # Shared tldt logic (depends on log/warn above and DRY_RUN below).
 # shellcheck source=scripts/lib/external-tools.sh
 source "${DEVSKILLS_DIR}/scripts/lib/external-tools.sh"
-# shellcheck source=scripts/lib/editors.sh
-source "${DEVSKILLS_DIR}/scripts/lib/editors.sh"
 
 # ------------------------------------------------------------
 # Arguments
@@ -32,8 +30,6 @@ source "${DEVSKILLS_DIR}/scripts/lib/editors.sh"
 
 LANG_PROFILE=""
 SKIP_EXTERNAL=0
-SKIP_CURSOR=0
-SKIP_VSCODE=0
 SKIP_CLAUDE=0
 SKIP_OPENCODE=0
 SKIP_CODEX=0
@@ -47,8 +43,6 @@ for arg in "$@"; do
     --lang=*) LANG_PROFILE="${arg#--lang=}" ;;
     --claude-dir=*) CLAUDE_CONFIG_DIR="${arg#--claude-dir=}" ;;
     --skip-external) SKIP_EXTERNAL=1 ;;
-    --skip-cursor) SKIP_CURSOR=1 ;;
-    --skip-vscode) SKIP_VSCODE=1 ;;
     --skip-claude) SKIP_CLAUDE=1 ;;
     --skip-opencode) SKIP_OPENCODE=1 ;;
     --skip-codex) SKIP_CODEX=1 ;;
@@ -57,7 +51,7 @@ for arg in "$@"; do
     --phases) PHASES=1 ;;
     --dry-run) DRY_RUN=1 ;;
     --help|-h)
-      echo "Usage: install.sh [--lang=go|typescript|javascript|rust|python|java|zig] [--claude-dir=PATH] [--skip-external] [--skip-claude] [--skip-opencode] [--skip-codex] [--skip-agy] [--skip-cursor] [--skip-vscode] [--concise] [--phases] [--dry-run]"
+      echo "Usage: install.sh [--lang=go|typescript|javascript|rust|python|java|zig] [--claude-dir=PATH] [--skip-external] [--skip-claude] [--skip-opencode] [--skip-codex] [--skip-agy] [--concise] [--phases] [--dry-run]"
       echo ""
       echo "  --lang=<profile>    Language profile to write: go|typescript|javascript|rust|python|java|zig"
       echo "  --claude-dir=PATH   Claude config dir (default: \$CLAUDE_CONFIG_DIR or \$HOME/.claude)"
@@ -66,8 +60,6 @@ for arg in "$@"; do
       echo "  --skip-opencode     Skip OpenCode skills install"
       echo "  --skip-codex        Skip Codex skills install"
       echo "  --skip-agy          Skip Antigravity (agy) plugin install"
-      echo "  --skip-cursor       Skip Cursor rules install into the current project"
-      echo "  --skip-vscode       Skip VSCode Copilot instructions install into the current project"
       echo "  --concise           Add a terse-response directive to AGENTS.md (with --lang)"
       echo "  --phases            Add phase-aware Insight suggestions to AGENTS.md (with --lang)"
       echo "  --dry-run           Show what would happen, write nothing"
@@ -87,15 +79,10 @@ CLAUDE_COMMANDS_DIR="${CLAUDE_CONFIG_DIR}/commands"
 CLAUDE_SKILLS_DIR="${CLAUDE_CONFIG_DIR}/skills"
 DEVSKILLS_SKILLS_DIR="${DEVSKILLS_DIR}/skills"
 
-# Auto-skip project-local installers when run from inside the devskills
-# source repo — otherwise they write contributor files into the repo itself.
+# Auto-skip project-local writes when run from inside the devskills source
+# repo — otherwise --lang writes contributor files into the repo itself.
 case "${PWD}/" in
   "${DEVSKILLS_DIR}"/*)
-    if [ "$SKIP_CURSOR" -eq 0 ] || [ "$SKIP_VSCODE" -eq 0 ]; then
-      warn "Running inside the devskills source repo; skipping Cursor/VSCode install."
-    fi
-    SKIP_CURSOR=1
-    SKIP_VSCODE=1
     if [ -n "$LANG_PROFILE" ]; then
       warn "Running inside the devskills source repo; ignoring --lang to avoid writing CLAUDE.md into the repo."
       LANG_PROFILE=""
@@ -338,32 +325,6 @@ install_lang_profile() {
 }
 
 # ------------------------------------------------------------
-# Cursor rules
-# ------------------------------------------------------------
-
-install_cursor() {
-  if [ -d "${PWD}/.cursor" ] || command -v cursor &>/dev/null; then
-    log "Installing Cursor rules to ${PWD}/.cursor/rules/"
-    devskills_install_cursor "$PWD" "$LANG_PROFILE"
-  else
-    warn "Cursor not detected in current project. Run from a project directory with .cursor/ or with Cursor installed."
-  fi
-}
-
-# ------------------------------------------------------------
-# VSCode Copilot
-# ------------------------------------------------------------
-
-install_vscode() {
-  if [ -d "${PWD}/.vscode" ] || command -v code &>/dev/null; then
-    log "Installing VSCode Copilot instructions to ${PWD}/.github/copilot-instructions.md"
-    devskills_install_vscode "$PWD" "$LANG_PROFILE"
-  else
-    warn "VSCode not detected in current project."
-  fi
-}
-
-# ------------------------------------------------------------
 # Main
 # ------------------------------------------------------------
 
@@ -374,18 +335,6 @@ if [ "$SKIP_CLAUDE" -eq 0 ]; then install_claude; else log "Skipping Claude Code
 if [ "$SKIP_OPENCODE" -eq 0 ]; then install_opencode; else log "Skipping OpenCode (--skip-opencode)"; fi
 if [ "$SKIP_CODEX" -eq 0 ]; then install_codex; else log "Skipping Codex (--skip-codex)"; fi
 if [ "$SKIP_AGY" -eq 0 ]; then install_agy; else log "Skipping Antigravity (--skip-agy)"; fi
-
-if [ "$SKIP_CURSOR" -eq 0 ]; then
-  install_cursor
-else
-  log "Skipping Cursor rules (--skip-cursor)"
-fi
-
-if [ "$SKIP_VSCODE" -eq 0 ]; then
-  install_vscode
-else
-  log "Skipping VSCode Copilot instructions (--skip-vscode)"
-fi
 
 if [ "$SKIP_EXTERNAL" -eq 0 ]; then
   log "Installing external tools..."

@@ -24,7 +24,7 @@ function run(script, extraArgs) {
 
 function help() {
   console.log(`
-devskills — command pack for Claude Code, OpenCode, Cursor, VSCode
+devskills — skill pack for Claude Code, OpenCode, Codex, Antigravity
 
 Commands:
   install              Install skills to all detected environments
@@ -39,10 +39,6 @@ Options (pass through to install/setup):
   --skip-external      Skip external tool installation (osv-scanner, tldt, ast-grep)
   --upgrade-deps       Also force-upgrade external tools (update)
   --claude-dir=<path>  Claude config dir (default: $CLAUDE_CONFIG_DIR or ~/.claude)
-  --skip-cursor        Skip Cursor rules install (install)
-  --skip-vscode        Skip VSCode Copilot install (install)
-  --cursor             Install Cursor rules into current project (setup)
-  --vscode             Install VSCode Copilot instructions (setup)
   --concise            Add a terse-response directive to AGENTS.md (setup/install)
   --phases             Add phase-aware Insight suggestions to AGENTS.md (setup/install)
   --uninstall          Remove devskills blocks from AGENTS.md/CLAUDE.md (setup)
@@ -51,7 +47,7 @@ Options (pass through to install/setup):
 Examples:
   npx devskills install
   npx devskills setup                       # AGENTS.md baseline only
-  npx devskills setup --lang=go --cursor
+  npx devskills setup --lang=go
   npx devskills install --lang=typescript --skip-external
   npx devskills install --claude-dir=~/.config/claude
   npx devskills update --upgrade-deps
@@ -74,12 +70,6 @@ function list() {
     if (f.endsWith(".md")) {
       console.log(`  ${f.replace(".md", "")}`)
     }
-  }
-
-  console.log("\nCursor rules:")
-  const cursorDir = path.join(DEVSKILLS_DIR, "cursor", "rules")
-  for (const f of fs.readdirSync(cursorDir).sort()) {
-    console.log(`  ${f}`)
   }
   console.log()
 }

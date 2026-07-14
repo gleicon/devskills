@@ -17,8 +17,8 @@ else
   exit 1
 fi
 
-# Reinstall commands only (no external tools, no Cursor/VSCode, no language profile changes)
-"${DEVSKILLS_DIR}/install.sh" --skip-external --skip-cursor --skip-vscode
+# Reinstall skills only (no external tools, no language profile changes)
+"${DEVSKILLS_DIR}/install.sh" --skip-external
 
 # Optionally force-upgrade external tools
 if [[ " $* " == *" --upgrade-deps "* ]]; then
