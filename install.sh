@@ -321,7 +321,7 @@ install_lang_profile() {
 
   # shellcheck source=scripts/lib/profile.sh
   source "${DEVSKILLS_DIR}/scripts/lib/profile.sh"
-  devskills_apply "${DEVSKILLS_DIR}/prompts" "$PWD" "$DRY_RUN" "$lang" "$CONCISE" "$PHASES"
+  devskills_apply "${DEVSKILLS_DIR}/agents-md" "$PWD" "$DRY_RUN" "$lang" "$CONCISE" "$PHASES"
 }
 
 # ------------------------------------------------------------

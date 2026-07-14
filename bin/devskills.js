@@ -56,7 +56,7 @@ Examples:
 
 function list() {
   const skillsDir = path.join(DEVSKILLS_DIR, "skills")
-  const langDir = path.join(DEVSKILLS_DIR, "prompts", "language")
+  const langDir = path.join(DEVSKILLS_DIR, "agents-md", "language")
 
   console.log("\nSkills (Claude Code / OpenCode / Codex / Antigravity):")
   for (const name of fs.readdirSync(skillsDir).sort()) {
