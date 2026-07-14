@@ -11,6 +11,7 @@ Report-only by default — the output is a prioritized list, no edits unless `--
 ## Arguments
 
 - Treat positional args as scope (files, directories, globs). With no scope, review the tests covering code changed on the current branch.
+- `--full` → review the whole test suite instead of just the tests covering the branch's changes. Explicit positional scope still wins; `--full` only replaces the no-scope default.
 - Freeform scope ("the auth module", "the whole suite") is interpreted reasonably.
 - `--fix` → after reporting, apply only the findings whose fix is **mechanical and unambiguous** — deleting a worthless or duplicate test, removing a snapshot that asserts nothing. Writing a missing test or rewriting a design-locking one is judgment work, so it **stays report-only**. After applying, re-run any build/test/lint check already in the loop and revert any fix that breaks it — or that touched more than the intended mechanical edit. Close with a summary of what was applied and what was left.
 

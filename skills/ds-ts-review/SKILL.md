@@ -8,11 +8,12 @@ Applies to: TypeScript 5.5+. Cloudflare Workers, Next.js, React, edge runtimes.
 
 ## Arguments
 
-Scan the invocation for the `--no-tiger` and `--fix` flags. Treat every other argument as review scope (files or directories); if no scope is given, review the changed files on the current branch.
+Scan the invocation for the `--no-tiger`, `--fix`, and `--full` flags. Treat every other argument as review scope (files or directories); if no scope is given, review the changed files on the current branch.
 
 - `--no-tiger` present → skip the Tiger Style section; run the remaining sections only.
 - `--no-tiger` absent → run all sections (default).
 - `--fix` → after reporting, apply only the violations whose fix is **mechanical and unambiguous** (a rename to the idiom, a missing error check the review is certain about). Anything that changes logic or rests on an unverified assumption — especially security and correctness findings — **stays report-only**. After applying, re-run any build/test/lint check already in the loop and revert any fix that breaks it — or that touched more than the intended mechanical edit. End with a summary of what was applied and what was left.
+- `--full` → review the entire codebase instead of just the branch's changes. Explicit positional scope still wins; `--full` only replaces the no-scope default.
 
 Example: `/ds-ts-review --no-tiger src/ worker/` reviews `src/` and `worker/` without Tiger Style.
 

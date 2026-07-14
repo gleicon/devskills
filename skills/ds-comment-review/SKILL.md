@@ -9,6 +9,7 @@ When invoked, audit the comments in scope against one question: **does each comm
 ## Arguments
 
 - Positional args are scope (files, directories, globs, or the whole codebase). With no scope, review comments in the code changed on the current branch.
+- `--full` → review comments across the whole codebase instead of just the branch's changes. Explicit positional scope still wins; `--full` only replaces the no-scope default.
 - `--fix` → apply the edits in place (delete the noise, tighten the verbose, strip cruft, keep the genuine ones) instead of only reporting.
 
 ## What to flag

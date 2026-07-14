@@ -9,6 +9,7 @@ When invoked, audit the code in scope against one question: **is the data correc
 ## Arguments
 
 - Treat positional args as scope (files, directories, globs — including schema and migration files). With no scope, review the code changed on the current branch.
+- `--full` → review the entire codebase instead of just the branch's changes. Explicit positional scope still wins; `--full` only replaces the no-scope default.
 - Freeform scope ("the orders schema", "the reporting queries") is interpreted reasonably.
 - State the store/engine if you know it (Postgres, MySQL, SQLite, Mongo, DynamoDB…) — isolation defaults and SQL dialects differ. Otherwise infer from config/driver and **state the assumption**.
 - `--pipelines` extends the review with a sixth area — data-pipeline / ETL correctness (idempotency, replay/backfill safety, late & out-of-order data, dedup, schema drift). **Off by default**: the default review covers the operational store. With the flag on, it's the after-the-fact audit counterpart to the `/ds-data-mode` build mode (mode shapes the pipeline build; this audits the built pipeline code).

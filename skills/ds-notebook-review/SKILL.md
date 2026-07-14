@@ -9,6 +9,7 @@ When invoked, audit the `.ipynb` files in scope against one question: **will thi
 ## Arguments
 
 - Treat positional args as scope (notebook files, directories, globs). With no scope, review the `.ipynb` files changed on the current branch.
+- `--full` → review all notebooks in the repo instead of just the branch's changes. Explicit positional scope still wins; `--full` only replaces the no-scope default.
 - Freeform scope ("the training notebook", "the EDA folder") is interpreted reasonably.
 - `--fix` → after reporting, apply only the findings whose fix is **mechanical and unambiguous**: strip committed output cells, reset `execution_count` to `null`, remove a scratch cell the review is certain is dead. Anything that changes execution semantics or rests on an assumption — setting a seed, reordering cells, rewriting leakage-prone preprocessing, deleting a cell whose effect you can't confirm — **stays report-only**. Edit the notebook JSON directly for the mechanical fixes (clear each cell's `outputs`, reset `execution_count` to `null`), confirm the file still parses as valid notebook JSON, then close with a summary of what was applied and what was left.
 

@@ -11,6 +11,7 @@ Report-only by default — the output is a prioritized findings list, no edits u
 ## Arguments
 
 - Treat positional args as scope (files, directories, globs). With no scope, review the code changed on the current branch.
+- `--full` → review the entire codebase instead of just the branch's changes. Explicit positional scope still wins; `--full` only replaces the no-scope default.
 - Freeform scope ("the parser", "the whole diff") is interpreted reasonably.
 - `--fix` → after reporting, apply only the findings whose fix is **mechanical and unambiguous** — a single obvious edit, no design judgment. A wrong fix to a correctness finding is worse than none, so anything that changes behavior or rests on an assumption you couldn't verify **stays report-only**. After applying, re-run any build/test/lint check already in the loop and revert any fix that breaks it — or that touched more than the intended mechanical edit. Close with a summary of what was applied and what was left.
 

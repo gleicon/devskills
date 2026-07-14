@@ -10,6 +10,8 @@ When invoked, perform a deep code-quality audit focused on implementation qualit
 
 Treat every argument as review scope (files or directories). If no scope is given, review the changed files on the current branch.
 
+`--full` → review the entire codebase instead of just the branch's changes. Explicit paths still win; `--full` only replaces the no-scope default.
+
 `--fix` → after reporting, apply only the findings whose fix is **mechanical and unambiguous** (a single obvious, behavior-preserving edit — e.g. deleting a dead wrapper or redundant helper, or pointing a duplicated literal at its canonical definition). The structural and code-judo restructurings this review favors — and structural consolidations like merging two implementations or deleting a subsystem — rest on judgment, so they **stay report-only**. Summarize what was applied vs. left.
 
 ## Core Prompt

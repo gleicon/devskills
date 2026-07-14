@@ -11,6 +11,7 @@ Report-only by default — the output is a prioritized list of what needs fixing
 ## Arguments
 
 - Treat positional args as scope (files, directories, globs). With no scope, review the documentation changed on the current branch (`README`, `docs/`, `*.md`, and the like).
+- `--full` → review all documentation in the repo instead of just what changed on the branch. Explicit positional scope still wins; `--full` only replaces the no-scope default.
 - Freeform scope ("the whole docs/ tree", "the README") is interpreted reasonably.
 - `--fix` → after reporting, apply the findings whose fix is **mechanical and unambiguous** — a fixable dead link, a stale count, a clearly-drifted line, a bloat-cut that loses no information; leave anything resting on a judgment call (a rewrite, a restructure, a coverage gap to fill) as report-only. After applying, re-run any build/test/lint check already in the loop and revert any fix that breaks it — or that touched more than the intended mechanical edit. Close with a summary of what was applied and what was left.
 
