@@ -50,8 +50,4 @@ Summary (<N> sentences, ~<X>% compression):
 Source: <filename or url>
 ```
 
-## When to trigger automatically
-
-This command can be configured to trigger automatically when input exceeds a token threshold (default: 2000 tokens). Set `TLDT_AUTO_THRESHOLD` in environment to override.
-
 Install tldt: `go install github.com/gleicon/tldt/cmd/tldt@latest`
