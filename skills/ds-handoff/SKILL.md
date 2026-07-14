@@ -14,6 +14,7 @@ When invoked, write a handoff document summarizing the current conversation, the
 
 ## Rules
 
+- **Redact secrets and PII before writing.** The handoff is a plaintext file pasted into a fresh session — strip API keys, tokens, passwords, and personal data from anything carried over; point to where a secret lives, never its value.
 - Do not duplicate content already captured in other artifacts (PRDs, plans, ADRs, issues, commits, diffs). Reference them by path or URL instead.
 - If the user passed arguments, treat them as a description of what the next session will focus on and tailor the document accordingly.
 

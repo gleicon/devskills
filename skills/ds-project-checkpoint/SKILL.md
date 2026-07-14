@@ -25,7 +25,7 @@ When invoked, make sure nothing durable is lost before `/clear` or the end of a 
    - `## Roadmap` task statuses to match reality (`[ ]` / `[~]` / `[x]`).
    - Rewrite `## Now`: **State** (where things stand, 2–4 lines), **Next** (the single next action), **Open questions** (anything unresolved that blocks progress), and a short **Watch** line for non-blocking things to keep an eye on, if any.
 6. **No-op fast path:** if the sweep found nothing durable beyond state, say so — just update `## Now`/roadmap and report "nothing durable to route."
-7. **If `--handoff`:** also write `.project/handoff.md` (current goal, what's done, what remains, key decisions, gotchas). Reference existing artifacts (`PLAN.md`, `DECISIONS.md`, commits) by path rather than duplicating them.
+7. **If `--handoff`:** also write `.project/handoff.md` (current goal, what's done, what remains, key decisions, gotchas). Reference existing artifacts (`PLAN.md`, `DECISIONS.md`, commits) by path rather than duplicating them. **Redact secrets/PII — the handoff is plaintext a fresh session will read.**
 8. **Confirm safe to clear** — state what is now persisted and where.
 
 ## Rules
