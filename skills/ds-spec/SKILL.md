@@ -4,7 +4,7 @@ description: "Convert a description into a structured specification."
 disable-model-invocation: true
 ---
 
-When invoked, gather information and produce a spec document that defines WHAT the system does, not HOW it is implemented. The spec becomes the input to `/ds-workflow` planning phases.
+When invoked, gather information and produce a spec document that defines WHAT the system does, not HOW it is implemented. The spec becomes the input to planning — hand it to `/ds-roadmap` to sequence the work.
 
 ## Process
 
@@ -83,4 +83,4 @@ If a language profile is active, add a "Technical Profile" section:
 
 Write the spec to `.project/SPEC.md` if `.project/` exists, else `SPEC.md` in the current directory; then display it inline for review.
 
-Ask: "Should I proceed to planning with `/ds-workflow`?" after displaying the spec.
+Ask: "Should I proceed to planning with `/ds-roadmap`?" after displaying the spec.

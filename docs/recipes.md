@@ -386,7 +386,7 @@ Indexed by *what you want to do*, not by kind — for the suffix taxonomy (`-mod
 | Land a backlog as separate PRs, `/clear`-safe | `/ds-roadmap` + `/ds-project-resume` |
 | Compress a long source doc | `/ds-tldt` |
 | Save tokens on a long session | `/ds-caveman-lite-mode` · `/ds-caveman-ultra-mode` |
-| Run the full pre-PR review pipeline with fixes between passes | `/ds-quality-gate-mode` |
+| Run the full pre-PR review pipeline with fixes between passes | `/ds-quality-gate` |
 | Turn a repeated manual flow into a command | `/ds-write-a-command` |
 | Inject cross-project context before asking | `/ds-recall` |
 | Store this session's outcome for future sessions | `/ds-recall-capture` |

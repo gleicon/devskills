@@ -207,7 +207,7 @@ Strict review of code comments under one lens — **does each comment earn its p
 
 ## Quality Gate
 
-### `/ds-quality-gate-mode` — mode
+### `/ds-quality-gate`
 
 Eight-pass review pipeline for a feature branch or scoped path, **bookended by `/ds-deslop`**. Run in order; implement accepted findings between passes before proceeding.
 
@@ -218,7 +218,7 @@ Deslop runs first to clean the incoming diff, then again last because the gate i
 After each pass: shows findings for that pass, asks "accept all / reject all / skip N", implements accepted ones, then moves to the next pass. Reports a one-paragraph summary at the end.
 
 - **Args:** optional path scope (applies to every pass). None → branch diff.
-- **Toggle:** `/ds-quality-gate-mode` to activate, `/ds-quality-gate-mode off` or "stop quality gate" to deactivate.
+- **Run:** `/ds-quality-gate` runs the pipeline once through; say "stop" to end early.
 - **Reach for it when:** finishing a feature branch before opening a PR; each pass answers a different question so running all six is not redundant.
 
 ---

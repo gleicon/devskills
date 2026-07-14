@@ -4,7 +4,7 @@ description: "Configure project preferences in `.project/config.md` — currentl
 disable-model-invocation: true
 ---
 
-When invoked, create or update `.project/config.md`, the per-project preferences a session reads at start. Today it holds one thing: the **modes** that `/ds-project-resume` (and `/ds-workflow`) apply automatically. This command edits only `config.md` — it never changes another `.project/` file, and never guesses which modes are active in the current session.
+When invoked, create or update `.project/config.md`, the per-project preferences a session reads at start. Today it holds one thing: the **modes** that `/ds-project-resume` applies automatically. This command edits only `config.md` — it never changes another `.project/` file, and never guesses which modes are active in the current session.
 
 ## Arguments
 
@@ -30,4 +30,4 @@ When invoked, create or update `.project/config.md`, the per-project preferences
 
 ## Output
 
-Display the written `## Modes` list and the file path, plus a one-line note that these apply on `/ds-project-resume` and `/ds-workflow` (skip with `--no-modes`).
+Display the written `## Modes` list and the file path, plus a one-line note that these apply on `/ds-project-resume` (skip with `--no-modes`).
