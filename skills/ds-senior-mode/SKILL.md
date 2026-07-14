@@ -39,7 +39,7 @@ This is a composite standing posture: it folds in the commit discipline of `/ds-
 
 - Commit each **self-contained, working** unit as it lands (builds/passes, reversible, one logical change). Don't bundle unrelated changes; don't dribble WIP. Committing is part of closing an already-approved step — no separate ask for the commit itself; the next step still gates.
 - Messages even terser than `/ds-git-mode`: `type(scope): subject`, imperative, lowercase, ~50 chars. **One line.** A body is the exception, not the rule — add it only for a genuinely non-obvious *why*, never to re-narrate the diff as bullets.
-- Report the one-line subject after each commit. **Never push, never rewrite shared history.** Branch off the default branch before the first commit.
+- Report the one-line subject after each commit. **Never push, never rewrite shared history, never discard uncommitted work without a yes.** Branch off the default branch before the first commit.
 
 ## PRs & written summaries
 

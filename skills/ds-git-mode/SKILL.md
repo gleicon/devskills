@@ -26,6 +26,7 @@ When active, manage version control the way a senior engineer does: commit each 
 
 - Work on a branch. If you're on the default branch (`main`/`master`), create a concise, type-prefixed branch (`feat/…`, `fix/…`, `refactor/…`) from the work and switch to it **before the first commit**. Match the project's branch-naming convention if it has one.
 - **Never rewrite shared history**: no rebase, no squash that rewrites, no force-push, no amend of a pushed commit. Keep history linear and append-only — each commit is real done work. (Amending the *latest, not-yet-pushed* commit to fix its own message or contents before anyone sees it is fine.)
+- **Never discard uncommitted or unmerged work without a yes.** `git reset --hard`, `git clean -f`/`-fd`, `git checkout -- .` / `git restore .`, and `git branch -D` irreversibly delete changes — the user's or your own. Reach for a non-destructive move first (stash, a fresh branch); if a destructive one is genuinely needed, name what will be lost and confirm before running it.
 - **Never push unless explicitly asked.** Opening PRs is out of scope — hand off to `gh` when the user asks.
 
 Confirm activation with "Git mode active." Activating a mode only turns on this posture; it is not approval to begin work — continue with whatever the user already asked for, or wait for their next instruction.
