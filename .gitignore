@@ -2,3 +2,20 @@ node_modules/
 .devskills/
 *.log
 .DS_Store
+
+# Agentic / LLM harness artifacts — assistant working files, not product.
+# (Product sources live in skills/, agents-md/, cursor/, vscode/.)
+.project/
+.claude/
+.codex/
+.opencode/
+.cursor/
+.continue/
+.windsurf/
+.aider*
+/CLAUDE.md
+/CLAUDE.local.md
+/AGENTS.md
+/GEMINI.md
+/.cursorrules
+/.windsurfrules
