@@ -4,7 +4,7 @@ A minimal, file-backed workflow for keeping project memory across sessions: a du
 
 The guiding rule: **these commands are scribes, not pilots.** They read the repo and the conversation and persist structure. They never choose your architecture, never impose a methodology, never interrogate you. You drive; they take notes.
 
-For the standalone commands these compose with, see [skills.md](skills.md). For worked use cases (new project, bug fix, big refactor, day-to-day PR flow, keeping `.project/` clean), see [project-recipes.md](project-recipes.md).
+For the standalone commands these compose with, see [skills.md](skills.md). For worked use cases (new project, bug fix, big refactor, day-to-day PR flow, keeping `.project/` clean), see [recipes.md](recipes.md#working-with-project-memory).
 
 ---
 
