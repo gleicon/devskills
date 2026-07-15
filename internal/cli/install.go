@@ -168,9 +168,11 @@ func runInstall(out io.Writer, catalog fs.FS, r harness.Resolver, scope harness.
 		if err != nil {
 			return err
 		}
-		plan, err := engine.Plan(t)
+		var plan dsync.Plan
 		if uninstall {
 			plan, err = engine.UninstallPlan(t)
+		} else {
+			plan, err = engine.Plan(t)
 		}
 		if err != nil {
 			return err

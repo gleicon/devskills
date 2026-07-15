@@ -156,28 +156,23 @@ func runInit(out io.Writer, catalog fs.FS, root string, sel initSelection, dryRu
 		return err
 	}
 
-	base, err := readAsset(catalog, "system/agents-base.md")
-	if err != nil {
-		return err
-	}
-	if err := e.Upsert(agentsPath, "base", base); err != nil {
-		return err
-	}
-	if sel.concise {
-		body, err := readAsset(catalog, "system/concise.md")
+	add := func(id, rel string) error {
+		body, err := readAsset(catalog, rel)
 		if err != nil {
 			return err
 		}
-		if err := e.Upsert(agentsPath, "concise", body); err != nil {
+		return e.Upsert(agentsPath, id, body)
+	}
+	if err := add("base", "system/agents-base.md"); err != nil {
+		return err
+	}
+	if sel.concise {
+		if err := add("concise", "system/concise.md"); err != nil {
 			return err
 		}
 	}
 	if sel.phases {
-		body, err := readAsset(catalog, "system/phase-hints.md")
-		if err != nil {
-			return err
-		}
-		if err := e.Upsert(agentsPath, "phases", body); err != nil {
+		if err := add("phases", "system/phase-hints.md"); err != nil {
 			return err
 		}
 	}

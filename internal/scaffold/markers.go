@@ -73,7 +73,7 @@ func (e *Engine) Upsert(file, id, body string) error {
 		return err
 	}
 	wrapped := wrapBlock(id, body)
-	next := orig
+	var next string
 	if re := blockRE(id); existed && re.MatchString(orig) {
 		next = re.ReplaceAllLiteralString(orig, wrapped)
 	} else {

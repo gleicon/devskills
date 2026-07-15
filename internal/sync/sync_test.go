@@ -143,7 +143,10 @@ func TestApplyIdempotentDropsStaleCompanion(t *testing.T) {
 	mkfile(t, filepath.Join(skillsDir, "ds-a", "stale.md"), "stale")
 
 	e := New(fakeCatalog())
-	p, _ := e.Plan(Target{SkillsDir: skillsDir})
+	p, err := e.Plan(Target{SkillsDir: skillsDir})
+	if err != nil {
+		t.Fatal(err)
+	}
 	if err := e.Apply(p); err != nil {
 		t.Fatal(err)
 	}
@@ -154,7 +157,10 @@ func TestApplyIdempotentDropsStaleCompanion(t *testing.T) {
 func TestApplyCodexSidecar(t *testing.T) {
 	skillsDir := t.TempDir()
 	e := New(fakeCatalog())
-	p, _ := e.Plan(Target{SkillsDir: skillsDir, Codex: true})
+	p, err := e.Plan(Target{SkillsDir: skillsDir, Codex: true})
+	if err != nil {
+		t.Fatal(err)
+	}
 	if err := e.Apply(p); err != nil {
 		t.Fatal(err)
 	}
@@ -167,7 +173,10 @@ func TestApplyCodexSidecar(t *testing.T) {
 func TestApplyWithoutCodexHasNoSidecar(t *testing.T) {
 	skillsDir := t.TempDir()
 	e := New(fakeCatalog())
-	p, _ := e.Plan(Target{SkillsDir: skillsDir})
+	p, err := e.Plan(Target{SkillsDir: skillsDir})
+	if err != nil {
+		t.Fatal(err)
+	}
 	if err := e.Apply(p); err != nil {
 		t.Fatal(err)
 	}
