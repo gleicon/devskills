@@ -6,6 +6,7 @@ import (
 	"runtime/debug"
 	"strings"
 
+	"charm.land/lipgloss/v2"
 	"github.com/spf13/cobra"
 )
 
@@ -34,24 +35,25 @@ func buildVersion() string {
 
 // versionInfo renders the version plus any VCS metadata the build recorded.
 func versionInfo() string {
-	var b strings.Builder
-	fmt.Fprintf(&b, "devskills %s\n", buildVersion())
-	fmt.Fprintf(&b, "  go: %s\n", runtime.Version())
+	lines := []string{
+		fmt.Sprintf("devskills %s", buildVersion()),
+		fmt.Sprintf("  go: %s", runtime.Version()),
+	}
 	if info, ok := debug.ReadBuildInfo(); ok {
 		for _, s := range info.Settings {
 			switch s.Key {
 			case "vcs.revision":
-				fmt.Fprintf(&b, "  commit: %s\n", s.Value)
+				lines = append(lines, fmt.Sprintf("  commit: %s", s.Value))
 			case "vcs.time":
-				fmt.Fprintf(&b, "  built: %s\n", s.Value)
+				lines = append(lines, fmt.Sprintf("  built: %s", s.Value))
 			case "vcs.modified":
 				if s.Value == "true" {
-					b.WriteString("  dirty: true\n")
+					lines = append(lines, "  dirty: true")
 				}
 			}
 		}
 	}
-	return strings.TrimRight(b.String(), "\n")
+	return strings.Join(lines, "\n")
 }
 
 func newVersionCmd() *cobra.Command {
@@ -60,7 +62,7 @@ func newVersionCmd() *cobra.Command {
 		Short: "Print version and build info",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			cmd.Println(versionInfo())
+			lipgloss.Fprintln(cmd.OutOrStdout(), versionInfo())
 			return nil
 		},
 	}

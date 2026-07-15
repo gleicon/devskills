@@ -67,7 +67,7 @@ func newInstallCmd(catalog fs.FS) *cobra.Command {
 				}
 			}
 			if len(ids) == 0 {
-				cmd.Println("No assistants selected — nothing to do.")
+				lipgloss.Fprintln(cmd.OutOrStdout(), "No assistants selected — nothing to do.")
 				return nil
 			}
 			return runInstall(cmd.OutOrStdout(), catalog, r, scope, ids, dryRun, uninstall)
@@ -152,13 +152,25 @@ func promptHarnesses(universe, checked []harness.ID) ([]harness.ID, error) {
 	form := huh.NewForm(huh.NewGroup(
 		huh.NewMultiSelect[harness.ID]().
 			Title("Install devskills for which assistants?").
+			Height(len(opts) + 1).
 			Options(opts...).
 			Value(&selected),
-	))
+	)).WithTheme(huh.ThemeFunc(formTheme))
 	if err := form.Run(); err != nil {
 		return nil, err
 	}
 	return selected, nil
+}
+
+// formTheme defines no colors — the form uses the terminal's own text color.
+// huh's ThemeBase sets no field palette, but the footer's help styles inherit
+// bubbles' hardcoded-hex defaults, so clear those back to the terminal.
+func formTheme(isDark bool) *huh.Styles {
+	s := huh.ThemeBase(isDark)
+	s.Help.ShortKey = s.Help.ShortKey.UnsetForeground()
+	s.Help.ShortDesc = s.Help.ShortDesc.UnsetForeground()
+	s.Help.ShortSeparator = s.Help.ShortSeparator.UnsetForeground()
+	return s
 }
 
 func runInstall(out io.Writer, catalog fs.FS, r harness.Resolver, scope harness.Scope, ids []harness.ID, dryRun, uninstall bool) error {
@@ -207,23 +219,23 @@ func buildTarget(r harness.Resolver, id harness.ID, scope harness.Scope) (dsync.
 func renderPlan(out io.Writer, p dsync.Plan, scope harness.Scope, dryRun, uninstall bool) {
 	header := lipgloss.NewStyle().Bold(true)
 	dim := lipgloss.NewStyle().Faint(true)
-	fmt.Fprintln(out, header.Render(fmt.Sprintf("%s (%s) → %s", p.Target.Name, scopeName(scope), p.Target.SkillsDir)))
+	lipgloss.Fprintln(out, header.Render(fmt.Sprintf("%s (%s) → %s", p.Target.Name, scopeName(scope), p.Target.SkillsDir)))
 	if uninstall {
-		fmt.Fprintf(out, "  %d items to remove\n", len(p.Removes))
+		lipgloss.Fprintf(out, "  %d items to remove\n", len(p.Removes))
 	} else {
-		fmt.Fprintf(out, "  %d skills to write/update\n", len(p.Writes))
+		lipgloss.Fprintf(out, "  %d skills to write/update\n", len(p.Writes))
 	}
 	for _, rm := range p.Removes {
-		fmt.Fprintf(out, "  remove %s: %s\n", rm.Kind, rm.Path)
+		lipgloss.Fprintf(out, "  remove %s: %s\n", rm.Kind, rm.Path)
 	}
 	if dryRun {
 		msg := "  dry run — nothing written"
 		if uninstall {
 			msg = "  dry run — nothing removed"
 		}
-		fmt.Fprintln(out, dim.Render(msg))
+		lipgloss.Fprintln(out, dim.Render(msg))
 	}
-	fmt.Fprintln(out)
+	lipgloss.Fprintln(out)
 }
 
 func scopeName(s harness.Scope) string {

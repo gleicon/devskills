@@ -8,7 +8,6 @@ linters:
       # broken stdout can't itself be reported), and the best-effort empty-dir
       # cleanup only fails when the dir wasn't empty — which is the intended no-op.
       exclude-functions:
-        - fmt.Fprint
-        - fmt.Fprintf
-        - fmt.Fprintln
+        - charm.land/lipgloss/v2.Fprintf
+        - charm.land/lipgloss/v2.Fprintln
         - os.Remove

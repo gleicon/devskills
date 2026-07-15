@@ -7,6 +7,7 @@ import (
 	"runtime"
 	"strings"
 
+	"charm.land/lipgloss/v2"
 	"github.com/spf13/cobra"
 
 	"github.com/gleicon/devskills/internal/doctor"
@@ -54,25 +55,25 @@ func runDoctor(out io.Writer, env doctorEnv, fix, dryRun bool) error {
 
 	for _, t := range doctor.Tools {
 		if path, err := env.lookPath(t.Name); err == nil {
-			fmt.Fprintf(out, "ok       %-12s (/%s) → %s\n", t.Name, t.Skill, path)
+			lipgloss.Fprintf(out, "ok       %-12s (/%s) → %s\n", t.Name, t.Skill, path)
 			continue
 		}
 		in, ok := t.Installer(env.goos, hasBinary)
 		if !ok {
-			fmt.Fprintf(out, "missing  %-12s (/%s) → no installer for this platform; see %s\n", t.Name, t.Skill, t.DocURL)
+			lipgloss.Fprintf(out, "missing  %-12s (/%s) → no installer for this platform; see %s\n", t.Name, t.Skill, t.DocURL)
 			continue
 		}
 		if !fix {
-			fmt.Fprintf(out, "missing  %-12s (/%s) → %s   [devskills doctor --fix]\n", t.Name, t.Skill, strings.Join(in.Command, " "))
+			lipgloss.Fprintf(out, "missing  %-12s (/%s) → %s   [devskills doctor --fix]\n", t.Name, t.Skill, strings.Join(in.Command, " "))
 			continue
 		}
 		if dryRun {
-			fmt.Fprintf(out, "would    %-12s → %s\n", t.Name, strings.Join(in.Command, " "))
+			lipgloss.Fprintf(out, "would    %-12s → %s\n", t.Name, strings.Join(in.Command, " "))
 			continue
 		}
-		fmt.Fprintf(out, "install  %-12s → %s\n", t.Name, strings.Join(in.Command, " "))
+		lipgloss.Fprintf(out, "install  %-12s → %s\n", t.Name, strings.Join(in.Command, " "))
 		if err := env.run(in.Command[0], in.Command[1:]...); err != nil {
-			fmt.Fprintf(out, "failed   %-12s → %v (see %s)\n", t.Name, err, t.DocURL)
+			lipgloss.Fprintf(out, "failed   %-12s → %v (see %s)\n", t.Name, err, t.DocURL)
 			failed = append(failed, t.Name)
 		}
 	}

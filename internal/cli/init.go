@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"charm.land/huh/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/spf13/cobra"
 
 	"github.com/gleicon/devskills/internal/harness"
@@ -133,11 +134,12 @@ func promptInit(avail []string) (initSelection, error) {
 	form := huh.NewForm(huh.NewGroup(
 		huh.NewMultiSelect[string]().
 			Title("Language profiles to include").
+			Height(len(langOpts)+1).
 			Options(langOpts...).
 			Value(&langs),
 		huh.NewConfirm().Title("Add the terse-response directive (concise)?").Value(&concise),
 		huh.NewConfirm().Title("Add phase-aware suggestions (phases)?").Value(&phases),
-	))
+	)).WithTheme(huh.ThemeFunc(formTheme))
 	if err := form.Run(); err != nil {
 		return initSelection{}, err
 	}
@@ -150,7 +152,7 @@ func promptInit(avail []string) (initSelection, error) {
 func runInit(out io.Writer, catalog fs.FS, root string, sel initSelection, dryRun bool) error {
 	agentsPath := filepath.Join(root, "AGENTS.md")
 	claudePath := filepath.Join(root, "CLAUDE.md")
-	e := scaffold.New(dryRun, func(s string) { fmt.Fprintf(out, "  %s\n", s) })
+	e := scaffold.New(dryRun, func(s string) { lipgloss.Fprintf(out, "  %s\n", s) })
 
 	if err := e.RemoveBlocks(agentsPath, retiredBlocks...); err != nil {
 		return err
@@ -193,7 +195,7 @@ func runInit(out io.Writer, catalog fs.FS, root string, sel initSelection, dryRu
 // AGENTS.md and CLAUDE.md (each file removed only if nothing else remained), plus
 // the pre-AGENTS.md profile file some old setups left behind.
 func runInitUninstall(out io.Writer, root string, dryRun bool) error {
-	e := scaffold.New(dryRun, func(s string) { fmt.Fprintf(out, "  %s\n", s) })
+	e := scaffold.New(dryRun, func(s string) { lipgloss.Fprintf(out, "  %s\n", s) })
 	for _, f := range []string{filepath.Join(root, "AGENTS.md"), filepath.Join(root, "CLAUDE.md")} {
 		ids, err := e.BlockIDs(f)
 		if err != nil {
@@ -214,14 +216,14 @@ func removeLegacyProfile(out io.Writer, root string, dryRun bool) error {
 		return nil // absent — nothing to sweep
 	}
 	if dryRun {
-		fmt.Fprintln(out, "  [dry] would remove legacy .devskills/language")
+		lipgloss.Fprintln(out, "  [dry] would remove legacy .devskills/language")
 		return nil
 	}
 	if err := os.Remove(file); err != nil {
 		return err
 	}
 	os.Remove(filepath.Join(root, ".devskills")) // best effort: only succeeds if empty
-	fmt.Fprintln(out, "  removed legacy .devskills/language")
+	lipgloss.Fprintln(out, "  removed legacy .devskills/language")
 	return nil
 }
 
