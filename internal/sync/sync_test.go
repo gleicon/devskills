@@ -105,11 +105,11 @@ func TestPlanIsReadOnly(t *testing.T) {
 	mkfile(t, filepath.Join(skillsDir, "ds-typeset", "SKILL.md"), "old")
 	mkfile(t, filepath.Join(legacyDir, "ds-workflow.md"), "old")
 
-	before := snapshot(t, skillsDir)
+	before := snapshot(t, skillsDir, legacyDir)
 	if _, err := New(fakeCatalog()).Plan(Target{SkillsDir: skillsDir, LegacyDir: legacyDir}); err != nil {
 		t.Fatal(err)
 	}
-	if after := snapshot(t, skillsDir); !slices.Equal(before, after) {
+	if after := snapshot(t, skillsDir, legacyDir); !slices.Equal(before, after) {
 		t.Errorf("Plan mutated the target: before %v, after %v", before, after)
 	}
 }
@@ -222,11 +222,11 @@ func TestUninstallPlanIsReadOnly(t *testing.T) {
 	mkfile(t, filepath.Join(skillsDir, "ds-a", "SKILL.md"), "a")
 	mkfile(t, filepath.Join(legacyDir, "ds-workflow.md"), "old")
 
-	before := snapshot(t, skillsDir)
+	before := snapshot(t, skillsDir, legacyDir)
 	if _, err := New(fakeCatalog()).UninstallPlan(Target{SkillsDir: skillsDir, LegacyDir: legacyDir}); err != nil {
 		t.Fatal(err)
 	}
-	if after := snapshot(t, skillsDir); !slices.Equal(before, after) {
+	if after := snapshot(t, skillsDir, legacyDir); !slices.Equal(before, after) {
 		t.Errorf("UninstallPlan mutated the target: before %v, after %v", before, after)
 	}
 }
@@ -334,18 +334,20 @@ func TestPlanPrunesDanglingSymlinkRetiredSkill(t *testing.T) {
 	}
 }
 
-func snapshot(t *testing.T, root string) []string {
+func snapshot(t *testing.T, roots ...string) []string {
 	t.Helper()
 	var out []string
-	err := filepath.WalkDir(root, func(p string, _ os.DirEntry, err error) error {
+	for _, root := range roots {
+		err := filepath.WalkDir(root, func(p string, _ os.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			out = append(out, p)
+			return nil
+		})
 		if err != nil {
-			return err
+			t.Fatal(err)
 		}
-		out = append(out, p)
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
 	}
 	slices.Sort(out)
 	return out
