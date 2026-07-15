@@ -2,8 +2,8 @@
 
 [ast-grep](https://ast-grep.github.io/) is a structural search tool: it matches code by its
 syntax tree, not by text, so a rule like `eval($INPUT)` matches every call regardless of
-spacing, variable names, or line breaks. devskills installs it (via `install.sh`) as an
-**optional, additive** aid to `/ds-security-review`.
+spacing, variable names, or line breaks. It's an **optional, additive** aid to
+`/ds-security-review` — `devskills doctor` installs it if you don't have it.
 
 > **Experimental.** This integration is new and meant to be exercised in the field.
 
@@ -30,7 +30,7 @@ brew install ast-grep          # macOS
 npm i -g @ast-grep/cli         # anywhere with Node
 ```
 
-`install.sh` does this for you (Homebrew → npm fallback); `scripts/upgrade-deps.sh` upgrades it.
+`devskills doctor --fix` does this for you (Homebrew → npm fallback).
 
 ## The operational reference
 
