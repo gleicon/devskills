@@ -137,28 +137,11 @@ func (e Engine) Apply(p Plan) error {
 		}
 	}
 	for _, rm := range p.Removes {
-		// A legacy command file with a generic pre-ds- name (test.md, spec.md, …)
-		// can collide with a user's own command of the same name; back it up so the
-		// removal stays recoverable. ds-* names are unambiguously devskills'.
-		if rm.Kind == LegacyCommand && !strings.HasPrefix(filepath.Base(rm.Path), "ds-") {
-			if err := backupFile(rm.Path); err != nil {
-				return fmt.Errorf("back up %s: %w", rm.Path, err)
-			}
-		}
 		if err := os.RemoveAll(rm.Path); err != nil {
 			return fmt.Errorf("remove %s %s: %w", rm.Kind, rm.Path, err)
 		}
 	}
 	return nil
-}
-
-// backupFile copies path to a sibling .bak before it is removed.
-func backupFile(path string) error {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(path+".bak", data, 0o644)
 }
 
 // writeSkill replaces dest with a fresh copy of the embedded skill. The rm

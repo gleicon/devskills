@@ -1,6 +1,7 @@
 package sync
 
 import (
+	"io/fs"
 	"os"
 	"path/filepath"
 	"slices"
@@ -56,7 +57,7 @@ func TestPlanPrunesPresentRetiredAndLegacy(t *testing.T) {
 	// Present: a retired skill dir, and two legacy command files.
 	mkfile(t, filepath.Join(skillsDir, "ds-typeset", "SKILL.md"), "old")
 	mkfile(t, filepath.Join(legacyDir, "ds-workflow.md"), "old")
-	mkfile(t, filepath.Join(legacyDir, "frontend.md"), "old")
+	mkfile(t, filepath.Join(legacyDir, "ds-modes.md"), "old")
 	// Not in any ledger — must be left alone.
 	mkfile(t, filepath.Join(legacyDir, "ds-custom.md"), "mine")
 
@@ -68,7 +69,7 @@ func TestPlanPrunesPresentRetiredAndLegacy(t *testing.T) {
 	want := []string{
 		filepath.Join(skillsDir, "ds-typeset"),
 		filepath.Join(legacyDir, "ds-workflow.md"),
-		filepath.Join(legacyDir, "frontend.md"),
+		filepath.Join(legacyDir, "ds-modes.md"),
 	}
 	slices.Sort(got)
 	slices.Sort(want)
@@ -265,28 +266,23 @@ func TestApplyUninstallDoesNotCreateSkillsDir(t *testing.T) {
 	assertAbsent(t, skillsDir)
 }
 
-func TestApplyBacksUpGenericLegacyCommandBeforeRemove(t *testing.T) {
-	skillsDir := t.TempDir()
-	legacyDir := t.TempDir()
-	// A generic pre-ds- name that could be the user's own command.
-	userCmd := filepath.Join(legacyDir, "spec.md")
-	mkfile(t, userCmd, "my own spec")
-	// A ds- name is unambiguously devskills' — removed without a backup.
-	dsCmd := filepath.Join(legacyDir, "ds-bug-review.md")
-	mkfile(t, dsCmd, "old devskills command")
-
-	e := New(fakeCatalog())
-	p, err := e.Plan(Target{SkillsDir: skillsDir, LegacyDir: legacyDir})
+// Guards the rename mistake — adding the new skill name but leaving the old one
+// in retiredSkills while it's still a live dir. Reads the real skills/ tree; go
+// test's CWD is the package dir, so it's two up (as catalog_test does).
+func TestRetiredSkillsNotInCatalog(t *testing.T) {
+	entries, err := fs.ReadDir(os.DirFS("../.."), "skills")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := e.Apply(p); err != nil {
-		t.Fatal(err)
+	live := make(map[string]bool, len(entries))
+	for _, d := range entries {
+		live[d.Name()] = true
 	}
-	assertAbsent(t, userCmd)
-	assertFile(t, userCmd+".bak", "my own spec")
-	assertAbsent(t, dsCmd)
-	assertAbsent(t, dsCmd+".bak")
+	for _, name := range retiredSkills {
+		if live[name] {
+			t.Errorf("%s is in retiredSkills but still a live skill in skills/", name)
+		}
+	}
 }
 
 func TestPlanProtectsRetiredNameBackInCatalog(t *testing.T) {

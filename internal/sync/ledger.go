@@ -27,25 +27,17 @@ var legacyCommands = []string{
 	"ds-workflow.md", "ds-write-a-command.md", "ds-zig-review.md", "ds-zoom-out.md",
 }
 
-// renamedCommands are pre-prefix and earlier-removed command filenames retired
-// across releases:
+// renamedCommands are earlier devskills command filenames retired across
+// releases. Only ds- names — the ones we can prove are ours — are listed:
 //
-//	frontend.md        -> ui.md (now ds-ui-mode.md)
-//	write-a-skill.md   -> write-a-command.md (now ds-write-a-command.md)
 //	ds-project-plan.md -> ds-roadmap.md (a plan-generator; left the project-* family)
 //	ds-modes.md, ds-review.md -> removed (launcher pickers of 10 modes / 8 reviews
 //	                             could never render, so deleted rather than degraded)
 //
-// Frozen alongside legacyCommands.
+// Pre-prefix bare names (test.md, spec.md, frontend.md, …) are deliberately not
+// swept: a bare name may be a user's own command, and the tiny pre-prefix install
+// base no longer carries them. Frozen alongside legacyCommands.
 var renamedCommands = []string{
-	"frontend.md", "write-a-skill.md",
-	"bug-review.md", "caveman-lite.md", "caveman-ultra.md", "code-quality-review.md",
-	"debug.md", "deslop.md", "doc-quality-review.md", "explore.md", "go-review.md", "grill-me.md",
-	"handoff.md", "project-checkpoint.md", "project-map.md", "project-plan.md",
-	"project-resume.md", "python-review.md", "quality-gate.md", "rust-review.md",
-	"security-review.md", "spec.md", "tdd.md", "test-quality-review.md", "test.md",
-	"tiger-style.md", "tldt.md", "ts-review.md", "ui-quality-review.md", "ui.md",
-	"verify-this.md", "workflow.md", "write-a-command.md", "zoom-out.md",
 	"ds-project-plan.md", "ds-modes.md", "ds-review.md",
 }
 
@@ -57,7 +49,10 @@ var legacyCommandFiles = slices.Concat(legacyCommands, renamedCommands)
 // retiredSkills are skill names devskills shipped and later renamed or removed;
 // a rename lands the old name here while the new name rides in the catalog.
 // Swept as directories from each harness's skills dir, both global and local.
-// Unlike the frozen command ledgers, this grows one entry per drop/rename.
+// Unlike the frozen command ledgers, this grows one entry per drop/rename —
+// removing or renaming a skill without adding its old name here orphans the dir
+// on every user's machine. A test catches the rename half: an old name still
+// pointing at a live skill.
 //
 //	ds-typeset — removed; off-identity Markdown-typeset utility.
 var retiredSkills = []string{"ds-typeset"}
