@@ -1,0 +1,38 @@
+# goreleaser config — cross-compiles the devskills binary, emits checksums, and
+# cuts a GitHub Release. Version is injected into internal/cli.version (the var
+# resolveVersion reads; see internal/cli/version.go), not main.version.
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: devskills
+    main: .
+    binary: devskills
+    env:
+      - CGO_ENABLED=0
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+    ldflags:
+      - -s -w -X github.com/gleicon/devskills/internal/cli.version={{ .Version }}
+
+archives:
+  - id: devskills
+    formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
