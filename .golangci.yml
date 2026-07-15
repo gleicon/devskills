@@ -1,0 +1,14 @@
+version: "2"
+
+linters:
+  settings:
+    errcheck:
+      # These writes have no recovery path, so checking their error is noise:
+      # CLI status lines go to a caller-provided io.Writer (a failed write to a
+      # broken stdout can't itself be reported), and the best-effort empty-dir
+      # cleanup only fails when the dir wasn't empty — which is the intended no-op.
+      exclude-functions:
+        - fmt.Fprint
+        - fmt.Fprintf
+        - fmt.Fprintln
+        - os.Remove
