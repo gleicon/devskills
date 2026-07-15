@@ -19,3 +19,7 @@ node_modules/
 /GEMINI.md
 /.cursorrules
 /.windsurfrules
+
+# Go build output
+/devskills
+/dist/
