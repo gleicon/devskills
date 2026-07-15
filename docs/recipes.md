@@ -1,6 +1,6 @@
 # Recipes & Workflows
 
-Worked examples of the devskills commands doing real work — and, more usefully, working *together*. These are opinionated suggestions, not the only way. For the dry reference (args, flags, behavior) see [commands.md](commands.md).
+Worked examples of the devskills commands doing real work — and, more usefully, working *together*. These are opinionated suggestions, not the only way. For the dry reference (args, flags, behavior) see [skills.md](skills.md).
 
 Everything here relies only on the commands, `git`, and `gh` — no external orchestration.
 
@@ -356,7 +356,7 @@ The savings are real only when recall has indexed relevant prior work. Seed it e
 
 ## Which command, when
 
-Indexed by *what you want to do*, not by kind — for the suffix taxonomy (`-mode` / `-review` / `-plan`), see [commands.md](commands.md#kinds-of-command).
+Indexed by *what you want to do*, not by kind — for the suffix taxonomy (`-mode` / `-review` / `-plan`), see [skills.md](skills.md#kinds-of-skill).
 
 | You want to… | Reach for |
 |---|---|

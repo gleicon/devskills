@@ -2,7 +2,7 @@
 
 `/ds-grill-me` is the most versatile command in the set, so it gets its own page. The base command is tiny — *interview me about this plan, one decision at a time, until we share the same understanding* — but what you point it at changes everything. This doc is a menu of those uses.
 
-For the command's args and behavior see [commands.md](commands.md). For the canonical pre-PR loop see [recipes.md](recipes.md#the-draft-pr-grill-loop). To *generate* the options before grilling, reach for `/ds-explore` first — it surfaces the candidate approaches and open questions that `/ds-grill-me` then walks you through.
+For the command's args and behavior see [skills.md](skills.md). For the canonical pre-PR loop see [recipes.md](recipes.md#the-draft-pr-grill-loop). To *generate* the options before grilling, reach for `/ds-explore` first — it surfaces the candidate approaches and open questions that `/ds-grill-me` then walks you through.
 
 ## Why it works
 
@@ -57,7 +57,7 @@ Before a risky change, grill the *plan for the change* rather than the change it
 /ds-grill-me --record  plan: migrate the auth layer from sessions to JWTs without downtime
 ```
 
-Forces the rollout order, the backwards-compat window, and the failure/rollback paths into the open. Pair with [`/ds-zoom-out`](commands.md) first if you don't already hold the area in your head.
+Forces the rollout order, the backwards-compat window, and the failure/rollback paths into the open. Pair with [`/ds-zoom-out`](skills.md) first if you don't already hold the area in your head.
 
 ### 5. Architecture decision → capture an ADR
 

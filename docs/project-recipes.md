@@ -1,6 +1,6 @@
 # Project Workflow — Recipes
 
-Use-case walkthroughs for working with devskills — the `.project/` workflow plus the modes, reviews, and checks that bookend it. For the commands and file layout, see [project-workflow.md](project-workflow.md); for the full command reference, see [commands.md](commands.md); for non-`.project/` workflows, see [recipes.md](recipes.md).
+Use-case walkthroughs for working with devskills — the `.project/` workflow plus the modes, reviews, and checks that bookend it. For the commands and file layout, see [project-workflow.md](project-workflow.md); for the full skill reference, see [skills.md](skills.md); for non-`.project/` workflows, see [recipes.md](recipes.md).
 
 > **There is no execute command — and that's deliberate.** In the sequences below, a `you →` line is *you typing a normal instruction to the agent*. Implementing is its default behavior; you don't invoke a command to make it write code. The slash-commands bookend the work — decide, structure, check, persist — and the building in the middle is plain conversation.
 >
