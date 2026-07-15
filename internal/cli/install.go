@@ -31,9 +31,9 @@ type installOpts struct {
 
 func newInstallCmd(catalog fs.FS) *cobra.Command {
 	var (
-		local, all, yes, dryRun          bool
-		harnessCSV                       string
-		claudeDir, codexDir, opencodeDir string
+		local, all, yes, dryRun, uninstall bool
+		harnessCSV                         string
+		claudeDir, codexDir, opencodeDir   string
 	)
 	cmd := &cobra.Command{
 		Use:   "install",
@@ -70,7 +70,7 @@ func newInstallCmd(catalog fs.FS) *cobra.Command {
 				cmd.Println("No assistants selected — nothing to do.")
 				return nil
 			}
-			return runInstall(cmd.OutOrStdout(), catalog, r, scope, ids, dryRun)
+			return runInstall(cmd.OutOrStdout(), catalog, r, scope, ids, dryRun, uninstall)
 		},
 	}
 	f := cmd.Flags()
@@ -79,6 +79,7 @@ func newInstallCmd(catalog fs.FS) *cobra.Command {
 	f.StringVar(&harnessCSV, "harness", "", "comma-separated assistants (claude,opencode,codex)")
 	f.BoolVarP(&yes, "yes", "y", false, "accept detected defaults without prompting")
 	f.BoolVar(&dryRun, "dry-run", false, "print the plan without changing anything")
+	f.BoolVar(&uninstall, "uninstall", false, "remove devskills' skills instead of installing")
 	f.StringVar(&claudeDir, "claude-dir", "", "override Claude config dir (global only)")
 	f.StringVar(&codexDir, "codex-dir", "", "override Codex config dir (global only)")
 	f.StringVar(&opencodeDir, "opencode-dir", "", "override OpenCode config dir (global only)")
@@ -160,7 +161,7 @@ func promptHarnesses(universe, checked []harness.ID) ([]harness.ID, error) {
 	return selected, nil
 }
 
-func runInstall(out io.Writer, catalog fs.FS, r harness.Resolver, scope harness.Scope, ids []harness.ID, dryRun bool) error {
+func runInstall(out io.Writer, catalog fs.FS, r harness.Resolver, scope harness.Scope, ids []harness.ID, dryRun, uninstall bool) error {
 	engine := dsync.New(catalog)
 	for _, id := range ids {
 		t, err := buildTarget(r, id, scope)
@@ -168,10 +169,13 @@ func runInstall(out io.Writer, catalog fs.FS, r harness.Resolver, scope harness.
 			return err
 		}
 		plan, err := engine.Plan(t)
+		if uninstall {
+			plan, err = engine.UninstallPlan(t)
+		}
 		if err != nil {
 			return err
 		}
-		renderPlan(out, plan, scope, dryRun)
+		renderPlan(out, plan, scope, dryRun, uninstall)
 		if dryRun {
 			continue
 		}
@@ -198,16 +202,24 @@ func buildTarget(r harness.Resolver, id harness.ID, scope harness.Scope) (dsync.
 	return t, nil
 }
 
-func renderPlan(out io.Writer, p dsync.Plan, scope harness.Scope, dryRun bool) {
+func renderPlan(out io.Writer, p dsync.Plan, scope harness.Scope, dryRun, uninstall bool) {
 	header := lipgloss.NewStyle().Bold(true)
 	dim := lipgloss.NewStyle().Faint(true)
 	fmt.Fprintln(out, header.Render(fmt.Sprintf("%s (%s) → %s", p.Target.Name, scopeName(scope), p.Target.SkillsDir)))
-	fmt.Fprintf(out, "  %d skills to write/update\n", len(p.Writes))
+	if uninstall {
+		fmt.Fprintf(out, "  %d items to remove\n", len(p.Removes))
+	} else {
+		fmt.Fprintf(out, "  %d skills to write/update\n", len(p.Writes))
+	}
 	for _, rm := range p.Removes {
 		fmt.Fprintf(out, "  remove %s: %s\n", rm.Kind, rm.Path)
 	}
 	if dryRun {
-		fmt.Fprintln(out, dim.Render("  dry run — nothing written"))
+		msg := "  dry run — nothing written"
+		if uninstall {
+			msg = "  dry run — nothing removed"
+		}
+		fmt.Fprintln(out, dim.Render(msg))
 	}
 	fmt.Fprintln(out)
 }

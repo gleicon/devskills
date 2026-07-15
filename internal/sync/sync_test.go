@@ -174,6 +174,88 @@ func TestApplyWithoutCodexHasNoSidecar(t *testing.T) {
 	assertAbsent(t, filepath.Join(skillsDir, "ds-a", "agents"))
 }
 
+func TestUninstallPlanRemovesFootprintNotUserFiles(t *testing.T) {
+	skillsDir := t.TempDir()
+	legacyDir := t.TempDir()
+	// devskills' footprint: a current-catalog skill, a retired skill, a legacy command.
+	mkfile(t, filepath.Join(skillsDir, "ds-a", "SKILL.md"), "a")
+	mkfile(t, filepath.Join(skillsDir, "ds-typeset", "SKILL.md"), "old")
+	mkfile(t, filepath.Join(legacyDir, "ds-workflow.md"), "old")
+	// Not ours — must be left alone.
+	mkfile(t, filepath.Join(skillsDir, "ds-mine", "SKILL.md"), "mine")
+	mkfile(t, filepath.Join(legacyDir, "ds-custom.md"), "mine")
+
+	p, err := New(fakeCatalog()).UninstallPlan(Target{SkillsDir: skillsDir, LegacyDir: legacyDir})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.Writes) != 0 {
+		t.Errorf("Writes = %v, want none", p.Writes)
+	}
+	got := removePaths(p)
+	want := []string{
+		filepath.Join(skillsDir, "ds-a"),
+		filepath.Join(skillsDir, "ds-typeset"),
+		filepath.Join(legacyDir, "ds-workflow.md"),
+	}
+	slices.Sort(got)
+	slices.Sort(want)
+	if !slices.Equal(got, want) {
+		t.Errorf("Removes = %v, want %v", got, want)
+	}
+}
+
+// TestUninstallPlanIsReadOnly extends the --dry-run guarantee to uninstall:
+// planning removals must not delete anything.
+func TestUninstallPlanIsReadOnly(t *testing.T) {
+	skillsDir := t.TempDir()
+	legacyDir := t.TempDir()
+	mkfile(t, filepath.Join(skillsDir, "ds-a", "SKILL.md"), "a")
+	mkfile(t, filepath.Join(legacyDir, "ds-workflow.md"), "old")
+
+	before := snapshot(t, skillsDir)
+	if _, err := New(fakeCatalog()).UninstallPlan(Target{SkillsDir: skillsDir, LegacyDir: legacyDir}); err != nil {
+		t.Fatal(err)
+	}
+	if after := snapshot(t, skillsDir); !slices.Equal(before, after) {
+		t.Errorf("UninstallPlan mutated the target: before %v, after %v", before, after)
+	}
+}
+
+func TestApplyUninstallRemovesFootprintLeavesUserFiles(t *testing.T) {
+	skillsDir := t.TempDir()
+	mkfile(t, filepath.Join(skillsDir, "ds-a", "SKILL.md"), "a")
+	mkfile(t, filepath.Join(skillsDir, "ds-typeset", "SKILL.md"), "old")
+	mkfile(t, filepath.Join(skillsDir, "ds-mine", "SKILL.md"), "mine")
+
+	e := New(fakeCatalog())
+	p, err := e.UninstallPlan(Target{SkillsDir: skillsDir})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := e.Apply(p); err != nil {
+		t.Fatal(err)
+	}
+	assertAbsent(t, filepath.Join(skillsDir, "ds-a"))
+	assertAbsent(t, filepath.Join(skillsDir, "ds-typeset"))
+	assertFile(t, filepath.Join(skillsDir, "ds-mine", "SKILL.md"), "mine")
+}
+
+// TestApplyUninstallDoesNotCreateSkillsDir guards the write-only MkdirAll: a
+// never-installed harness (no skills dir) must stay a no-op, not conjure the dir.
+func TestApplyUninstallDoesNotCreateSkillsDir(t *testing.T) {
+	skillsDir := filepath.Join(t.TempDir(), "skills")
+	e := New(fakeCatalog())
+	p, err := e.UninstallPlan(Target{SkillsDir: skillsDir})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := e.Apply(p); err != nil {
+		t.Fatal(err)
+	}
+	assertAbsent(t, skillsDir)
+}
+
 func snapshot(t *testing.T, root string) []string {
 	t.Helper()
 	var out []string

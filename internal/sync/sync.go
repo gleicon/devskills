@@ -27,13 +27,18 @@ type RemoveKind int
 const (
 	RetiredSkill RemoveKind = iota
 	LegacyCommand
+	CurrentSkill // a current-catalog skill, removed only on uninstall
 )
 
 func (k RemoveKind) String() string {
-	if k == LegacyCommand {
+	switch k {
+	case LegacyCommand:
 		return "legacy command"
+	case CurrentSkill:
+		return "skill"
+	default:
+		return "retired skill"
 	}
-	return "retired skill"
 }
 
 // Remove is a single prune step: a present retired skill dir or legacy command
@@ -68,27 +73,56 @@ func (e Engine) Plan(t Target) (Plan, error) {
 	if err != nil {
 		return Plan{}, err
 	}
-	p := Plan{Target: t, Writes: names}
+	return Plan{Target: t, Writes: names, Removes: e.prunes(t)}, nil
+}
+
+// UninstallPlan computes the removals to back devskills out of t: every current
+// catalog skill and every retired skill present in the skills dir, plus the
+// legacy command purge (global only). No writes — it is install's inverse, and
+// like Plan it only reads the filesystem, so --dry-run stays "plan but don't apply".
+func (e Engine) UninstallPlan(t Target) (Plan, error) {
+	names, err := skillNames(e.catalog)
+	if err != nil {
+		return Plan{}, err
+	}
+	p := Plan{Target: t}
+	for _, name := range names {
+		if pth := filepath.Join(t.SkillsDir, name); exists(pth) {
+			p.Removes = append(p.Removes, Remove{Path: pth, Kind: CurrentSkill})
+		}
+	}
+	p.Removes = append(p.Removes, e.prunes(t)...)
+	return p, nil
+}
+
+// prunes returns the retired-skill and legacy-command removals present for t —
+// the ledger-driven deletions shared by install (beside its writes) and
+// uninstall. Only names devskills shipped are ever touched.
+func (e Engine) prunes(t Target) []Remove {
+	var rms []Remove
 	for _, name := range retiredSkills {
 		if pth := filepath.Join(t.SkillsDir, name); exists(pth) {
-			p.Removes = append(p.Removes, Remove{Path: pth, Kind: RetiredSkill})
+			rms = append(rms, Remove{Path: pth, Kind: RetiredSkill})
 		}
 	}
 	if t.LegacyDir != "" {
 		for _, name := range legacyCommandFiles {
 			if pth := filepath.Join(t.LegacyDir, name); exists(pth) {
-				p.Removes = append(p.Removes, Remove{Path: pth, Kind: LegacyCommand})
+				rms = append(rms, Remove{Path: pth, Kind: LegacyCommand})
 			}
 		}
 	}
-	return p, nil
+	return rms
 }
 
 // Apply performs the plan's writes and removals. Writes overwrite blindly —
-// skills are files devskills owns, so no backups (see DECISIONS.md).
+// skills are files devskills owns, so no backups (see DECISIONS.md). Uninstall
+// plans carry no writes, so the skills dir is never (re)created here.
 func (e Engine) Apply(p Plan) error {
-	if err := os.MkdirAll(p.Target.SkillsDir, 0o755); err != nil {
-		return fmt.Errorf("create skills dir: %w", err)
+	if len(p.Writes) > 0 {
+		if err := os.MkdirAll(p.Target.SkillsDir, 0o755); err != nil {
+			return fmt.Errorf("create skills dir: %w", err)
+		}
 	}
 	for _, name := range p.Writes {
 		dest := filepath.Join(p.Target.SkillsDir, name)
