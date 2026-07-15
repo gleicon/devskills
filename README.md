@@ -1,261 +1,189 @@
+<div align="center">
+
 # devskills
 
-Installable **command** pack for Claude Code, OpenCode, OpenAI Codex, Cursor, and VSCode Copilot. Opinionated defaults, composable language profiles, a full dev workflow from specification to shipped product.
+**Opinionated engineering skills for AI coding assistants.**
+You invoke them. You stay in control.
 
-Despite the name, this is **not** a Skills repo — it ships **commands**, not skills. A Claude Code *Skill* is invoked by the model whenever it decides one applies; a devskills **command** is a slash command *you* invoke, when you choose. That difference is the point: the tools stay under your control. devskills doesn't hand the model more autonomy — it sharpens *your* developer skills with tools you drive directly, and you keep total control over when each one runs.
+`Claude Code` · `OpenCode` · `Codex`
 
-No magic. Files in the right directories. Prompts that encode real constraints.
+</div>
+
+---
+
+devskills are Agent Skills with one rule inverted: **you** decide when each one runs, never the model. Every skill ships with `disable-model-invocation` set — it surfaces only when you type `/ds-<name>`. Nothing fires on its own, watches your session, or picks your next step.
+
+Each skill encodes an opinionated engineering default — Tiger Style, a spec→ship workflow, strict review passes, per-language idioms — as a tool you reach for, not autonomy you hand over. A single Go binary installs the whole catalog and scaffolds your project's `AGENTS.md`.
+
+*No magic. Files in the right directories. Prompts that encode real constraints.*
 
 ## Install
 
-```bash
-git clone https://github.com/gleicon/devskills.git ~/.devskills
-~/.devskills/install.sh
-```
-
-Commands copy to `~/.claude/commands/`, `~/.opencode/commands/`, and `~/.codex/prompts/` (each installed only when that tool is detected). External tools (osv-scanner, tldt, ast-grep) install automatically when their prerequisites are present (Homebrew, Go, or npm).
-
-In Codex, devskills commands are invoked under the `prompts:` namespace — `/ds-debug` becomes `/prompts:ds-debug`. Codex reads a project's `AGENTS.md` natively, so `setup.sh` covers its persistent surface with no extra step.
-
-Skip external tools:
+Install the CLI with Go:
 
 ```bash
-~/.devskills/install.sh --skip-external
+go install github.com/gleicon/devskills@latest
 ```
 
-Custom Claude config dir:
+…or grab a prebuilt binary from the [latest release](https://github.com/gleicon/devskills/releases).
+
+Then sync the skills into your assistants:
 
 ```bash
-~/.devskills/install.sh --claude-dir=~/.config/claude
+devskills install
 ```
 
-Per-project setup (run from inside a project):
+`install` detects Claude Code, OpenCode, and Codex, lets you pick which to target, and copies the catalog into each one's skills directory. Re-run it any time to update — it prunes skills that were renamed or dropped and never touches anything it didn't ship. Use `--local` to install into the current repo instead of globally, `--dry-run` to preview the plan, `--uninstall` to remove.
+
+## Use
+
+Type `/ds` in your assistant to browse the catalog, then `/ds-<name>` to run a skill:
+
+```
+/ds-spec         turn a rough idea into a structured spec
+/ds-tiger-style-mode   set the engineering bar for the session
+/ds-security-review    audit the diff for exploitable weaknesses
+```
+
+To give a project a persistent engineering baseline, scaffold its `AGENTS.md` (and a `CLAUDE.md` import) from your stack:
 
 ```bash
-~/.devskills/scripts/setup.sh                        # baseline AGENTS.md only
-~/.devskills/scripts/setup.sh --lang=go              # baseline + Go profile
-~/.devskills/scripts/setup.sh --lang=typescript --cursor --vscode
+devskills init --lang go
 ```
 
-`setup.sh` writes a universal engineering baseline to `AGENTS.md` and points `CLAUDE.md` at it via `@AGENTS.md`; `--lang` stacks a language profile on top. See [Repository Setup](#repository-setup) below.
+## The catalog
 
-Keep devskills up to date:
+The **phase spine** follows the arc of a change. The groups below it — modes, language reviews, project memory, utilities — cut across phases; reach for them whenever they apply. Everything works standalone: no skill requires `.project/` or any other.
 
-```bash
-~/.devskills/scripts/update.sh              # pull + reinstall commands
-~/.devskills/scripts/update.sh --upgrade-deps  # also force-upgrade tldt
-```
+| Phase | Skill | What it does |
+|-------|-------|--------------|
+| **Orient** | `/ds-zoom-out` | step up a level — map how the code fits before you change it |
+| **Spec** | `/ds-spec` | turn a description into a structured spec with acceptance criteria |
+| | `/ds-explore` | at a fork, lay out candidate approaches without deciding |
+| | `/ds-grill-me` | get interviewed about a plan until the gaps are exposed |
+| **Plan** | `/ds-blueprint` | design a **new** system: module boundaries, seams, build order |
+| | `/ds-architecture-plan` | assess an **existing** codebase → sequenced refactoring plan |
+| | `/ds-roadmap` | turn a goal or another skill's output into an ordered roadmap |
+| | `/ds-perf-plan` | a graded, ranked optimization plan with a cost model |
+| **Build** | `/ds-debug` | root-cause a failure: reproduce, isolate, fix, prove |
+| **Clean** | `/ds-deslop` | strip AI slop from the diff before any review |
+| **Review** | `/ds-code-quality-review` | maintainability + single source of truth |
+| | `/ds-bug-review` | correctness — real bugs, not style |
+| | `/ds-security-review` | exploitable weaknesses; each finding names the attack |
+| | `/ds-data-review` | data correctness, integrity, migration safety |
+| | `/ds-test-quality-review` | is the risky logic actually covered, and are the tests real? |
+| | `/ds-doc-quality-review` | docs accuracy against the code, dead links, staleness |
+| | `/ds-ui-quality-review` | UI soundness, craft, and accessibility |
+| | `/ds-comment-review` | do the comments earn their place? |
+| | `/ds-notebook-review` | notebook state, output hygiene, reproducibility |
+| | `/ds-quality-gate` | run the review pipeline as a gate over the whole branch |
+| | `/ds-osv` | scan dependencies for known CVEs (OSV) |
+| **Verify** | `/ds-verify-this` | a before/after repro with a hard verdict |
+| **Ship** | `/ds-handoff` | compact the session into a handoff doc |
 
-> **Renamed in this release:** every command is now namespaced with a `ds-`
-> prefix (e.g. `/debug` → `/ds-debug`), and modes carry a `-mode` suffix
-> (e.g. `/tiger-style` → `/ds-tiger-style-mode`). This avoids collisions with
-> Claude Code built-ins like `/debug` and `/security-review`, and makes a
-> command's kind readable at a glance. Re-running `install.sh` or `update.sh`
-> drops in the new names and removes the old files automatically — no manual
-> cleanup. See the [Commands](#commands) table for the current names.
+Every review reports by default and changes nothing; pass `--fix` to apply the mechanical, unambiguous findings, or `--full` to widen scope from the branch diff to the whole codebase.
 
-### install.sh flags
+### Modes — standing postures, compose anytime
 
-```
---lang=<profile>     go | typescript | javascript | rust | python | java | zig
---claude-dir=<path>  Claude config dir (default: $CLAUDE_CONFIG_DIR or ~/.claude)
---skip-external      skip external tool installation (osv-scanner, tldt, ast-grep)
---skip-cursor        skip Cursor rules
---skip-vscode        skip VSCode Copilot instructions
---concise            add a terse-response directive to AGENTS.md (with --lang)
---dry-run            show what would happen, write nothing
-```
+Turn one on and it governs the rest of the session; several can be active at once.
 
-### setup.sh flags (per-project)
+| Mode | Posture |
+|------|---------|
+| `/ds-senior-mode` | write like a super-senior engineer everywhere — terse, step-gated, no slop (folds in git + test + deslop + step) |
+| `/ds-tiger-style-mode` | the safety + explicitness engineering bar |
+| `/ds-git-mode` | commit each working unit as it lands; terse messages; never pushes |
+| `/ds-step-mode` | smallest reviewable step, then hand back |
+| `/ds-test-mode` | keep the core tested by risk as you build |
+| `/ds-tdd-mode` | drive implementation test-first, one vertical slice at a time |
+| `/ds-ui-mode` | component/state discipline + design craft for UI work |
+| `/ds-data-mode` | idempotency, late/out-of-order data, schema drift, replay safety |
 
-```
---lang=<profile>     optional; stacks a language profile (go|typescript|javascript|rust|python|java|zig)
---concise            add a terse-response directive to AGENTS.md
---cursor             install Cursor rules into current project
---vscode             install VSCode Copilot instructions into current project
---dry-run            show what would happen, write nothing
-```
+### Language reviews
 
-## Commands
+`/ds-go-review` · `/ds-python-review` · `/ds-rust-review` · `/ds-java-review` · `/ds-ts-review` · `/ds-zig-review`
 
-Every command is namespaced with a `ds-` prefix (short for devskills) so it never collides with a Claude Code or OpenCode built-in, and its **suffix tells you its kind**: `-mode` (persists for the session), `-review` (a findings-list audit), `-plan` (a graded, costed plan), or no suffix (a one-shot action). Full taxonomy and per-command detail are in [docs/commands.md](docs/commands.md#kinds-of-command).
+Each folds Tiger Style, that language's idioms, and security into one pass, and detects the project's target version to layer on version-specific checks. Prefer these over the general reviews when the diff is single-language.
 
-### Modes — persistent session behavior (`-mode`)
+### Project memory — optional `.project/` persistence
 
-| Command | Description |
-|---------|-------------|
-| `/ds-tiger-style-mode` | TigerBeetle engineering constraints: safety, performance, experience |
-| `/ds-ui-mode` | UI mode: component/state discipline, design craft, a11y, Core Web Vitals |
-| `/ds-data-mode` | Data-engineering discipline: idempotency, late/out-of-order data, schema drift, replay/backfill safety, data-quality assertions |
-| `/ds-senior-mode` | Write like a super-senior engineer in *everything* — terse, direct, no slop — across code, comments, commits, PRs, docs, and replies; folds in git + test + deslop + step discipline, works in small reviewable steps |
-| `/ds-git-mode` | Senior-engineer commit discipline: self-contained units, terse Conventional-Commit messages, branch-first, never rewrite history |
-| `/ds-step-mode` | User-driven, step-gated execution — smallest step → stop → free-form handback → repeat |
-| `/ds-tdd-mode` | Test-first, one vertical slice at a time |
-| `/ds-test-mode` | Pragmatic testing — test by risk, not coverage |
-| `/ds-quality-gate-mode` | Seven-pass review pipeline (deslop → test → security → bug → data → quality → docs → deslop), fixes between passes |
-| `/ds-caveman-lite-mode` | Compressed response mode (~25–35% token reduction) |
-| `/ds-caveman-ultra-mode` | Compressed response mode (~75–85% token reduction) |
+Durable context across `/clear` and session ends. The workflow runs fine without any of these.
 
-### Reviews — findings-list audits (`-review`)
-
-Every `-review` reports by default and changes nothing; pass `--fix` to apply the **mechanical, unambiguous** findings in place.
-
-**General**
-
-| Command | Description |
-|---------|-------------|
-| `/ds-bug-review` | Language-agnostic correctness audit — hunts real bugs |
-| `/ds-security-review` | Language-agnostic security audit — each finding names the attack |
-| `/ds-osv` | Scan dependency manifests for known CVEs via OSV Scanner; `--fix` bumps direct deps |
-| `/ds-data-review` | Store-agnostic data audit — schema/integrity, query correctness, transactions, migration safety (`--pipelines` for ETL) |
-| `/ds-code-review` | Single-source-of-truth audit — duplicates, constant drift, parallel-agent conflicts, unjustified dependencies |
-| `/ds-code-quality-review` | Strict maintainability audit: abstraction, sprawl, spaghetti |
-| `/ds-doc-quality-review` | Strict docs audit: accuracy, dead links, bloat (`--comments` for code comments) |
-| `/ds-test-quality-review` | Strict test audit: is critical code well tested? |
-| `/ds-ui-quality-review` | Strict UI audit: async-state/fetch correctness, a11y, Core Web Vitals, design craft |
-| `/ds-comment-review` | WHY-not-WHAT comment discipline — strip restate/obvious/cruft, keep the rare important one |
-
-**Language**
-
-| Command | Description |
-|---------|-------------|
-| `/ds-go-review` | Go: idiomatic + security + Tiger Style (`--no-tiger` to skip style) |
-| `/ds-ts-review` | TypeScript/Workers: strict mode, React, Cloudflare |
-| `/ds-rust-review` | Rust: geiger/unsafe, clippy, audit, Tiger Style |
-| `/ds-python-review` | Python: idioms, typing, security, Tiger Style |
-| `/ds-java-review` | Java: idioms, records/sealed types, security, Tiger Style |
-| `/ds-zig-review` | Zig: explicit allocators, errors-as-values, safety, Tiger Style |
-| `/ds-notebook-review` | Jupyter: execution/hidden-state, committed outputs, reproducibility, data-science correctness |
-
-### Plans — graded, sequenced moves (`-plan`)
-
-| Command | Description |
-|---------|-------------|
-| `/ds-perf-plan` | Optimization plan — moves tagged by architectural cost (L1/L2/L3), each with a cost model |
-| `/ds-architecture-plan` | Module/dependency/boundary analysis → sequenced refactoring plan (L1/L2/L3) |
-
-### Workflow & design
-
-| Command | Description |
-|---------|-------------|
-| `/ds-spec` | Convert a description into a structured specification |
-| `/ds-roadmap` | Ordered `## Roadmap` task list from a goal, spec, or findings |
-| `/ds-explore` | Lay out candidate approaches with trade-offs (`--web` for research) |
-| `/ds-blueprint` | Design a target architecture — modules, dependency rules, seams, build order |
-| `/ds-grill-me` | Relentless plan interview (`--record` logs to DECISIONS.md) |
-| `/ds-workflow` | Phase-map orchestrator — orient, then route each phase to its command |
-
-### Project memory (`.project/`)
-
-Minimal file-backed memory — keep state across `/clear` and session ends. Not required; opt-in.
-
-| Command | Description |
-|---------|-------------|
-| `/ds-project-map` | Scan the repo into `.project/PROJECT.md` |
-| `/ds-project-config` | Set preferences in `.project/config.md` (modes auto-applied on resume) |
-| `/ds-project-checkpoint` | Sweep the session and route durable context to its owning file (`--handoff` for a full handoff doc) |
-| `/ds-project-resume` | Restore context from `.project/PLAN.md` and apply configured modes (`--no-modes` to skip) |
-
-### Debug & verification
-
-| Command | Description |
-|---------|-------------|
-| `/ds-debug` | Root-cause a failure with the scientific method |
-| `/ds-verify-this` | Prove a falsifiable claim with local before/after evidence |
-| `/ds-zoom-out` | Step up a layer — map modules, callers, boundaries |
+| Skill | What it does |
+|-------|--------------|
+| `/ds-project-map` | map the repo into `.project/PROJECT.md` |
+| `/ds-project-config` | set preferences (e.g. modes auto-applied on resume) |
+| `/ds-project-resume` | restore where you left off and apply configured modes |
+| `/ds-project-checkpoint` | sweep the session, route durable context to its owning file |
+| `/ds-project-compact` | housekeeping over the persisted `.project/` state |
 
 ### Utilities
 
-| Command | Description |
-|---------|-------------|
-| `/ds-deslop` | Strip AI-generated slop from the branch diff |
-| `/ds-handoff` | Compact the conversation into a handoff doc |
-| `/ds-tldt` | Extractive summary of context or a file — no LLM cost |
-| `/ds-write-a-command` | Author a new devskills command in repo conventions |
+| Skill | What it does |
+|-------|--------------|
+| `/ds-tldt` | extractive summary of a doc before it enters context — no LLM cost |
+| `/ds-recall` | inject prior local context from [recall](https://github.com/gleicon/recall) into the session |
+| `/ds-recall-capture` | store this session's outcome in recall's knowledge base |
+| `/ds-recall-setup` | initialize recall and its session integration |
 
-### Context recycling (experimental — requires [recall](https://github.com/gleicon/recall))
+> The `recall` skills are experimental and need the external [recall](https://github.com/gleicon/recall) engine installed.
 
-Local-first context engine: indexes your project, accumulates cross-project recipes and insights, and routes questions to a local model before hitting the cloud API. Goal: reuse what you already paid for.
+## The CLI
 
-| Command | Description |
-|---------|-------------|
-| `/ds-recall` | Index project + inject a context-rich brief into the session; `query "<q>"` routes locally; `brain` pulls cross-project patterns |
-| `/ds-recall-capture` | Compact this session's outcome (goal + result + insight) and store it in recall's knowledge base |
-| `/ds-recall-setup` | Index project, seed recipes, and install recall's session integration via `recall install-skill` (claude; opencode/cursor/codex when present) |
+One binary, four commands:
 
-## Build your own workflow
+| Command | Does |
+|---------|------|
+| `devskills install` | sync the skills into Claude Code / OpenCode / Codex (`--local`, `--harness`, `--dry-run`, `--uninstall`) |
+| `devskills init` | scaffold a project's `AGENTS.md` + a `CLAUDE.md` import (`--lang`, `--concise`, `--phases`) |
+| `devskills doctor` | check — or, with `--fix`, install — the external tools some skills need |
+| `devskills version` | print version and build info |
 
-devskills ships no fixed pipeline. Each command does one job and hands control back — you compose them into whatever flow the work needs. Unlike all-in-one agent frameworks that drive the session for you, the power stays with you: nothing here decides your next step. Start anywhere, reorder freely — spec, plan, build under a mode or two, review, persist. The docs lay out worked flows, not one true path:
+`init` builds `AGENTS.md` from stacked, independently-managed blocks marked `<!-- BEGIN/END devskills:<id> -->`, so re-running is idempotent and swapping a language replaces only that block. It's harness-agnostic — Claude Code reads the `CLAUDE.md` import; OpenCode and Codex read `AGENTS.md` directly.
 
-- **[docs/recipes.md](docs/recipes.md)** — worked, multi-step workflows (pre-PR gate, find-then-prove, driving a multi-PR queue, …)
-- **[docs/commands.md](docs/commands.md)** — every command: args, behavior, and when to reach for it
-- **[docs/project-workflow.md](docs/project-workflow.md)** · **[docs/project-recipes.md](docs/project-recipes.md)** — the optional `.project/` memory workflow
+### Language profiles
+
+`init --lang` stacks a stack-specific profile — idioms, toolchain defaults, and review constraints — under the universal baseline. Pass several (`--lang go,typescript`) for a polyglot repo.
+
+| Profile | Target |
+|---------|--------|
+| `go` | Go 1.24+ — backend services, CLIs, APIs |
+| `typescript` | TypeScript 5.5+ — Workers, Next.js, React, edge |
+| `javascript` | ES2022+ — Workers, vanilla frontend |
+| `rust` | Rust stable — systems, performance-critical services |
+| `python` | Python 3.13+ — backend, APIs, CLIs, data pipelines |
+| `java` | Java 25+ (LTS) — backend, APIs, systems tooling |
+| `zig` | Zig 0.16 — systems, CLIs, embedded |
+
+### External tools
+
+`doctor` provisions the binaries a few skills shell out to — each detects and instructs at use time, so these are optional until you run the skill.
+
+| Tool | Skill | Purpose |
+|------|-------|---------|
+| [osv-scanner](https://github.com/google/osv-scanner) | `/ds-osv` | supply-chain vulnerability scan against the OSV/CVE database |
+| [ast-grep](https://github.com/ast-grep/ast-grep) | `/ds-security-review` | structural pattern search that widens the security pass ([cookbook](docs/ast-grep.md)) |
+| [tldt](https://github.com/gleicon/tldt) | `/ds-tldt` | extractive text summarization — no LLM, no cost |
+
+## Docs
+
+devskills ships no fixed pipeline. Each skill does one job and hands control back — you compose them into whatever the work needs. The docs lay out worked flows, not one true path.
+
+- **[docs/skills.md](docs/skills.md)** — every skill: args, behavior, and when to reach for it
+- **[docs/recipes.md](docs/recipes.md)** — worked, multi-step workflows (pre-PR gate, find-then-prove, driving a multi-PR queue, the optional `.project/` memory loop)
+- **[docs/project-workflow.md](docs/project-workflow.md)** — the `.project/` memory model
 - **[docs/grill-me.md](docs/grill-me.md)** · **[docs/tiger-style.md](docs/tiger-style.md)** — the grill playbook and the engineering bar
-- **[docs/ast-grep.md](docs/ast-grep.md)** — the optional ast-grep structural pass for `/ds-security-review`: rule language and a starter cookbook
-
-## Repository Setup
-
-`setup.sh` builds your project's `AGENTS.md` from stacked, independently-managed blocks, and points `CLAUDE.md` at it with a single `@AGENTS.md` import — so Claude Code (which reads `CLAUDE.md`) and OpenCode and OpenAI Codex (which read `AGENTS.md` directly) share the same content with no duplication.
-
-| Block | Flag | Contents |
-|-------|------|----------|
-| `base` | always | Universal engineering principles — think before coding, simplicity first, surgical changes, goal-driven execution, safe at the boundaries |
-| `language` | `--lang=<x>` | Stack-specific idioms, toolchain, and review constraints |
-| `concise` | `--concise` | Terse-response directive (caveman-lite behavior, baked in) |
-
-Running `setup.sh` with no flags writes just the baseline. Each block lives between `<!-- BEGIN/END devskills:<id> -->` markers, so re-running is idempotent and swapping `--lang` replaces only that block. Existing `AGENTS.md`/`CLAUDE.md` files are backed up (sibling timestamped `.bak`) once, before any change — these are transient; delete them or keep them out of version control once you've confirmed the result.
-
-`update.sh` refreshes the globally-installed commands, but not a project's `AGENTS.md` — the managed blocks are a point-in-time snapshot. To pull baseline changes into a project after an update, re-run `setup.sh` there (idempotent, so it just refreshes the blocks in place).
-
-The baseline blocks target `AGENTS.md` (Claude Code, OpenCode, and OpenAI Codex). Cursor and VSCode Copilot have their own rule mechanisms — `--cursor` installs `.cursor/rules/*.mdc` and `--vscode` writes `copilot-instructions.md`. Both honor `--lang`: they carry Tiger Style plus the notes for the selected language only (no `--lang` writes Tiger Style alone), but not the `base`/`concise` blocks.
-
-To back out, `setup.sh --uninstall` strips the devskills blocks (and removes a file that held *only* devskills content), leaving your own content untouched — a clean install→uninstall round-trip restores the originals exactly.
-
-## Language Profiles
-
-Each profile encodes idioms, toolchain defaults, and review constraints for its stack, and is stacked under the baseline as a `## Language Profile — <x>` section.
-
-| Profile | Stack | Use case |
-|---------|-------|---------|
-| `go` | Go 1.24+ | Backend services, CLIs, APIs |
-| `typescript` | TypeScript 5+, Wrangler | Cloudflare Workers, Next.js, React |
-| `javascript` | ES2022+, Wrangler | Cloudflare Workers, vanilla frontend |
-| `rust` | Rust stable | Systems programming, large projects |
-| `python` | Python 3.13+ | Backend services, APIs, CLIs, data pipelines |
-| `java` | Java 25+ (LTS) | Backend services, APIs, CLIs, systems tooling |
-| `zig` | Zig 0.16 | Systems programming, CLIs, embedded (Tiger Style native) |
-
-## Scripts
-
-`install.sh` — one-time global install. Copies commands to Claude Code and OpenCode config dirs. Installs external tools. Run from anywhere.
-
-`scripts/setup.sh` — per-project configurator. Builds `AGENTS.md` (engineering baseline + optional language/concise blocks) and points `CLAUDE.md` at it via `@AGENTS.md`, optionally installs Cursor rules and VSCode Copilot instructions into the current directory. Run from inside a project. See [Repository Setup](#repository-setup).
-
-`scripts/update.sh` — pulls the latest devskills repo and reinstalls skills. Use `--upgrade-deps` to also force-upgrade tldt to its latest published version.
-
-`scripts/upgrade-deps.sh` — force-upgrades external tools regardless of current state. Useful after upstream major version bumps.
-
-## External Tools
-
-Installed by `install.sh`. Managed by `upgrade-deps.sh`.
-
-| Tool | Purpose |
-|------|---------|
-| [osv-scanner](https://github.com/google/osv-scanner) | Supply-chain vulnerability scan against the OSV/CVE database |
-| [tldt](https://github.com/gleicon/tldt) | Extractive text summarization; no LLM, no cost |
-| [ast-grep](https://github.com/ast-grep/ast-grep) | Structural code search; widens `/ds-security-review`'s reach by enumerating dangerous patterns to trace ([cookbook](docs/ast-grep.md)) |
+- **[docs/ast-grep.md](docs/ast-grep.md)** — the optional structural pass for `/ds-security-review`
 
 ## References
 
-devskills ships its own prompt commands based on these upstream sources.
+devskills builds on these upstream sources.
 
 | Reference | Used by |
 |-----------|---------|
-| [Tiger Style](https://tigerstyle.dev/) | `/ds-tiger-style-mode`, all review commands |
-| [Caveman](https://github.com/juliusbrussee/caveman) | `/ds-caveman-lite-mode`, `/ds-caveman-ultra-mode` |
-| [mattpocock/skills](https://github.com/mattpocock/skills) | `/ds-grill-me`, `/ds-handoff`, `/ds-zoom-out`, `/ds-tdd-mode`, `/ds-write-a-command` |
-| [cursor/plugins — cursor-team-kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit/skills) | `/ds-code-quality-review`, `/ds-deslop`, `/ds-verify-this` |
-| [Andrej Karpathy](https://x.com/karpathy/status/2015883857489522876) · [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) | AGENTS.md baseline (`base` block) |
+| [Tiger Style](https://tigerstyle.dev/) | `/ds-tiger-style-mode`, all review skills |
+| [mattpocock/skills](https://github.com/mattpocock/skills) | `/ds-grill-me`, `/ds-handoff`, `/ds-zoom-out`, `/ds-tdd-mode` |
+| [cursor-team-kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit/skills) | `/ds-code-quality-review`, `/ds-deslop`, `/ds-verify-this` |
+| [Andrej Karpathy](https://x.com/karpathy/status/2015883857489522876) · [andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) | the `AGENTS.md` baseline |
 | [recall](https://github.com/gleicon/recall) | `/ds-recall`, `/ds-recall-capture`, `/ds-recall-setup` |
 
 ## License
