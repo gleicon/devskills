@@ -193,3 +193,18 @@ devskills builds on these upstream sources.
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+## Development
+
+No Makefile — it's a plain Go module (needs **Go 1.26+**). The common tasks:
+
+```bash
+go build .                                          # build the ./devskills binary
+go run . --help                                     # run the CLI without building first
+go test -race ./...                                 # unit tests (embed integrity, sync, scaffold, cli, …)
+go test -tags integration ./internal/acceptance/    # end-to-end acceptance — builds the binary, drives it in a sandbox
+golangci-lint run                                   # lint gate (golangci-lint v2; config in .golangci.yml)
+gofmt -w .                                          # format
+```
+
+Skills and profiles live in `skills/` and `agents-md/` and are embedded into the binary at build time — edit the source there, not an installed copy. Releases are cut by pushing a `v*` tag (goreleaser, via `.github/workflows/release.yml`); `goreleaser build --snapshot --clean` dry-runs the cross-build locally.
