@@ -43,6 +43,27 @@ func newEngine(dryRun bool, stamp string, log func(string)) *Engine {
 
 var importLine = regexp.MustCompile(`(?m)^[[:space:]]*@AGENTS\.md`)
 
+var blockBegin = regexp.MustCompile(`(?m)^<!-- BEGIN devskills:(\S+) -->$`)
+
+// BlockIDs returns the ids of every devskills-managed block present in file, in
+// file order — nil if the file is absent or has none. It is the input to
+// RemoveBlocks when backing devskills out entirely, so any id (language:<lang>,
+// a retired one) is caught without a hardcoded list.
+func (e *Engine) BlockIDs(file string) ([]string, error) {
+	content, existed, err := readMaybe(file)
+	if err != nil {
+		return nil, err
+	}
+	if !existed {
+		return nil, nil
+	}
+	var ids []string
+	for _, m := range blockBegin.FindAllStringSubmatch(content, -1) {
+		ids = append(ids, m[1])
+	}
+	return ids, nil
+}
+
 // Upsert inserts or replaces the managed block <id> in file, wrapping body in the
 // markers. An existing block is replaced in place; otherwise the block is
 // appended after the current content. A byte-identical result writes nothing.

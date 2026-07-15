@@ -3,6 +3,7 @@ package scaffold
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 )
 
@@ -182,6 +183,28 @@ func TestEnsureClaudeImportCreatesBlock(t *testing.T) {
 	want := "<!-- BEGIN devskills:import -->\n@AGENTS.md\n<!-- END devskills:import -->\n"
 	if got := read(t, f); got != want {
 		t.Errorf("content = %q, want %q", got, want)
+	}
+}
+
+func TestBlockIDs(t *testing.T) {
+	dir := t.TempDir()
+	f := filepath.Join(dir, "AGENTS.md")
+	write(t, f, "# top\n\n<!-- BEGIN devskills:base -->\nx\n<!-- END devskills:base -->\n\n"+
+		"<!-- BEGIN devskills:language:go -->\ny\n<!-- END devskills:language:go -->\n")
+	ids, err := fixedEngine(false).BlockIDs(f)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(ids, []string{"base", "language:go"}) {
+		t.Errorf("ids = %v, want [base language:go]", ids)
+	}
+
+	ids, err = fixedEngine(false).BlockIDs(filepath.Join(dir, "absent.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ids != nil {
+		t.Errorf("ids = %v, want nil for an absent file", ids)
 	}
 }
 

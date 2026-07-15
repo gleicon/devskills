@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"os"
 	"path"
 	"path/filepath"
 	"slices"
@@ -38,14 +39,21 @@ type initOpts struct {
 
 func newInitCmd(catalog fs.FS) *cobra.Command {
 	var (
-		langCSV                      string
-		concise, phases, yes, dryRun bool
+		langCSV                                 string
+		concise, phases, yes, dryRun, uninstall bool
 	)
 	cmd := &cobra.Command{
 		Use:   "init",
 		Short: "Scaffold AGENTS.md (and a CLAUDE.md import) for the current project",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			r, err := harness.NewResolver(nil)
+			if err != nil {
+				return err
+			}
+			if uninstall {
+				return runInitUninstall(cmd.OutOrStdout(), r.ProjectRoot, dryRun)
+			}
 			avail, err := availableLanguages(catalog)
 			if err != nil {
 				return err
@@ -64,10 +72,6 @@ func newInitCmd(catalog fs.FS) *cobra.Command {
 					return err
 				}
 			}
-			r, err := harness.NewResolver(nil)
-			if err != nil {
-				return err
-			}
 			return runInit(cmd.OutOrStdout(), catalog, r.ProjectRoot, sel, dryRun)
 		},
 	}
@@ -77,6 +81,7 @@ func newInitCmd(catalog fs.FS) *cobra.Command {
 	f.BoolVar(&phases, "phases", false, "add phase-aware suggestions")
 	f.BoolVarP(&yes, "yes", "y", false, "accept defaults (base only) without prompting")
 	f.BoolVar(&dryRun, "dry-run", false, "print what would change without writing")
+	f.BoolVar(&uninstall, "uninstall", false, "remove devskills' blocks from AGENTS.md/CLAUDE.md")
 	return cmd
 }
 
@@ -187,6 +192,42 @@ func runInit(out io.Writer, catalog fs.FS, root string, sel initSelection, dryRu
 		}
 	}
 	return e.EnsureClaudeImport(claudePath)
+}
+
+// runInitUninstall backs devskills out of the project: every managed block in
+// AGENTS.md and CLAUDE.md (each file removed only if nothing else remained), plus
+// the pre-AGENTS.md profile file some old setups left behind.
+func runInitUninstall(out io.Writer, root string, dryRun bool) error {
+	e := scaffold.New(dryRun, func(s string) { fmt.Fprintf(out, "  %s\n", s) })
+	for _, f := range []string{filepath.Join(root, "AGENTS.md"), filepath.Join(root, "CLAUDE.md")} {
+		ids, err := e.BlockIDs(f)
+		if err != nil {
+			return err
+		}
+		if err := e.RemoveBlocks(f, ids...); err != nil {
+			return err
+		}
+	}
+	return removeLegacyProfile(out, root, dryRun)
+}
+
+// removeLegacyProfile sweeps the profile file older setups recorded in
+// .devskills/language; the directory follows if it is then empty.
+func removeLegacyProfile(out io.Writer, root string, dryRun bool) error {
+	file := filepath.Join(root, ".devskills", "language")
+	if _, err := os.Stat(file); err != nil {
+		return nil // absent — nothing to sweep
+	}
+	if dryRun {
+		fmt.Fprintln(out, "  [dry] would remove legacy .devskills/language")
+		return nil
+	}
+	if err := os.Remove(file); err != nil {
+		return err
+	}
+	os.Remove(filepath.Join(root, ".devskills")) // best effort: only succeeds if empty
+	fmt.Fprintln(out, "  removed legacy .devskills/language")
+	return nil
 }
 
 func readAsset(catalog fs.FS, rel string) (string, error) {

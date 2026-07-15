@@ -151,3 +151,66 @@ func TestRunInitDryRunWritesNothing(t *testing.T) {
 		}
 	}
 }
+
+func TestRunInitUninstallRemovesOurFiles(t *testing.T) {
+	root := t.TempDir()
+	// Scaffold, then back out: both files held only devskills content.
+	if err := runInit(io.Discard, fakeAssets(), root, initSelection{langs: []string{"go"}, concise: true}, false); err != nil {
+		t.Fatal(err)
+	}
+	if err := runInitUninstall(io.Discard, root, false); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"AGENTS.md", "CLAUDE.md"} {
+		if _, err := os.Stat(filepath.Join(root, name)); !os.IsNotExist(err) {
+			t.Errorf("%s should be removed (held only devskills content)", name)
+		}
+	}
+}
+
+func TestRunInitUninstallKeepsUserContent(t *testing.T) {
+	root := t.TempDir()
+	agents := filepath.Join(root, "AGENTS.md")
+	seed := "# My project rules\n\n<!-- BEGIN devskills:base -->\nours\n<!-- END devskills:base -->\n\n# Keep this\n"
+	if err := os.WriteFile(agents, []byte(seed), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := runInitUninstall(io.Discard, root, false); err != nil {
+		t.Fatal(err)
+	}
+	want := "# My project rules\n\n# Keep this\n"
+	if got := readFile(t, agents); got != want {
+		t.Errorf("content = %q, want %q", got, want)
+	}
+}
+
+func TestRunInitUninstallDryRun(t *testing.T) {
+	root := t.TempDir()
+	if err := runInit(io.Discard, fakeAssets(), root, initSelection{langs: []string{"go"}}, false); err != nil {
+		t.Fatal(err)
+	}
+	before := readFile(t, filepath.Join(root, "AGENTS.md"))
+	if err := runInitUninstall(io.Discard, root, true); err != nil {
+		t.Fatal(err)
+	}
+	if after := readFile(t, filepath.Join(root, "AGENTS.md")); after != before {
+		t.Error("dry-run uninstall mutated AGENTS.md")
+	}
+}
+
+func TestRunInitUninstallSweepsLegacyProfile(t *testing.T) {
+	root := t.TempDir()
+	legacyDir := filepath.Join(root, ".devskills")
+	if err := os.MkdirAll(legacyDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(legacyDir, "language"), []byte("go"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := runInitUninstall(io.Discard, root, false); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(legacyDir); !os.IsNotExist(err) {
+		t.Error("empty .devskills dir should be swept after removing its only file")
+	}
+}
