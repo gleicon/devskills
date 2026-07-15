@@ -15,6 +15,7 @@ package acceptance
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"io/fs"
 	"os"
 	"os/exec"
@@ -31,11 +32,17 @@ const (
 
 var dsBin string
 
-func TestMain(m *testing.M) {
+func TestMain(m *testing.M) { os.Exit(runSuite(m)) }
+
+// runSuite builds the binary into a temp dir, runs the suite, and cleans up. The
+// wrapper exists so the deferred cleanup fires before os.Exit skips it.
+func runSuite(m *testing.M) int {
 	tmp, err := os.MkdirTemp("", "ds-acceptance")
 	if err != nil {
-		panic(err)
+		fmt.Fprintln(os.Stderr, "acceptance: mktemp:", err)
+		return 1
 	}
+	defer os.RemoveAll(tmp)
 	dsBin = filepath.Join(tmp, "devskills")
 	// Build the root binary by import path — works regardless of this package's
 	// location in the module tree.
@@ -44,15 +51,12 @@ func TestMain(m *testing.M) {
 		"-o", dsBin, rootPkg)
 	build.Stdout, build.Stderr = os.Stdout, os.Stderr
 	if err := build.Run(); err != nil {
-		_ = os.RemoveAll(tmp)
-		panic("build failed: " + err.Error())
+		fmt.Fprintln(os.Stderr, "acceptance: build failed:", err)
+		return 1
 	}
-	code := m.Run()
-	_ = os.RemoveAll(tmp)
-	os.Exit(code)
+	return m.Run()
 }
 
-// TestInstall covers the global install path across all three harnesses.
 func TestInstall(t *testing.T) {
 	sb := t.TempDir()
 	cSkills := filepath.Join(sb, ".claude", "skills")
@@ -102,8 +106,6 @@ func TestInstall(t *testing.T) {
 	}
 }
 
-// TestInit covers project scaffolding: block writing, user-content safety,
-// idempotent re-run, and clean uninstall (AC-13).
 func TestInit(t *testing.T) {
 	sb := t.TempDir()
 	proj := filepath.Join(sb, "project")
@@ -144,8 +146,6 @@ func TestInit(t *testing.T) {
 	}
 }
 
-// TestDoctor covers the external-tool report and the fix-dry-run path, asserting
-// nothing is ever really installed (AC-17).
 func TestDoctor(t *testing.T) {
 	sb := t.TempDir()
 	out := mustRun(t, sb, sb, "doctor") // check-only never errors
@@ -162,7 +162,6 @@ func TestDoctor(t *testing.T) {
 	}
 }
 
-// TestVersion asserts the ldflags version stamp reaches the CLI (AC-18).
 func TestVersion(t *testing.T) {
 	sb := t.TempDir()
 	out := mustRun(t, sb, sb, "version")
@@ -200,9 +199,8 @@ func sandboxEnv(sandbox string) []string {
 	}
 	var env []string
 	for _, kv := range os.Environ() {
-		i := strings.IndexByte(kv, '=')
-		if i >= 0 {
-			if _, ok := override[kv[:i]]; ok {
+		if k, _, ok := strings.Cut(kv, "="); ok {
+			if _, skip := override[k]; skip {
 				continue
 			}
 		}
