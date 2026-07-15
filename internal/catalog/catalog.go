@@ -57,7 +57,9 @@ func validateSkill(fsys fs.FS, name string) error {
 // trimming surrounding quotes from values. Line-based on purpose: the contract
 // is a handful of scalar keys, not arbitrary YAML.
 func frontmatter(b []byte) (map[string]string, bool) {
-	rest, ok := strings.CutPrefix(string(b), "---\n")
+	// Normalize CRLF so a file checked out with Windows line endings still parses.
+	s := strings.ReplaceAll(string(b), "\r\n", "\n")
+	rest, ok := strings.CutPrefix(s, "---\n")
 	if !ok {
 		return nil, false
 	}

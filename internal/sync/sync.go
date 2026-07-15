@@ -10,6 +10,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"strings"
 )
 
@@ -73,7 +74,7 @@ func (e Engine) Plan(t Target) (Plan, error) {
 	if err != nil {
 		return Plan{}, err
 	}
-	return Plan{Target: t, Writes: names, Removes: e.prunes(t)}, nil
+	return Plan{Target: t, Writes: names, Removes: e.prunes(t, names)}, nil
 }
 
 // UninstallPlan computes the removals to back devskills out of t: every current
@@ -91,16 +92,21 @@ func (e Engine) UninstallPlan(t Target) (Plan, error) {
 			p.Removes = append(p.Removes, Remove{Path: pth, Kind: CurrentSkill})
 		}
 	}
-	p.Removes = append(p.Removes, e.prunes(t)...)
+	p.Removes = append(p.Removes, e.prunes(t, names)...)
 	return p, nil
 }
 
 // prunes returns the retired-skill and legacy-command removals present for t —
 // the ledger-driven deletions shared by install (beside its writes) and
-// uninstall. Only names devskills shipped are ever touched.
-func (e Engine) prunes(t Target) []Remove {
+// uninstall. Only names devskills shipped are ever touched, and a retired name
+// that is back in the current catalog (protect) is skipped: it belongs to the
+// write set, so pruning it would install the skill then delete it.
+func (e Engine) prunes(t Target, protect []string) []Remove {
 	var rms []Remove
 	for _, name := range retiredSkills {
+		if slices.Contains(protect, name) {
+			continue
+		}
 		if pth := filepath.Join(t.SkillsDir, name); exists(pth) {
 			rms = append(rms, Remove{Path: pth, Kind: RetiredSkill})
 		}
@@ -131,11 +137,28 @@ func (e Engine) Apply(p Plan) error {
 		}
 	}
 	for _, rm := range p.Removes {
+		// A legacy command file with a generic pre-ds- name (test.md, spec.md, …)
+		// can collide with a user's own command of the same name; back it up so the
+		// removal stays recoverable. ds-* names are unambiguously devskills'.
+		if rm.Kind == LegacyCommand && !strings.HasPrefix(filepath.Base(rm.Path), "ds-") {
+			if err := backupFile(rm.Path); err != nil {
+				return fmt.Errorf("back up %s: %w", rm.Path, err)
+			}
+		}
 		if err := os.RemoveAll(rm.Path); err != nil {
 			return fmt.Errorf("remove %s %s: %w", rm.Kind, rm.Path, err)
 		}
 	}
 	return nil
+}
+
+// backupFile copies path to a sibling .bak before it is removed.
+func backupFile(path string) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path+".bak", data, 0o644)
 }
 
 // writeSkill replaces dest with a fresh copy of the embedded skill. The rm
@@ -205,7 +228,9 @@ func skillNames(catalog fs.FS) ([]string, error) {
 	return names, nil
 }
 
+// exists reports whether an entry is present at path. Lstat, not Stat, so a
+// dangling symlink still counts as present and gets pruned rather than lingering.
 func exists(path string) bool {
-	_, err := os.Stat(path)
+	_, err := os.Lstat(path)
 	return err == nil
 }

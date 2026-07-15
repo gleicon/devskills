@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 )
 
@@ -205,6 +206,38 @@ func TestBlockIDs(t *testing.T) {
 	}
 	if ids != nil {
 		t.Errorf("ids = %v, want nil for an absent file", ids)
+	}
+}
+
+func TestUpsertReplacesBlockInCRLFFile(t *testing.T) {
+	dir := t.TempDir()
+	f := filepath.Join(dir, "AGENTS.md")
+	crlf := "top\r\n\r\n<!-- BEGIN devskills:base -->\r\nOLD\r\n<!-- END devskills:base -->\r\n"
+	write(t, f, crlf)
+	if err := fixedEngine(false).Upsert(f, "base", "NEW"); err != nil {
+		t.Fatal(err)
+	}
+	got := read(t, f)
+	if strings.Count(got, "<!-- BEGIN devskills:base -->") != 1 {
+		t.Errorf("expected the block replaced in place, not duplicated:\n%q", got)
+	}
+	if !strings.Contains(got, "NEW") || strings.Contains(got, "OLD") {
+		t.Errorf("block body not replaced:\n%q", got)
+	}
+	if strings.Contains(got, "\r") {
+		t.Errorf("expected CRLF normalized to LF:\n%q", got)
+	}
+}
+
+func TestRemoveBlocksStripsInCRLFFile(t *testing.T) {
+	dir := t.TempDir()
+	f := filepath.Join(dir, "AGENTS.md")
+	write(t, f, "# Mine\r\n\r\n<!-- BEGIN devskills:base -->\r\nx\r\n<!-- END devskills:base -->\r\n")
+	if err := fixedEngine(false).RemoveBlocks(f, "base"); err != nil {
+		t.Fatal(err)
+	}
+	if got := read(t, f); strings.Contains(got, "devskills:base") {
+		t.Errorf("block not removed from a CRLF file:\n%q", got)
 	}
 }
 

@@ -265,6 +265,75 @@ func TestApplyUninstallDoesNotCreateSkillsDir(t *testing.T) {
 	assertAbsent(t, skillsDir)
 }
 
+func TestApplyBacksUpGenericLegacyCommandBeforeRemove(t *testing.T) {
+	skillsDir := t.TempDir()
+	legacyDir := t.TempDir()
+	// A generic pre-ds- name that could be the user's own command.
+	userCmd := filepath.Join(legacyDir, "spec.md")
+	mkfile(t, userCmd, "my own spec")
+	// A ds- name is unambiguously devskills' — removed without a backup.
+	dsCmd := filepath.Join(legacyDir, "ds-bug-review.md")
+	mkfile(t, dsCmd, "old devskills command")
+
+	e := New(fakeCatalog())
+	p, err := e.Plan(Target{SkillsDir: skillsDir, LegacyDir: legacyDir})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := e.Apply(p); err != nil {
+		t.Fatal(err)
+	}
+	assertAbsent(t, userCmd)
+	assertFile(t, userCmd+".bak", "my own spec")
+	assertAbsent(t, dsCmd)
+	assertAbsent(t, dsCmd+".bak")
+}
+
+func TestPlanProtectsRetiredNameBackInCatalog(t *testing.T) {
+	// A maintainer returns ds-typeset to the catalog but leaves it in retiredSkills.
+	// Plan must write it and never schedule the path it just wrote for removal.
+	catalog := fstest.MapFS{
+		"skills/ds-typeset/SKILL.md": {Data: []byte("back")},
+		"skills/ds-a/SKILL.md":       {Data: []byte("a")},
+	}
+	skillsDir := t.TempDir()
+	mkfile(t, filepath.Join(skillsDir, "ds-typeset", "SKILL.md"), "present")
+
+	p, err := New(catalog).Plan(Target{SkillsDir: skillsDir})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Contains(p.Writes, "ds-typeset") {
+		t.Errorf("Writes = %v, want it to include ds-typeset", p.Writes)
+	}
+	for _, rm := range p.Removes {
+		if rm.Path == filepath.Join(skillsDir, "ds-typeset") {
+			t.Error("ds-typeset is in the catalog; it must not be pruned")
+		}
+	}
+}
+
+func TestPlanPrunesDanglingSymlinkRetiredSkill(t *testing.T) {
+	skillsDir := t.TempDir()
+	link := filepath.Join(skillsDir, "ds-typeset")
+	if err := os.Symlink(filepath.Join(skillsDir, "gone"), link); err != nil {
+		t.Skipf("symlinks unsupported here: %v", err)
+	}
+	p, err := New(fakeCatalog()).Plan(Target{SkillsDir: skillsDir})
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, rm := range p.Removes {
+		if rm.Path == link {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("a dangling symlink at a retired-skill path should be pruned")
+	}
+}
+
 func snapshot(t *testing.T, root string) []string {
 	t.Helper()
 	var out []string

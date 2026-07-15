@@ -275,5 +275,7 @@ func readMaybe(file string) (content string, existed bool, err error) {
 	if err != nil {
 		return "", false, err
 	}
-	return string(b), true, nil
+	// Normalize CRLF so a Windows-checkout file matches the LF-anchored block
+	// regex; it is rewritten with LF on the next change.
+	return strings.ReplaceAll(string(b), "\r\n", "\n"), true, nil
 }
