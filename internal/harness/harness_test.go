@@ -117,6 +117,31 @@ func TestSkillsDirPrecedence(t *testing.T) {
 	}
 }
 
+func TestLegacyCommandDir(t *testing.T) {
+	r := Resolver{Home: "/home/u", getenv: fakeEnv(nil)}
+	tests := []struct {
+		id   ID
+		want string
+		ok   bool
+	}{
+		{Claude, "/home/u/.claude/commands", true},
+		{Codex, "/home/u/.codex/prompts", true},
+		{OpenCode, "/home/u/.opencode/commands", true},
+		{Antigravity, "", false},
+	}
+	for _, tt := range tests {
+		t.Run(string(tt.id), func(t *testing.T) {
+			got, ok := r.LegacyCommandDir(tt.id)
+			if ok != tt.ok {
+				t.Fatalf("ok = %v, want %v", ok, tt.ok)
+			}
+			if got != filepath.FromSlash(tt.want) {
+				t.Errorf("got %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestDetected(t *testing.T) {
 	found := func(string) (string, error) { return "/usr/bin/x", nil }
 	missing := func(string) (string, error) { return "", errors.New("not found") }

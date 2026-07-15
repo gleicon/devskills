@@ -17,7 +17,7 @@ import (
 var assets embed.FS
 
 func main() {
-	if err := cli.Execute(context.Background()); err != nil {
+	if err := cli.Execute(context.Background(), assets); err != nil {
 		os.Exit(1)
 	}
 }

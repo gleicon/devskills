@@ -129,6 +129,22 @@ func (r Resolver) Detected(id ID) bool {
 	return false
 }
 
+// LegacyCommandDir returns the harness's pre-skills command/prompt directory —
+// the global-only sweep target for the legacy-command purge. The bool is false
+// for a harness that never had one (Antigravity).
+func (r Resolver) LegacyCommandDir(id ID) (string, bool) {
+	switch id {
+	case Claude:
+		return filepath.Join(r.configDir(Claude), "commands"), true
+	case Codex:
+		return filepath.Join(r.configDir(Codex), "prompts"), true
+	case OpenCode:
+		// OpenCode's legacy commands lived under ~/.opencode, not the XDG config dir.
+		return filepath.Join(r.Home, ".opencode", "commands"), true
+	}
+	return "", false
+}
+
 // configDir resolves the global config dir (the parent of skills/) with
 // precedence override > env > default. Not valid for Antigravity — SkillsDir
 // short-circuits it before reaching here.
