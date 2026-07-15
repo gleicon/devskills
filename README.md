@@ -19,9 +19,13 @@ Each skill encodes an opinionated engineering default — Tiger Style, a spec→
 
 ## Install
 
-Install the CLI with Go:
+Install the CLI — pick one:
 
 ```bash
+# quick install — macOS / Linux
+curl -fsSL https://raw.githubusercontent.com/gleicon/devskills/main/install.sh | sh
+
+# or, with Go
 go install github.com/gleicon/devskills@latest
 ```
 
