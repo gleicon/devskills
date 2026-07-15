@@ -19,7 +19,8 @@ Plain markdown. No hidden state, no checksums. Commit it as shared project memor
 ├── DECISIONS.md   # append-only why-log (written by /ds-grill-me --record and checkpoint's sweep)
 ├── config.md      # optional: project preferences — modes auto-applied on resume (/ds-project-config)
 ├── handoff.md     # full handoff, only when you ask (/ds-project-checkpoint --handoff)
-└── SPEC.md        # optional, only if you use /ds-spec in this workflow
+├── SPEC.md        # optional, only if you use /ds-spec in this workflow
+└── archive/       # spent decisions + finished roadmap, moved here by /ds-project-compact (never read by resume)
 ```
 
 `PLAN.md` is the heart. Its `## Now` block always holds *where we are* and *the next step*, which is what makes ending a session — or running `/clear` — safe at any time: a fresh session reads `PLAN.md` and continues.
