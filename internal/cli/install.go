@@ -111,7 +111,7 @@ func chooseHarnesses(o installOpts, universe, detected []harness.ID) (ids []harn
 
 func parseHarnessCSV(csv string, universe []harness.ID) ([]harness.ID, error) {
 	var ids []harness.ID
-	for _, tok := range strings.Split(csv, ",") {
+	for tok := range strings.SplitSeq(csv, ",") {
 		tok = strings.TrimSpace(tok)
 		if tok == "" {
 			continue
