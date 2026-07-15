@@ -4,7 +4,6 @@
 package harness
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -16,10 +15,9 @@ import (
 type ID string
 
 const (
-	Claude      ID = "claude"
-	OpenCode    ID = "opencode"
-	Codex       ID = "codex"
-	Antigravity ID = "antigravity"
+	Claude   ID = "claude"
+	OpenCode ID = "opencode"
+	Codex    ID = "codex"
 )
 
 // Scope is where skills install: shared across the user's projects, or into one
@@ -31,26 +29,19 @@ const (
 	Local
 )
 
-// ErrPluginManaged reports that a (harness, scope) pair has no skills directory
-// to sync because the assistant owns its own store. It applies only to
-// Antigravity + Global, which installs via `agy plugin install`. Callers match
-// it with errors.Is and take the plugin path instead of a file copy.
-var ErrPluginManaged = errors.New("harness: target is plugin-managed, no skills dir")
-
 type info struct {
 	name   string // human-readable
 	binary string // executable name for PATH detection
 }
 
 var registry = map[ID]info{
-	Claude:      {name: "Claude Code", binary: "claude"},
-	OpenCode:    {name: "OpenCode", binary: "opencode"},
-	Codex:       {name: "OpenAI Codex", binary: "codex"},
-	Antigravity: {name: "Antigravity", binary: "agy"},
+	Claude:   {name: "Claude Code", binary: "claude"},
+	OpenCode: {name: "OpenCode", binary: "opencode"},
+	Codex:    {name: "OpenAI Codex", binary: "codex"},
 }
 
 // All returns every supported harness in install order.
-func All() []ID { return []ID{Claude, OpenCode, Codex, Antigravity} }
+func All() []ID { return []ID{Claude, OpenCode, Codex} }
 
 // Valid reports whether id names a supported harness.
 func (id ID) Valid() bool { _, ok := registry[id]; return ok }
@@ -88,17 +79,13 @@ func NewResolver(overrides map[ID]string) (Resolver, error) {
 
 // SkillsDir resolves the directory devskills' skills install into for id at
 // scope. Global applies precedence flag > env > default; local uses the repo's
-// per-harness dir and ignores overrides. Returns ErrPluginManaged for the
-// Antigravity global target, which has no directory.
+// per-harness dir and ignores overrides.
 func (r Resolver) SkillsDir(id ID, scope Scope) (string, error) {
 	if !id.Valid() {
 		return "", fmt.Errorf("unknown harness %q", id)
 	}
 	if scope == Local {
 		return filepath.Join(r.ProjectRoot, localSkillsDir(id)), nil
-	}
-	if id == Antigravity {
-		return "", ErrPluginManaged
 	}
 	return filepath.Join(r.configDir(id), "skills"), nil
 }
@@ -114,9 +101,6 @@ func (r Resolver) Detected(id ID) bool {
 	if _, err := r.find(h.binary); err == nil {
 		return true
 	}
-	if id == Antigravity {
-		return false // no config dir; only agy on PATH signals presence
-	}
 	if _, err := os.Stat(r.configDir(id)); err == nil {
 		return true
 	}
@@ -131,7 +115,7 @@ func (r Resolver) Detected(id ID) bool {
 
 // LegacyCommandDir returns the harness's pre-skills command/prompt directory —
 // the global-only sweep target for the legacy-command purge. The bool is false
-// for a harness that never had one (Antigravity).
+// for a harness with no legacy dir.
 func (r Resolver) LegacyCommandDir(id ID) (string, bool) {
 	switch id {
 	case Claude:
@@ -146,8 +130,7 @@ func (r Resolver) LegacyCommandDir(id ID) (string, bool) {
 }
 
 // configDir resolves the global config dir (the parent of skills/) with
-// precedence override > env > default. Not valid for Antigravity — SkillsDir
-// short-circuits it before reaching here.
+// precedence override > env > default.
 func (r Resolver) configDir(id ID) string {
 	if o := r.Overrides[id]; o != "" {
 		return r.expand(o)
@@ -181,8 +164,6 @@ func localSkillsDir(id ID) string {
 		return filepath.Join(".opencode", "skills")
 	case Codex:
 		return filepath.Join(".codex", "skills")
-	case Antigravity:
-		return filepath.Join(".agents", "skills")
 	}
 	return ""
 }

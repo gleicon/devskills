@@ -24,7 +24,6 @@ func TestSkillsDirDefaults(t *testing.T) {
 		{Claude, Local, "/repo/.claude/skills"},
 		{OpenCode, Local, "/repo/.opencode/skills"},
 		{Codex, Local, "/repo/.codex/skills"},
-		{Antigravity, Local, "/repo/.agents/skills"},
 	}
 	for _, tt := range tests {
 		t.Run(string(tt.id)+"-"+scopeName(tt.scope), func(t *testing.T) {
@@ -36,14 +35,6 @@ func TestSkillsDirDefaults(t *testing.T) {
 				t.Errorf("got %q, want %q", got, tt.want)
 			}
 		})
-	}
-}
-
-func TestSkillsDirAntigravityGlobalIsPluginManaged(t *testing.T) {
-	r := Resolver{Home: "/home/u", getenv: fakeEnv(nil)}
-	_, err := r.SkillsDir(Antigravity, Global)
-	if !errors.Is(err, ErrPluginManaged) {
-		t.Errorf("err = %v, want ErrPluginManaged", err)
 	}
 }
 
@@ -127,7 +118,6 @@ func TestLegacyCommandDir(t *testing.T) {
 		{Claude, "/home/u/.claude/commands", true},
 		{Codex, "/home/u/.codex/prompts", true},
 		{OpenCode, "/home/u/.opencode/commands", true},
-		{Antigravity, "", false},
 	}
 	for _, tt := range tests {
 		t.Run(string(tt.id), func(t *testing.T) {
@@ -179,18 +169,6 @@ func TestDetected(t *testing.T) {
 		r := Resolver{Home: t.TempDir(), getenv: fakeEnv(nil), lookPath: missing}
 		if r.Detected(Claude) {
 			t.Error("want not detected")
-		}
-	})
-
-	t.Run("antigravity needs the binary", func(t *testing.T) {
-		home := t.TempDir()
-		// A stray ~/.agents dir must not read as detected — only agy on PATH does.
-		if err := os.MkdirAll(filepath.Join(home, ".agents"), 0o755); err != nil {
-			t.Fatal(err)
-		}
-		r := Resolver{Home: home, getenv: fakeEnv(nil), lookPath: missing}
-		if r.Detected(Antigravity) {
-			t.Error("want not detected without agy on PATH")
 		}
 	})
 }

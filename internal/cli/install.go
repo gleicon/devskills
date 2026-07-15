@@ -18,9 +18,8 @@ import (
 	dsync "github.com/gleicon/devskills/internal/sync"
 )
 
-// installableHarnesses is the set install offers. Antigravity is added with its
-// agy plugin path in a later step; today it has no directory to copy into.
-var installableHarnesses = []harness.ID{harness.Claude, harness.OpenCode, harness.Codex}
+// installableHarnesses is the set install offers.
+var installableHarnesses = harness.All()
 
 type installOpts struct {
 	local      bool
