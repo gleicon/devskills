@@ -1,0 +1,214 @@
+package cli
+
+import (
+	"fmt"
+	"io"
+	"io/fs"
+	"path"
+	"path/filepath"
+	"slices"
+	"strings"
+
+	"charm.land/huh/v2"
+	"github.com/spf13/cobra"
+
+	"github.com/gleicon/devskills/internal/harness"
+	"github.com/gleicon/devskills/internal/scaffold"
+)
+
+// retiredBlocks are managed-block ids devskills once wrote and no longer does;
+// init sweeps them every run, the way the sync ledger sweeps retired skills. The
+// bare "language" block predates the per-language language:<lang> ids.
+var retiredBlocks = []string{"language"}
+
+type initSelection struct {
+	langs   []string
+	concise bool
+	phases  bool
+}
+
+type initOpts struct {
+	langCSV      string
+	concise      bool
+	phases       bool
+	yes          bool
+	tty          bool
+	flagsChanged bool // any of --lang/--concise/--phases explicitly set
+}
+
+func newInitCmd(catalog fs.FS) *cobra.Command {
+	var (
+		langCSV                      string
+		concise, phases, yes, dryRun bool
+	)
+	cmd := &cobra.Command{
+		Use:   "init",
+		Short: "Scaffold AGENTS.md (and a CLAUDE.md import) for the current project",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			avail, err := availableLanguages(catalog)
+			if err != nil {
+				return err
+			}
+			o := initOpts{
+				langCSV: langCSV, concise: concise, phases: phases, yes: yes, tty: isTTY(),
+				flagsChanged: cmd.Flags().Changed("lang") || cmd.Flags().Changed("concise") || cmd.Flags().Changed("phases"),
+			}
+			sel, needPrompt, err := chooseInit(o, avail)
+			if err != nil {
+				return err
+			}
+			if needPrompt {
+				sel, err = promptInit(avail)
+				if err != nil {
+					return err
+				}
+			}
+			r, err := harness.NewResolver(nil)
+			if err != nil {
+				return err
+			}
+			return runInit(cmd.OutOrStdout(), catalog, r.ProjectRoot, sel, dryRun)
+		},
+	}
+	f := cmd.Flags()
+	f.StringVar(&langCSV, "lang", "", "comma-separated language profiles (e.g. go,typescript)")
+	f.BoolVar(&concise, "concise", false, "add the terse-response directive")
+	f.BoolVar(&phases, "phases", false, "add phase-aware suggestions")
+	f.BoolVarP(&yes, "yes", "y", false, "accept defaults (base only) without prompting")
+	f.BoolVar(&dryRun, "dry-run", false, "print what would change without writing")
+	return cmd
+}
+
+// chooseInit resolves the block selection with no I/O. Explicit flags win and skip
+// the prompt; a bare TTY with no flags prompts; anything else (piped, --yes) takes
+// the base-only default.
+func chooseInit(o initOpts, avail []string) (initSelection, bool, error) {
+	if o.flagsChanged {
+		langs, err := parseLangCSV(o.langCSV, avail)
+		if err != nil {
+			return initSelection{}, false, err
+		}
+		return initSelection{langs: langs, concise: o.concise, phases: o.phases}, false, nil
+	}
+	if o.tty && !o.yes {
+		return initSelection{}, true, nil
+	}
+	return initSelection{}, false, nil
+}
+
+// parseLangCSV validates, trims, and dedupes the requested profiles. Empty is
+// valid (base only) — unlike --harness, a language is optional.
+func parseLangCSV(csv string, avail []string) ([]string, error) {
+	var langs []string
+	for tok := range strings.SplitSeq(csv, ",") {
+		tok = strings.TrimSpace(tok)
+		if tok == "" {
+			continue
+		}
+		if !slices.Contains(avail, tok) {
+			return nil, fmt.Errorf("unknown language profile %q (available: %s)", tok, strings.Join(avail, ", "))
+		}
+		if !slices.Contains(langs, tok) {
+			langs = append(langs, tok)
+		}
+	}
+	return langs, nil
+}
+
+func promptInit(avail []string) (initSelection, error) {
+	langOpts := make([]huh.Option[string], len(avail))
+	for i, l := range avail {
+		langOpts[i] = huh.NewOption(l, l)
+	}
+	var (
+		langs           []string
+		concise, phases bool
+	)
+	form := huh.NewForm(huh.NewGroup(
+		huh.NewMultiSelect[string]().
+			Title("Language profiles to include").
+			Options(langOpts...).
+			Value(&langs),
+		huh.NewConfirm().Title("Add the terse-response directive (concise)?").Value(&concise),
+		huh.NewConfirm().Title("Add phase-aware suggestions (phases)?").Value(&phases),
+	))
+	if err := form.Run(); err != nil {
+		return initSelection{}, err
+	}
+	return initSelection{langs: langs, concise: concise, phases: phases}, nil
+}
+
+// runInit writes AGENTS.md's managed blocks (base + selected layers) and points
+// CLAUDE.md at it. The retired bare "language" block is swept first so a bash-era
+// project migrates to the per-language ids in place.
+func runInit(out io.Writer, catalog fs.FS, root string, sel initSelection, dryRun bool) error {
+	agentsPath := filepath.Join(root, "AGENTS.md")
+	claudePath := filepath.Join(root, "CLAUDE.md")
+	e := scaffold.New(dryRun, func(s string) { fmt.Fprintf(out, "  %s\n", s) })
+
+	if err := e.RemoveBlocks(agentsPath, retiredBlocks...); err != nil {
+		return err
+	}
+
+	base, err := readAsset(catalog, "system/agents-base.md")
+	if err != nil {
+		return err
+	}
+	if err := e.Upsert(agentsPath, "base", base); err != nil {
+		return err
+	}
+	if sel.concise {
+		body, err := readAsset(catalog, "system/concise.md")
+		if err != nil {
+			return err
+		}
+		if err := e.Upsert(agentsPath, "concise", body); err != nil {
+			return err
+		}
+	}
+	if sel.phases {
+		body, err := readAsset(catalog, "system/phase-hints.md")
+		if err != nil {
+			return err
+		}
+		if err := e.Upsert(agentsPath, "phases", body); err != nil {
+			return err
+		}
+	}
+	for _, lang := range sel.langs {
+		body, err := readAsset(catalog, "language/"+lang+".md")
+		if err != nil {
+			return err
+		}
+		note := fmt.Sprintf("<!-- profile: %s — managed by devskills; edits between these markers are overwritten -->", lang)
+		if err := e.Upsert(agentsPath, "language:"+lang, note+"\n"+body); err != nil {
+			return err
+		}
+	}
+	return e.EnsureClaudeImport(claudePath)
+}
+
+func readAsset(catalog fs.FS, rel string) (string, error) {
+	b, err := fs.ReadFile(catalog, path.Join("agents-md", rel))
+	if err != nil {
+		return "", fmt.Errorf("read embedded %s: %w", rel, err)
+	}
+	return string(b), nil
+}
+
+// availableLanguages lists the language profiles the binary embeds, so the flag
+// validation and prompt stay in sync with the shipped content.
+func availableLanguages(catalog fs.FS) ([]string, error) {
+	entries, err := fs.ReadDir(catalog, "agents-md/language")
+	if err != nil {
+		return nil, fmt.Errorf("read language profiles: %w", err)
+	}
+	var langs []string
+	for _, d := range entries {
+		if name, ok := strings.CutSuffix(d.Name(), ".md"); ok {
+			langs = append(langs, name)
+		}
+	}
+	return langs, nil
+}
