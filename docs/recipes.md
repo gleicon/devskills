@@ -1,14 +1,14 @@
 # Recipes & Workflows
 
-Worked examples of the devskills commands doing real work — and, more usefully, working *together*. These are opinionated suggestions, not the only way. For the dry reference (args, flags, behavior) see [commands.md](commands.md).
+Worked examples of the devskills skills doing real work — and, more usefully, working *together*. These are opinionated suggestions, not the only way. For the dry reference (args, flags, behavior) see [skills.md](skills.md).
 
-Everything here relies only on the commands, `git`, and `gh` — no external orchestration.
+Everything here relies only on the skills, `git`, and `gh` — no external orchestration.
 
 ---
 
 ## Modes stack — run several at once
 
-A **mode** (`/ds-tiger-style-mode`, `/ds-ui-mode`, `/ds-data-mode`, `/ds-test-mode`, `/ds-git-mode`, `/ds-step-mode`, `/ds-caveman-lite-mode` / `/ds-caveman-ultra-mode`) doesn't do a job and return — it changes *how* the agent works for the rest of the session. Modes **compose**: turn on as many as fit the work. Building a tested UI to a strict bar, committed cleanly as you go, is four at once —
+A **mode** (`/ds-tiger-style-mode`, `/ds-ui-mode`, `/ds-data-mode`, `/ds-senior-mode`, `/ds-test-mode`, `/ds-tdd-mode`, `/ds-git-mode`, `/ds-step-mode`) doesn't do a job and return — it changes *how* the agent works for the rest of the session. Modes **compose**: turn on as many as fit the work. Building a tested UI to a strict bar, committed cleanly as you go, is four at once —
 
 ```
 /ds-tiger-style-mode             # safety + explicitness bar
@@ -18,7 +18,7 @@ A **mode** (`/ds-tiger-style-mode`, `/ds-ui-mode`, `/ds-data-mode`, `/ds-test-mo
    ...build it; all four stay active until the session ends...
 ```
 
-To drop one mid-session, say so ("stop UI mode"); `/ds-caveman-lite-mode` and `/ds-caveman-ultra-mode` are the ones with explicit off-switches ("normal mode"). The caveman modes deliberately leave commit messages "written normally" — `/ds-git-mode` is what governs them, so the two compose cleanly. Everything else here — `/ds-spec`, `/ds-bug-review`, `/ds-verify-this`, … — is an **action**: it runs once and returns a result. The recipes below stitch the two together.
+To drop one mid-session, say so ("stop UI mode"). Everything else here — `/ds-spec`, `/ds-bug-review`, `/ds-verify-this`, … — is an **action**: it runs once and returns a result. The recipes below stitch the two together.
 
 ---
 
@@ -37,11 +37,11 @@ To drop one mid-session, say so ("stop UI mode"); `/ds-caveman-lite-mode` and `/
 **A specific area.** One or more paths → audit just those. Use when you suspect a module is decaying, or before you start a change in code you don't trust.
 
 ```
-/ds-code-quality-review the whole codebase, not just recent changes
+/ds-code-quality-review --full
 ```
-**Everything.** Freeform "full codebase" scope → a project-wide structural audit. Slower and noisier; reach for it when onboarding to a repo, planning a refactor, or doing a periodic health check. Expect it to find cross-file duplication and sprawl that a branch-scoped pass can't see.
+**Everything.** `--full` → a project-wide structural audit. Slower and noisier; reach for it when onboarding to a repo, planning a refactor, or doing a periodic health check. Expect it to find cross-file duplication and sprawl that a branch-scoped pass can't see. (`--full` works on every review this way.)
 
-> Rule of thumb: branch-scoped before every PR, area-scoped when something smells, full-codebase occasionally.
+> Rule of thumb: branch-scoped before every PR, area-scoped when something smells, `--full` occasionally.
 
 ---
 
@@ -81,15 +81,14 @@ Fresh AI-generated code carries slop — narrating comments, defensive overkill 
 /ds-deslop src/handlers/
 ```
 
-`/ds-deslop` is **narrow and behavior-preserving** — it tidies style and removes noise. It is *not* a structural audit. The three compose:
+`/ds-deslop` is **narrow and behavior-preserving** — it tidies style and removes noise. It is *not* a structural audit. The two compose:
 
 ```
 /ds-deslop                  # 1. remove noise first
-/ds-code-review             # 2. single-source-of-truth: duplicates, drift, parallel-agent conflicts
-/ds-code-quality-review     # 3. then judge the structure that remains
+/ds-code-quality-review     # 2. then judge the structure — including single source of truth
 ```
 
-`/ds-code-review` catches a distinct failure mode from the other two: it checks whether the branch introduced *another* version of something that already exists — a second HTTP client, a duplicate constant, a helper that competes with one an earlier agent added. Most common in AI-assisted codebases where multiple agents independently solve the same problem without seeing each other's work. Run it after slop removal, before structural review, so `/ds-code-quality-review` isn't auditing code that should have been deleted outright.
+`/ds-code-quality-review` catches a failure mode alongside structure: whether the branch introduced *another* version of something that already exists — a second HTTP client, a duplicate constant, a helper that competes with one an earlier agent added. Most common in AI-assisted codebases where multiple agents independently solve the same problem without seeing each other's work. Run it after slop removal so it isn't auditing code that should have been deleted outright.
 
 ---
 
@@ -128,28 +127,27 @@ Performance work is the most hallucination-prone — "this loop looks slow, add 
 
 ## A pre-PR quality gate
 
-Stitch the quality commands into one gate you run before marking a PR ready:
+Stitch the quality skills into one gate you run before marking a PR ready:
 
 ```
 /ds-deslop                  # 1. remove slop introduced on the branch
-/ds-code-review             # 2. single source of truth: duplicates, constant drift, parallel-agent conflicts
-/ds-code-quality-review     # 3. structure: is the diff making the codebase worse?
-/ds-bug-review              # 4. correctness: real bugs, not style
-/ds-security-review         # 5. exploitability — if it touches input, auth, secrets, or I/O
-/ds-data-review             # 6. data correctness — if it touches schema, queries, transactions, or migrations
-/ds-test-quality-review     # 7. is the risky logic actually covered, with good tests?
-/ds-perf-plan               # 8. performance: where is it doing more work than needed? (perf-sensitive changes)
-/ds-go-review               # 9. language pass (or /ds-ts-review, /ds-rust-review)
-/ds-verify-this  <claim>    # 10. prove the headline change actually works
+/ds-code-quality-review     # 2. structure + single source of truth: is the diff making the codebase worse?
+/ds-bug-review              # 3. correctness: real bugs, not style
+/ds-security-review         # 4. exploitability — if it touches input, auth, secrets, or I/O
+/ds-data-review             # 5. data correctness — if it touches schema, queries, transactions, or migrations
+/ds-test-quality-review     # 6. is the risky logic actually covered, with good tests?
+/ds-perf-plan               # 7. performance: where is it doing more work than needed? (perf-sensitive changes)
+/ds-go-review               # 8. language pass (or /ds-ts-review, /ds-rust-review)
+/ds-verify-this  <claim>    # 9. prove the headline change actually works
 ```
 
-Then write the PR description from what you learned and `gh pr ready`. Each step answers a *different* question — slop (noise), single-source-of-truth, structure, correctness, exploitability, data correctness, test coverage, performance, language idioms, behavior — so they don't overlap. Not every PR needs all ten: reach for `/ds-code-review` whenever multiple agents or AI tools touched the branch; `/ds-security-review` when it touches untrusted input; `/ds-data-review` when it touches schema/queries/migrations; `/ds-test-quality-review` when the logic is non-trivial; `/ds-perf-plan` when a path is hot or the change is perf-sensitive. Run the questions that apply.
+Then write the PR description from what you learned and `gh pr ready`. Each step answers a *different* question — noise, structure + single-source-of-truth, correctness, exploitability, data correctness, test coverage, performance, language idioms, behavior — so they don't overlap. Not every PR needs all nine: `/ds-code-quality-review` earns its place on any branch (especially when multiple agents touched it — it catches competing implementations); reach for `/ds-security-review` when it touches untrusted input; `/ds-data-review` when it touches schema/queries/migrations; `/ds-test-quality-review` when the logic is non-trivial; `/ds-perf-plan` when a path is hot. Run the questions that apply. To run the core of this as a guided pipeline with fixes applied between passes, use `/ds-quality-gate` — a tighter, deslop-bookended **six-pass** (this manual list adds `/ds-perf-plan`, the language review, and `/ds-verify-this` on top).
 
 ---
 
 ## A standalone build loop
 
-This loop covers the full spec-to-ship ground — spec, plan, build, verify, ship — using only standalone commands:
+This loop covers the full spec-to-ship ground — spec, plan, build, verify, ship — using only standalone skills:
 
 ```
 /ds-spec                    # 1. WHAT: a SPEC.md with acceptance criteria (optional)
@@ -165,7 +163,7 @@ This loop covers the full spec-to-ship ground — spec, plan, build, verify, shi
 
 Ship with plain `git` + `gh`. The artifacts that persist your thinking are `SPEC.md` and `DECISIONS.md` — commit them. This is deliberately lighter than a phase-based engine: fewer moving parts, no background state, faster to start.
 
-To carry plan and state *across* sessions (so `/clear` is always safe), layer the `.project/` memory commands on top — `/ds-project-map`, `/ds-project-checkpoint`, `/ds-project-resume` — and seed the plan with `/ds-roadmap`. See [project-workflow.md](project-workflow.md).
+To carry plan and state *across* sessions (so `/clear` is always safe), layer the `.project/` memory skills on top — `/ds-project-map`, `/ds-project-checkpoint`, `/ds-project-resume` — and seed the plan with `/ds-roadmap`. The full `.project/` playbook is [below](#working-with-project-memory).
 
 ---
 
@@ -173,7 +171,7 @@ To carry plan and state *across* sessions (so `/clear` is always safe), layer th
 
 When you have a backlog of independent changes to land as *separate* PRs — a queue of issues, or a big refactor split into reviewable chunks — the `.project/` files turn it into a loop that survives `/clear` and hands cleanly between sessions. The plan *is* the protocol.
 
-1. **Map once, plan the queue.** `/ds-project-map` writes `.project/PROJECT.md` (the repo facts every issue shares). Then capture the queue in `.project/PLAN.md`: issue order, a **Current** pointer (which issue, which step), and the per-issue loop (branch → implement → `npm test` → draft PR → grill → ready → merged → sync). Putting the protocol *in the plan* is what makes the session reconstructible after a `/clear`.
+1. **Map once, plan the queue.** `/ds-project-map` writes `.project/PROJECT.md` (the repo facts every issue shares). Then capture the queue in `.project/PLAN.md`: issue order, a **Current** pointer (which issue, which step), and the per-issue loop (branch → implement → run the tests → draft PR → grill → ready → merged → sync). Putting the protocol *in the plan* is what makes the session reconstructible after a `/clear`.
 2. **One branch + one draft PR per issue.** Branch off fresh `main`, implement surgically from the issue's spec, run the tests, open a **draft** PR. Record the PR URL under Current in `PLAN.md`.
 3. **Grill the draft, then mark ready.** Point `/ds-grill-me` at the open PR to stress-test the *approach* one decision at a time; apply what it surfaces, then `gh pr ready`. (This is [the draft-PR grill loop](#the-draft-pr-grill-loop) used as one step of the larger loop.)
 4. **Confirm-then-advance at the gates.** Treat *mark-ready* and *merged* as human checkpoints — never assume a merge. Once merged: `git fetch upstream && git checkout main && git merge --ff-only upstream/main`, delete the branch, tick the issue off, and move the Current pointer to the next one.
@@ -243,7 +241,7 @@ Every step in the plan is anchored to a concrete symptom in *your* codebase — 
 /ds-verify-this "the form shows an inline error and keeps focus when the email is invalid"
 ```
 
-Because `/ds-ui-mode` encodes design constraints (type scale, spacing tokens, visual hierarchy) up front, you escape the generic AI look without re-prompting for "polish" each time. Verify what the user actually sees — a screenshot or a keyboard-navigation transcript is the evidence, not a green unit test.
+Because `/ds-ui-mode` encodes design constraints (type scale, spacing tokens, visual hierarchy) up front, you escape the generic AI look without re-prompting for "polish" each time. Verify what the user actually sees — a screenshot or a keyboard-navigation transcript is the evidence, not a green unit test. Audit finished UI with `/ds-ui-quality-review`.
 
 ---
 
@@ -265,20 +263,13 @@ The mode shapes how the pipeline gets *built*; `/ds-data-review --pipelines` aud
 
 ## Surviving long sessions
 
-Two failure modes on long tasks: the context window fills, and prose burns tokens.
+Long tasks hit two walls: the context window fills, and a big pasted input blows it out. Handle both by capturing state and compressing inputs.
 
 - **Continuity** — when you're switching sessions/machines or pausing mid-task, capture state instead of trusting the transcript:
   ```
   /ds-handoff  next: wire the retry logic into the client and add the timeout test
   ```
-  It writes a `handoff.md` (goal, done, remaining, decisions, open questions) and returns the path. Start the next session by pointing the agent at that file. Do this *before* the context gets so full the summary degrades.
-
-- **Compression** — for long iterative back-and-forth, drop the prose overhead:
-  ```
-  /ds-caveman-lite-mode            # ~25–35% less prose, full explanatory value
-  /ds-caveman-ultra-mode           # ~75–85% less; fragments + notation, ask for detail when needed
-  ```
-  Code, commits, PR bodies, and safety warnings stay written in full regardless.
+  It writes a `handoff.md` (goal, done, remaining, decisions, open questions) and returns the path. Start the next session by pointing the agent at that file. Do this *before* the context gets so full the summary degrades. (For an ongoing project, `/ds-project-checkpoint` persists the same state into `.project/` instead.)
 
 - **Big inputs** — before pasting a long doc or page into context, compress it losslessly-ish:
   ```
@@ -354,9 +345,231 @@ The savings are real only when recall has indexed relevant prior work. Seed it e
 
 ---
 
-## Which command, when
+## Working with `.project/` memory
 
-Indexed by *what you want to do*, not by kind — for the suffix taxonomy (`-mode` / `-review` / `-plan`), see [commands.md](commands.md#kinds-of-command).
+The `.project/` skills keep a durable description, plan, session state, and preferences in plain markdown, so any session is safe to `/clear` or end and a fresh agent can pick up exactly where you left off. Everything above works *without* `.project/`; this section is the persistence layer you add for work that spans sittings. For the file layout and each skill's behavior, see [project-workflow.md](project-workflow.md).
+
+> **There is no execute skill — and that's deliberate.** In the sequences below, a `you →` line is *you typing a normal instruction to the agent*. Implementing is its default behavior; you don't invoke a skill to make it write code. The skills bookend the work — decide, structure, check, persist — and the building in the middle is plain conversation.
+>
+> ```
+> /ds-project-resume                # a skill: orient from .project/
+> you → "implement task 2: ..."     # you: plain prose, no skill needed
+> ```
+
+### Project from scratch
+
+No code yet, so map comes last — there's nothing to map until something exists.
+
+```
+you → "I want a CLI that watches a dir and uploads new files to S3"
+/ds-spec                       # WHAT + acceptance criteria → .project/SPEC.md
+/ds-explore --web              # research stack/approach options → .project/EXPLORE.md
+/ds-grill-me --record          # decide the open branches → .project/DECISIONS.md
+/ds-roadmap               # turn the decisions into an ordered roadmap → .project/PLAN.md
+/ds-tiger-style-mode                # engineering bar on for the session
+you → "implement task 1: project scaffold + the dir-watch loop"
+/ds-project-map                # now there's code — capture PROJECT.md (description + repo map)
+/ds-deslop                     # clean the generated code
+/ds-verify-this "watcher emits an event within 1s of a new file appearing"
+/ds-project-checkpoint         # persist state, then /clear is safe
+```
+
+Next session: `/ds-project-resume` and keep going.
+
+### Adopting it in a live project
+
+The code already exists, so **map first** — establish ground truth before planning.
+
+```
+/ds-project-map                # scan the existing repo → .project/PROJECT.md
+/ds-zoom-out                   # map the area you're about to touch (responsibility, callers, boundaries)
+/ds-roadmap               # seed the roadmap from your current goals / backlog
+you → "implement the first task"
+...
+/ds-project-checkpoint
+```
+
+If you inherit a long design doc, run `/ds-tldt ./DESIGN.md` first to compress it before it goes into context.
+
+### Periodic quality pass
+
+No feature — just paying down entropy. The trick is turning findings *into tasks* instead of fixing ad hoc.
+
+```
+/ds-deslop                                 # strip slop from recent work
+/ds-code-quality-review --full             # project-wide structural audit (or a path to scope it)
+/ds-bug-review --full                      # correctness pass: real bugs (logic, null, error paths, races, leaks)
+/ds-test-quality-review --full             # is the critical code actually tested — and are those tests any good?
+/ds-doc-quality-review --full              # docs entropy too: drift vs. code, dead links, bloat
+you → paste the findings into:
+/ds-roadmap                           # findings become ordered tasks in PLAN.md
+/ds-go-review        (or /ds-ts-review, /ds-rust-review)   # language idioms + security
+you → "fix roadmap tasks 1–3"
+/ds-verify-this "the auth refactor preserves the existing token behavior"
+/ds-project-checkpoint
+```
+
+Run it on a cadence (end of a sprint, before a release). Branch-scope the reviews weekly; `--full` occasionally.
+
+### Implementing a new feature
+
+```
+/ds-project-resume             # orient: where we are, what's next
+/ds-spec                       # if the feature is non-trivial → .project/SPEC.md  (optional)
+/ds-explore                    # at a design fork: lay out approaches (add --web to research)
+/ds-grill-me --record          # decide → DECISIONS.md
+/ds-roadmap               # add the feature's tasks to the roadmap
+/ds-zoom-out                   # if it touches unfamiliar code
+/ds-tiger-style-mode                # engineering bar on
+/ds-test-mode                       # + keep the core tested as you build (stacks with /ds-tiger-style-mode)
+you → "implement task 4: the retry policy with capped backoff"
+/ds-deslop
+/ds-code-quality-review        # branch-scoped, before review
+/ds-bug-review                 # correctness pass on the branch — real bugs, not style
+/ds-security-review            # if it touches input, auth, secrets, or external I/O
+/ds-test-quality-review        # did the risky logic get good tests, or just happy-path ones?
+/ds-doc-quality-review         # if the feature touched README/docs — did they keep up?
+/ds-verify-this "requests retry 3× with backoff, then surface the error"
+/ds-project-checkpoint
+```
+
+### Making a small change
+
+Not everything earns the full ceremony. Match the weight to the work.
+
+```
+you → "change the default timeout to 30s and update the test that asserts it"
+/ds-deslop                     # optional, if the diff has any slop
+/ds-verify-this "client times out at 30s, not 10s"   # if behavior changed
+git commit
+```
+
+Skip `/ds-roadmap`/`/ds-project-checkpoint` for a one-liner you commit immediately — there's no state worth persisting. Reach for the workflow when work spans more than one sitting.
+
+### Fixing a bug
+
+The find-then-prove loop shown above (`/ds-debug` → `/ds-verify-this`), with a checkpoint if it was more than trivial:
+
+```
+/ds-debug "mytool parse empty.json panics"   # reproduce → root cause → minimal fix
+/ds-deslop                     # clean the fix if it sprawled
+/ds-verify-this "mytool parse empty.json exits 0 with an error message, no panic"
+/ds-project-checkpoint         # if it was more than a trivial fix
+```
+
+### Shoring up a risky area
+
+Inherited or critical code you don't trust — get it covered *before* you change it, so a later refactor has a net under it.
+
+```
+/ds-zoom-out                   # understand the area: responsibility, callers, boundaries
+/ds-test-quality-review src/billing/   # where's the critical logic untested, and which tests lie?
+/ds-bug-review src/billing/    # while you're in here: any latent defects in that code?
+you → paste the gaps into:
+/ds-roadmap               # the coverage gaps and bugs become ordered tasks
+/ds-test-mode                       # pragmatic testing mode on — cover by risk, not for a number
+you → "cover the proration edge cases the review flagged"
+/ds-verify-this "a mid-cycle plan change prorates to the day, not the month"
+/ds-project-checkpoint
+```
+
+Tests first, *then* the change. `/ds-test-quality-review` finds what's unprotected; `/ds-test-mode` keeps you honest writing it; `/ds-bug-review` catches what was already broken.
+
+### Day-to-day: branch → draft PR → ship
+
+The everyday loop, end to end.
+
+```
+git checkout -b feat/upload-retries
+/ds-project-resume                         # orient
+/ds-roadmap                           # if this branch needs its own task list
+you → "implement tasks 1 and 2"
+/ds-deslop                                 # clean before anyone looks
+/ds-code-quality-review                    # structural pass on the branch
+git commit && gh pr create --draft --fill
+/ds-grill-me --record                      # stress-test the approach against the draft PR
+you → "incorporate the decisions we just made"
+/ds-verify-this "uploads survive a transient 503 and succeed on retry"
+/ds-project-checkpoint                     # persist state
+gh pr ready
+```
+
+The draft-PR → `/ds-grill-me` → ready loop is [documented in detail above](#the-draft-pr-grill-loop); the `.project/` skills just add persistent state around it.
+
+### A big change (architecture / large refactor)
+
+Big changes span sessions, so lean hard on checkpoint/resume and incremental phases. Understand and decide *before* touching anything.
+
+```
+/ds-zoom-out                   # map the current architecture broadly
+/ds-explore --web              # research target patterns / approaches → EXPLORE.md
+/ds-grill-me --record          # decide; the hard-to-reverse choices go in DECISIONS.md (ADR-worthy)
+/ds-roadmap               # break it into ordered, individually-shippable phases
+/ds-tiger-style-mode
+you → "implement phase 1: introduce the new interface behind the old one"
+/ds-code-quality-review        # audit each phase
+/ds-verify-this "behavior is unchanged after phase 1"   # the refactor invariant
+/ds-project-checkpoint --handoff   # rich handoff before you stop — this will span sessions
+# ...next session...
+/ds-project-resume             # picks up PLAN.md + the fresh handoff
+/ds-project-map                # refresh PROJECT.md once the shape has changed
+/ds-doc-quality-review         # the shape changed — hunt docs the refactor silently rotted (renames, moved files, dead links)
+```
+
+Checkpoint between *every* phase so you can `/clear` and resume with a clean context window — that's the whole point of the state files for work this size.
+
+### Resuming after time away
+
+```
+/ds-project-resume             # reads PLAN.md ## Now; flags handoff.md if it's stale
+/ds-project-map                # re-run if the code drifted while you were away (refreshes the map)
+/ds-zoom-out                   # re-familiarize with the area you'll touch
+```
+
+If `/ds-project-resume` reports a stale `handoff.md`, trust `## Now` over it (and delete the stale file — see below).
+
+### Handing the project to someone else
+
+```
+/ds-project-checkpoint --handoff   # writes a rich .project/handoff.md (context, what was tried, gotchas)
+```
+
+They (or a fresh agent) start with `/ds-project-resume`, which loads `PROJECT.md` (the map), `PLAN.md` (`## Now` + roadmap), and the fresh `handoff.md`. `DECISIONS.md` answers "why is it like this?" without a meeting.
+
+### Keeping `.project/` clean
+
+The files have different lifetimes — some durable, some scratch — and left alone the directory rots. **`/ds-project-compact` is the housekeeping skill for exactly this:** it archives superseded `DECISIONS.md` entries and completed `## Roadmap` sections into a dated `.project/archive/` file — losslessly, with per-item approval, never touching `## Now`. Run it whenever the directory grows unwieldy. Knowing the lifetimes still helps you see what it'll flag:
+
+**`PLAN.md` — living, prune it.**
+- `/ds-project-checkpoint` marks tasks `[x]` and overwrites `## Now`; `## Now` never needs manual cleanup.
+- The `## Roadmap` accumulates `[x]` tasks. When a feature or milestone ships, **prune the completed tasks** so the roadmap shows what's *left* (or let `/ds-project-compact` archive them). git and `DECISIONS.md` already hold the history, so deleting is fine.
+- Rule of thumb: if you can't see the next three things to do without scrolling, prune.
+
+**`EXPLORE.md` — scratch, disposable.**
+- Overwritten on every `/ds-explore`. Once you've decided (`/ds-grill-me` → `DECISIONS.md`), its content is captured where it matters. Delete it or just let the next `/ds-explore` overwrite it. Never cite it as a durable record.
+
+**`handoff.md` — point-in-time, expires.**
+- Written only by `/ds-project-checkpoint --handoff`. `/ds-project-resume` ignores it once it's older than `PLAN.md`. After a successful resume, `rm .project/handoff.md` so it doesn't linger and confuse — `## Now` is the source of truth, not a past handoff.
+
+**`PROJECT.md` / `DECISIONS.md` / `config.md` — durable, keep.**
+- `PROJECT.md`: refresh with `/ds-project-map` when the repo's shape drifts; otherwise leave it.
+- `DECISIONS.md`: append-only "why" log, fed by `/ds-grill-me --record` and `/ds-project-checkpoint`'s sweep, surfaced by `/ds-project-resume`. Don't prune it by hand — `/ds-project-compact` archives superseded entries losslessly when it grows unwieldy.
+- `config.md`: per-project preferences (the modes auto-applied on resume). Hand-edited or via `/ds-project-config`; small and stable. Leave it unless your preferred modes change.
+
+**Git hygiene.** Commit the durable set (`PROJECT.md`, `PLAN.md`, `DECISIONS.md`, `config.md`) as shared memory; the scratch files don't belong in history. If you commit `.project/`, ignore the scratch:
+
+```gitignore
+.project/EXPLORE.md
+.project/handoff.md
+```
+
+Or git-ignore the whole `.project/` directory for a purely local workflow — nothing here depends on git.
+
+---
+
+## Which skill, when
+
+Indexed by *what you want to do*, not by kind — for the suffix taxonomy (`-mode` / `-review` / `-plan`), see [skills.md](skills.md#kinds-of-skill).
 
 | You want to… | Reach for |
 |---|---|
@@ -367,12 +580,14 @@ Indexed by *what you want to do*, not by kind — for the suffix taxonomy (`-mod
 | Keep the core tested as you work (mode) | `/ds-test-mode` |
 | Build a data pipeline correctly as you go (mode) | `/ds-data-mode` |
 | Commit clean, human-readable history as you build (mode) | `/ds-git-mode` |
+| Work like a super-senior everywhere, no slop (mode) | `/ds-senior-mode` |
 | Execute step-by-step, keeping control at every break (mode) | `/ds-step-mode` |
 | Remove AI slop from a fresh branch | `/ds-deslop` |
 | Bring a codebase's comments to discipline | `/ds-comment-review` |
 | Judge structure / find simplifications | `/ds-code-quality-review` |
 | Find real bugs (correctness) | `/ds-bug-review` |
 | Audit security, language-agnostic | `/ds-security-review` |
+| Scan dependencies for known CVEs | `/ds-osv` |
 | Check the data is correct, consistent, and well-modeled | `/ds-data-review` |
 | Check whether the right things are tested | `/ds-test-quality-review` |
 | Plan a performance optimization (costed) | `/ds-perf-plan` |
@@ -385,9 +600,7 @@ Indexed by *what you want to do*, not by kind — for the suffix taxonomy (`-mod
 | Pause / switch sessions cleanly | `/ds-handoff` |
 | Land a backlog as separate PRs, `/clear`-safe | `/ds-roadmap` + `/ds-project-resume` |
 | Compress a long source doc | `/ds-tldt` |
-| Save tokens on a long session | `/ds-caveman-lite-mode` · `/ds-caveman-ultra-mode` |
-| Run the full pre-PR review pipeline with fixes between passes | `/ds-quality-gate-mode` |
-| Turn a repeated manual flow into a command | `/ds-write-a-command` |
+| Run the full pre-PR review pipeline with fixes between passes | `/ds-quality-gate` |
 | Inject cross-project context before asking | `/ds-recall` |
 | Store this session's outcome for future sessions | `/ds-recall-capture` |
 | Set up recall and install its session integration | `/ds-recall-setup` |

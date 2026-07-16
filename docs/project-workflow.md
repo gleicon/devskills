@@ -2,9 +2,9 @@
 
 A minimal, file-backed workflow for keeping project memory across sessions: a durable description, a plan, and current state in plain markdown — no heavy orchestration, no background agents, no question-driven hand-holding.
 
-The guiding rule: **these commands are scribes, not pilots.** They read the repo and the conversation and persist structure. They never choose your architecture, never impose a methodology, never interrogate you. You drive; they take notes.
+The guiding rule: **these skills are scribes, not pilots.** They read the repo and the conversation and persist structure. They never choose your architecture, never impose a methodology, never interrogate you. You drive; they take notes.
 
-For the standalone commands these compose with, see [commands.md](commands.md). For worked use cases (new project, bug fix, big refactor, day-to-day PR flow, keeping `.project/` clean), see [project-recipes.md](project-recipes.md).
+For the standalone skills these compose with, see [skills.md](skills.md). For worked use cases (new project, bug fix, big refactor, day-to-day PR flow, keeping `.project/` clean), see [recipes.md](recipes.md#working-with-project-memory).
 
 ---
 
@@ -19,16 +19,17 @@ Plain markdown. No hidden state, no checksums. Commit it as shared project memor
 ├── DECISIONS.md   # append-only why-log (written by /ds-grill-me --record and checkpoint's sweep)
 ├── config.md      # optional: project preferences — modes auto-applied on resume (/ds-project-config)
 ├── handoff.md     # full handoff, only when you ask (/ds-project-checkpoint --handoff)
-└── SPEC.md        # optional, only if you use /ds-spec in this workflow
+├── SPEC.md        # optional, only if you use /ds-spec in this workflow
+└── archive/       # spent decisions + finished roadmap, moved here by /ds-project-compact (never read by resume)
 ```
 
 `PLAN.md` is the heart. Its `## Now` block always holds *where we are* and *the next step*, which is what makes ending a session — or running `/clear` — safe at any time: a fresh session reads `PLAN.md` and continues.
 
 ---
 
-## The commands
+## The skills
 
-Four keep the `.project/` memory — `/ds-project-map`, `/ds-project-config`, `/ds-project-checkpoint`, `/ds-project-resume`; `/ds-roadmap` seeds the plan and works with or without `.project/`.
+Five keep the `.project/` memory — `/ds-project-map`, `/ds-project-config`, `/ds-project-checkpoint`, `/ds-project-resume`, `/ds-project-compact`; `/ds-roadmap` seeds the plan and works with or without `.project/`.
 
 ### `/ds-project-map` → `PROJECT.md`
 
@@ -36,11 +37,11 @@ Reads the actual code and writes (or refreshes) the stable description: overview
 
 ### `/ds-project-config` → `config.md`
 
-Sets the per-project preferences a session reads at start — today, the **modes** that `/ds-project-resume` (and `/ds-workflow`) apply automatically. It discovers your installed `ds-*-mode` commands so you don't have to remember names, writes a `## Modes` bullet list, and warns on an unknown name. Optional and hand-editable; it only ever touches `config.md`.
+Sets the per-project preferences a session reads at start — today, the **modes** that `/ds-project-resume` applies automatically. It discovers your installed `ds-*-mode` skills so you don't have to remember names, writes a `## Modes` bullet list, and warns on an unknown name. Optional and hand-editable; it only ever touches `config.md`.
 
 ### `/ds-roadmap` → `PLAN.md` (`## Roadmap`)
 
-Turns input into an ordered task checklist. The input can be a goal, a `SPEC.md`, or **pasted output from another command** — drop in `/ds-code-quality-review` findings or a bug list and they become ordered tasks. It sequences and scopes; it does not pick libraries or patterns. Tasks are outcomes (`[ ]` / `[~]` / `[x]`), not implementation instructions. Like `/ds-spec`, it's `.project`-aware: it writes `.project/PLAN.md` here, or `PLAN.md` in the current directory when there's no `.project/`.
+Turns input into an ordered task checklist. The input can be a goal, a `SPEC.md`, or **pasted output from another skill** — drop in `/ds-code-quality-review` findings or a bug list and they become ordered tasks. It sequences and scopes; it does not pick libraries or patterns. Tasks are outcomes (`[ ]` / `[~]` / `[x]`), not implementation instructions. Like `/ds-spec`, it's `.project`-aware: it writes `.project/PLAN.md` here, or `PLAN.md` in the current directory when there's no `.project/`.
 
 ### `/ds-project-checkpoint [--handoff]` → routes durable context
 
@@ -49,6 +50,10 @@ Run before `/clear` or at end of session. **Sweeps the conversation** for durabl
 ### `/ds-project-resume [--no-modes]` → reads state, applies modes
 
 Run at session start. First **applies any modes in `config.md`** (read-and-adopt each mode's command file; `--no-modes` skips this but still lists them). Then reads `PLAN.md` (and `PROJECT.md` for the map), lightly surfaces `DECISIONS.md` (count + recent few), and summarizes where to pick up. If `handoff.md` exists it is loaded **only if it is newer than `PLAN.md`** (by file modification time — no git required) — otherwise it's flagged as stale and ignored, so a forgotten handoff never misleads a fresh session. Resume itself doesn't modify `.project/` files; an applied mode then governs the session under its own rules.
+
+### `/ds-project-compact` → archives spent state
+
+Housekeeping for a `.project/` that's grown heavy. Classifies each `DECISIONS.md` entry as active (stays), superseded (archived, its residual truth re-recorded as a fresh decision), or expired (archived), and moves completed `## Roadmap` sections out — all into an append-only `.project/archive/<file>-<date>.md`, so nothing is lost: every pre-compact entry stays findable in live ∪ archive. Each classification and reader-affecting write is approved one at a time. It never touches `## Now`, and `/ds-project-resume` never reads the archive. Run it when superseded decisions and finished roadmap sections start adding noise to every resume.
 
 ---
 
@@ -67,7 +72,7 @@ Run at session start. First **applies any modes in `config.md`** (read-and-adopt
 
    ...you write code, driving the design...
 
-/ds-deslop                       # quality gates (standalone commands)
+/ds-deslop                       # quality gates (standalone skills)
 /ds-code-quality-review
 /ds-verify-this <claim>
 
@@ -80,11 +85,11 @@ Every step is engineer-driven and self-contained. The only persistent artifacts 
 
 ---
 
-## How it relates to the standalone commands
+## How it relates to the standalone skills
 
 - `/ds-spec` and `/ds-roadmap` are a pair of `.project`-aware generators (not `.project`-only): spec writes `.project/SPEC.md` (else `SPEC.md`) and defines the WHAT; roadmap writes `.project/PLAN.md` (else `PLAN.md`) and turns that into an ordered roadmap.
 - `/ds-grill-me --record` appends to `.project/DECISIONS.md` when `.project/` exists. Grill a design, then plan it.
 - `/ds-handoff` stays separate and ephemeral (writes to a temp dir, tool-agnostic). The durable handoff is `/ds-project-checkpoint --handoff`.
-- `/ds-step-mode current plan` drives `PLAN.md` one user-gated step at a time — the execution complement to these note-taking commands (they're scribes; it's the pilot you stay in control of). It marks steps done as they complete and offers `/ds-project-checkpoint` at milestones.
+- `/ds-step-mode current plan` drives `PLAN.md` one user-gated step at a time — the execution complement to these note-taking skills (they're scribes; it's the pilot you stay in control of). It marks steps done as they complete and offers `/ds-project-checkpoint` at milestones.
 
-Nothing here is required to use the standalone commands — `.project/` is opt-in. Create it with `/ds-project-map` (or just `mkdir .project`) and the workflow switches on.
+Nothing here is required to use the standalone skills — `.project/` is opt-in. Create it with `/ds-project-map` (or just `mkdir .project`) and the workflow switches on.

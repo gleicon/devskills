@@ -1,0 +1,161 @@
+---
+name: ds-rust-review
+description: "Review Rust code for safety metrics, error handling, and idiomatic Rust."
+disable-model-invocation: true
+---
+
+Applies to: Rust stable, edition 2024. Systems programming, CLI tools, services.
+
+## Arguments
+
+Scan the invocation for the `--no-tiger`, `--fix`, and `--full` flags. Treat every other argument as review scope (files or directories); if no scope is given, review the changed files on the current branch.
+
+- `--no-tiger` present → skip the Tiger Style section; run the remaining sections only.
+- `--no-tiger` absent → run all sections (default).
+- `--fix` → after reporting, apply only the violations whose fix is **mechanical and unambiguous** (a rename to the idiom, a missing error check the review is certain about). Anything that changes logic or rests on an unverified assumption — especially security and correctness findings — **stays report-only**. After applying, re-run any build/test/lint check already in the loop and revert any fix that breaks it — or that touched more than the intended mechanical edit. End with a summary of what was applied and what was left.
+- `--full` → review the entire codebase instead of just the branch's changes. Explicit positional scope still wins; `--full` only replaces the no-scope default.
+
+The whole-crate metric commands below are baseline context. Anchor findings to the code in scope — don't report pre-existing `unwrap`/`panic` counts outside the change as if the change introduced them.
+
+## Automated Checks (run first if tools are available)
+
+```bash
+# Safety surface metrics
+cargo geiger 2>/dev/null          # count unsafe blocks across crate graph
+cargo geiger --output-format json  # machine-readable
+
+# Lints — must pass clean
+cargo clippy -- -D warnings
+
+# Security audit
+cargo audit
+
+# Unused dependencies
+cargo +nightly udeps --all-targets 2>/dev/null
+
+# Warnings in clean build
+cargo clean && cargo build 2>&1 | grep -E "^warning"
+
+# Count unsafe/panic/unwrap manually
+grep -rn "unsafe " src/
+grep -rn "\.unwrap()" src/
+grep -rn "\.expect(" src/
+grep -rn "panic!(" src/
+grep -rn "todo!()" src/
+grep -rn "unimplemented!()" src/
+```
+
+Run these commands, report counts, then do manual review below.
+
+## Safety Metrics
+
+Report these numbers at the top of the review:
+
+```
+unsafe blocks:      <N>  (cargo geiger or manual grep)
+unwrap() calls:     <N>
+expect() calls:     <N>
+panic!() calls:     <N>
+todo!()/unimpl!():  <N>
+clippy warnings:    <N>
+audit findings:     <N>
+```
+
+Each non-zero number introduced or touched by the change requires justification. Pre-existing counts outside the scope are context, not findings.
+
+## Review Checklist
+
+Use the checklist as a lens, not a scorecard: reason about the actual change, report real violations anchored to `file:line`, and flag issues even when they aren't listed. Don't manufacture findings to fill a category.
+
+### Tiger Style
+
+Skip this section entirely if `--no-tiger` was passed. Otherwise it is mandatory.
+- [ ] Non-trivial functions assert preconditions and key invariants with `assert!` / `debug_assert!`
+- [ ] All loops over external input have explicit bounds; no recursion without provable termination
+- [ ] Functions under 70 lines
+- [ ] Named constants for limits and sizes — no unexplained magic numbers
+- [ ] Errors propagated explicitly — never silently dropped with `let _ =` or `.ok()` on a meaningful operation
+
+### Unsafe Code
+- [ ] Every `unsafe` block has a `// SAFETY:` comment explaining the invariant relied upon
+- [ ] Unsafe is confined to the smallest possible scope
+- [ ] Each unsafe block has a corresponding test exercising the unsafe path
+- [ ] No raw pointer arithmetic without bounds assertions
+- [ ] Edition 2024: `extern` blocks are declared `unsafe extern`, and `no_mangle`/`link_section`/`export_name` use the `#[unsafe(...)]` wrapper
+
+### Panic and Unwrap
+- [ ] No `.unwrap()` in library code (crates without `main.rs`)
+- [ ] Each `.expect("msg")` has a descriptive message that identifies WHAT failed and WHY it should not
+- [ ] No `panic!()` on recoverable errors (bad input, missing file, network failure)
+- [ ] `panic!()` acceptable only for: violated invariants, programmer errors, OOM in systems context
+
+### Error Handling
+- [ ] Library errors use `thiserror` with typed enum variants
+- [ ] Binary errors use `anyhow` with `.context("operation description")`
+- [ ] `?` operator used consistently — no manual `match Err(e) => return Err(e.into())`
+- [ ] All `Result`-returning functions have their error handled at call sites — no implicit `.ok()`  discard on meaningful operations
+
+### Ownership and Borrowing
+- [ ] No unnecessary `.clone()` — check if a reference suffices
+- [ ] No `Arc<Mutex<T>>` where single-threaded `RefCell<T>` or owned data works
+- [ ] `Mutex` lock scope is minimal — no lock held across await points
+- [ ] No `Box<dyn Error>` in library public API — use typed errors
+
+### Async (if applicable)
+- [ ] No blocking calls inside `async fn` (no `std::thread::sleep`, `std::fs::read`)
+- [ ] CPU-bound work in `tokio::task::spawn_blocking`
+- [ ] Futures are `Send` when used with multi-thread Tokio runtime
+- [ ] `select!` arms handle cancellation correctly
+
+### Idiomatic Rust
+- [ ] Iterator chains preferred over manual loops where clarity is not lost
+- [ ] `if let` / `while let` over `.unwrap()` on Options
+- [ ] `matches!()` macro for pattern matching in boolean context
+- [ ] Field order only matters for `#[repr(C)]`/FFI types — don't flag ordering on ordinary `repr(Rust)` structs (the compiler reorders them)
+- [ ] `#[derive]` used where applicable (Debug, Clone, PartialEq)
+- [ ] No custom `Display` that just re-emits the `Debug` output — if `Display` adds nothing over `{:?}`, drop it
+- [ ] Async closures (`async || …`, stable since 1.85) instead of `|| async { … }` where a closure must return a future
+- [ ] Edition 2024: `impl Trait` return types capture every in-scope generic lifetime — narrow with `+ use<...>` where the wider capture is unwanted
+
+### Performance
+_Idiom-level checks only — for a ranked, costed optimization plan, use `/ds-perf-plan`._
+- [ ] No allocation inside loops where pre-allocation is possible
+- [ ] `String::with_capacity(n)` / `Vec::with_capacity(n)` where size is known
+- [ ] No repeated `HashMap::get` + `HashMap::insert` — use `entry()` API
+- [ ] Large values passed by reference, not moved through multiple stack frames unnecessarily
+
+### Security
+- [ ] No SQL built by string formatting — use parameterized queries / typed query macros (`sqlx`, `diesel`)
+- [ ] No `Command::new` / shell execution with unsanitized user input
+- [ ] No hardcoded credentials or secrets
+- [ ] Untrusted input validated and bounded before use (lengths, indices, sizes)
+- [ ] Outbound URLs derived from user input validated or allow-listed (SSRF)
+- [ ] Deserialization of untrusted data is size-bounded and depth-limited
+
+### Testing
+- [ ] Each `unsafe` block has a dedicated test
+- [ ] Each error variant has a test triggering it
+- [ ] `#[should_panic]` tests for intentional panics
+- [ ] Fuzzing targets for parsing/deserialization code (`cargo fuzz` or `bolero`)
+
+### Dependencies (Cargo.toml)
+- [ ] No duplicate functionality across deps (two HTTP clients, two JSON libs)
+- [ ] `features` flags used to minimize compiled surface area
+- [ ] Dev-only deps in `[dev-dependencies]`, not `[dependencies]`
+- [ ] `cargo audit` clean (no known CVEs)
+
+## Output Format
+
+Header (always emit):
+```
+unsafe: <N> | unwrap: <N> | expect: <N> | panic: <N> | clippy: <N>
+```
+
+Findings:
+```
+<file>:<line>: <severity>: <problem>. <fix>.
+```
+
+Severity: `critical` (soundness/CVE), `major` (reliability/correctness), `minor` (idiom/style).
+
+Skip findings with no actionable fix. Do not report clippy items already caught by `cargo clippy -- -D warnings`.
