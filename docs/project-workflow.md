@@ -14,8 +14,8 @@ Plain markdown. No hidden state, no checksums. Commit it as shared project memor
 
 ```
 .project/
-├── PROJECT.md     # stable: what it is, stack, repo map, hard constraints
-├── PLAN.md        # living: ## Roadmap (ordered tasks + status) and ## Now (state, next, open Qs)
+├── PROJECT.md     # stable: what it is, stack, repo map, hard constraints, ## Landmines
+├── PLAN.md        # living: ## Roadmap (tasks + status), ## Now (state, next, open Qs), ## Watch (open flags)
 ├── DECISIONS.md   # append-only why-log (written by /ds-grill-me --record and checkpoint's sweep)
 ├── config.md      # optional: project preferences — modes auto-applied on resume (/ds-project-config)
 ├── handoff.md     # full handoff, only when you ask (/ds-project-checkpoint --handoff)
@@ -29,7 +29,7 @@ Plain markdown. No hidden state, no checksums. Commit it as shared project memor
 
 ## The skills
 
-Five keep the `.project/` memory — `/ds-project-map`, `/ds-project-config`, `/ds-project-checkpoint`, `/ds-project-resume`, `/ds-project-compact`; `/ds-roadmap` seeds the plan and works with or without `.project/`.
+Six keep the `.project/` memory — `/ds-project-map`, `/ds-project-config`, `/ds-project-checkpoint`, `/ds-project-resume`, `/ds-project-compact`, `/ds-project-verify`; `/ds-roadmap` seeds the plan and works with or without `.project/`.
 
 ### `/ds-project-map` → `PROJECT.md`
 
@@ -45,15 +45,19 @@ Turns input into an ordered task checklist. The input can be a goal, a `SPEC.md`
 
 ### `/ds-project-checkpoint [--handoff]` → routes durable context
 
-Run before `/clear` or at end of session. **Sweeps the conversation** for durable context that only lives in the chat and **routes each piece to its owning file** — resolved decisions append to `DECISIONS.md`, a genuinely new structural fact appends to `PROJECT.md` (additive only, with your approval; broad drift is flagged for `/ds-project-map`), a scope change is recorded as a decision and `SPEC.md` is flagged stale (never edited). It then ticks roadmap statuses and overwrites `## Now` with State / Next / Open questions. Reader-affecting writes (`DECISIONS.md`, `PROJECT.md`) are shown and approved one at a time; the `PLAN.md` update is automatic. If nothing durable turns up, it's a fast no-op — just the `## Now` refresh. `--handoff` additionally writes a richer `.project/handoff.md` (context, what was tried, gotchas) — use it when the next session needs more than the plan, e.g. handing to another person or a long pause.
+Run before `/clear` or at end of session. **Sweeps the conversation** for durable context that only lives in the chat and **routes each piece to its owning file** — resolved decisions append to `DECISIONS.md`, a genuinely new structural fact appends to `PROJECT.md` (additive only, with your approval; broad drift is flagged for `/ds-project-map`), a scope change is recorded as a decision and `SPEC.md` is flagged stale in `## Watch` (never edited), and a code-keyed constraint someone will trip over later becomes a scope-keyed row in `PROJECT.md`'s `## Landmines`. It then ticks roadmap statuses, overwrites `## Now` with State / Next / Open questions, and appends open flags to `## Watch`. It **writes what you said and asks only about what it inferred** — an inferred decision, a supersession call — shown as one batch you strike from, never a prompt per item. If nothing durable turns up, it's a fast no-op — just the `## Now` refresh. `--handoff` additionally writes a richer `.project/handoff.md` (context, what was tried, gotchas) — use it when the next session needs more than the plan, e.g. handing to another person or a long pause.
 
 ### `/ds-project-resume [--no-modes]` → reads state, applies modes
 
-Run at session start. First **applies any modes in `config.md`** (read-and-adopt each mode's command file; `--no-modes` skips this but still lists them). Then reads `PLAN.md` (and `PROJECT.md` for the map), lightly surfaces `DECISIONS.md` (count + recent few), and summarizes where to pick up. If `handoff.md` exists it is loaded **only if it is newer than `PLAN.md`** (by file modification time — no git required) — otherwise it's flagged as stale and ignored, so a forgotten handoff never misleads a fresh session. Resume itself doesn't modify `.project/` files; an applied mode then governs the session under its own rules.
+Run at session start. First **applies any modes in `config.md`** (read-and-adopt each mode's command file; `--no-modes` skips this but still lists them). Then reads `PLAN.md` (and `PROJECT.md` for the map) and loads `DECISIONS.md` in full **silently** — decisions and `## Landmines` rows are loaded to be honored while you work, not read back at you — before reporting a fixed short list: state, next, open questions, `## Watch`, modes. Nothing outside that list, including anything it happened to find interesting. If `handoff.md` exists it is loaded **only if it is newer than `PLAN.md`** (by file modification time — no git required) — otherwise it's flagged as stale and ignored, so a forgotten handoff never misleads a fresh session. Resume itself doesn't modify `.project/` files; an applied mode then governs the session under its own rules.
 
 ### `/ds-project-compact` → archives spent state
 
-Housekeeping for a `.project/` that's grown heavy. Classifies each `DECISIONS.md` entry as active (stays), superseded (archived, its residual truth re-recorded as a fresh decision), or expired (archived), and moves completed `## Roadmap` sections out — all into an append-only `.project/archive/<file>-<date>.md`, so nothing is lost: every pre-compact entry stays findable in live ∪ archive. Each classification and reader-affecting write is approved one at a time. It never touches `## Now`, and `/ds-project-resume` never reads the archive. Run it when superseded decisions and finished roadmap sections start adding noise to every resume.
+Housekeeping for a `.project/` that's grown heavy. Classifies each `DECISIONS.md` entry as active (stays), superseded (archived, its residual truth re-recorded as a fresh decision), or expired (archived), and moves completed `## Roadmap` sections out — all into an append-only `.project/archive/<file>-<date>.md`, so nothing is lost: every pre-compact entry stays findable in live ∪ archive. Each classification and reader-affecting write is approved one at a time. It never touches `## Now` or `## Watch`, and `/ds-project-resume` never reads the archive. Run it when superseded decisions and finished roadmap sections start adding noise to every resume. Note what it is *not*: compact sorts entries by whether they still govern and never opens the code, so a compacted file is tidy, not verified — that's `/ds-project-verify`.
+
+### `/ds-project-verify` → reconciles the files against the code
+
+The only skill here that reads the source. Checkpoint sweeps the *session* and compact sorts by governance; neither notices a claim that was true when written and was quietly falsified by a later change. That drift is silent, so it accumulates fastest in projects being maintained well — every session checkpointed, every write approved. It corrects only what is knowable without you (supersession markers on unmarked reversals, landmine rows whose scope no longer resolves) and **flags** the rest into `## Watch`, because a spec disagreeing with the code can equally mean the code regressed — and rewriting the spec to match would bury the regression it was meant to catch. Resume nudges you to run it after ~10 checkpoints.
 
 ---
 
@@ -79,6 +83,10 @@ Housekeeping for a `.project/` that's grown heavy. Classifies each `DECISIONS.md
 /ds-project-checkpoint           # persist state, then /clear or stop
 # next session:
 /ds-project-resume               # pick up exactly where you left off
+
+# every so often — resume nudges you when either is due
+/ds-project-compact              # trim spent decisions + finished roadmap
+/ds-project-verify               # reconcile the files against the code
 ```
 
 Every step is engineer-driven and self-contained. The only persistent artifacts are the handful of files in `.project/` — readable, diffable, and yours to edit by hand at any time.

@@ -121,6 +121,7 @@ Durable context across `/clear` and session ends. The workflow runs fine without
 | `/ds-project-resume` | restore where you left off and apply configured modes |
 | `/ds-project-checkpoint` | sweep the session, route durable context to its owning file |
 | `/ds-project-compact` | housekeeping over the persisted `.project/` state |
+| `/ds-project-verify` | reconcile the `.project/` files against the code |
 
 ### Utilities
 

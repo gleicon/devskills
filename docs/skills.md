@@ -73,17 +73,23 @@ Create/edit `.project/config.md`, the per-project preferences — today, the **m
 
 ### `/ds-project-checkpoint` — action
 
-**Sweep the session and route durable context to its owning file:** decisions append to `DECISIONS.md`, a new structural fact appends to `PROJECT.md` (additive, with approval; broad drift flagged for `/ds-project-map`), a scope change is recorded as a decision and `SPEC.md` flagged stale (never edited). Then ticks roadmap statuses and overwrites `## Now`. Reader-affecting writes are approved one at a time; the `PLAN.md` update is automatic; nothing durable → fast no-op. Run before `/clear` or end of session. `--handoff` also writes a richer `.project/handoff.md`.
+**Sweep the session and route durable context to its owning file:** decisions append to `DECISIONS.md`, a new structural fact appends to `PROJECT.md` (additive, with approval; broad drift flagged for `/ds-project-map`), a scope change is recorded as a decision and `SPEC.md` flagged stale in `## Watch` (never edited), and a code-keyed constraint becomes a scope-keyed row in `PROJECT.md`'s `## Landmines`. Then ticks roadmap statuses, overwrites `## Now`, and appends open flags to `## Watch`. Writes what you said and asks only about what it inferred — an inferred decision, a supersession call — as one batch you strike from, not a prompt per item; nothing durable → fast no-op. Run before `/clear` or end of session. `--handoff` also writes a richer `.project/handoff.md`.
 
 ### `/ds-project-resume` — action
 
-Apply any `config.md` modes (read-and-adopt; `--no-modes` skips, still listing them), then read `.project/PLAN.md` (+ `PROJECT.md`), surface `DECISIONS.md` (count + recent few), and report where to pick up. Loads `handoff.md` only if it's newer than the plan (by file time — no git dependency, so `.project/` can be git-ignored), else flags it stale. Doesn't modify `.project/` files.
+Apply any `config.md` modes (read-and-adopt; `--no-modes` skips, still listing them), then read `.project/PLAN.md` (+ `PROJECT.md`) and load `DECISIONS.md` in full silently, and report a fixed short list — state, next, open questions, `## Watch`, modes — and nothing else. Decisions and `## Landmines` rows load to be honored as you work, never recited back. Loads `handoff.md` only if it's newer than the plan (by file time — no git dependency, so `.project/` can be git-ignored), else flags it stale. Doesn't modify `.project/` files.
 
 ### `/ds-project-compact` — action
 
-Housekeeping over the persisted `.project/` state, loss-free. Classifies each `DECISIONS.md` entry as active (stays), superseded (archived; residual truth re-recorded as a fresh active decision), or expired (archived), and moves completed `## Roadmap` sections out — all to an append-only `.project/archive/<file>-<date>.md`, so every pre-compact entry stays findable in live ∪ archive. Never touches `## Now`; `/ds-project-resume` never reads the archive. Every classification and reader-affecting write is approved per item.
+Housekeeping over the persisted `.project/` state, loss-free. Classifies each `DECISIONS.md` entry as active (stays), superseded (archived; residual truth re-recorded as a fresh active decision), or expired (archived), and moves completed `## Roadmap` sections out — all to an append-only `.project/archive/<file>-<date>.md`, so every pre-compact entry stays findable in live ∪ archive. Never touches `## Now` or `## Watch`; `/ds-project-resume` never reads the archive. Every classification and reader-affecting write is approved per item. Sorts by whether an entry still governs — it never opens the code, so a compacted file is tidy, not verified.
 
 - **Reach for it when:** `.project/` has grown long enough that superseded decisions and finished roadmap sections are adding noise (and tokens) to every resume.
+
+### `/ds-project-verify` — action
+
+The only project skill that reads the source. Reconciles `SPEC.md`, `DECISIONS.md`, and `PROJECT.md` against the code and finds claims that were true when written and were quietly falsified since — drift nothing else catches, because checkpoint sweeps the session and compact sorts by governance. Corrects only what's knowable without you (supersession markers on unmarked reversals; landmine rows whose scope no longer resolves) and flags the rest into `## Watch`. Never edits `SPEC.md`: a spec that disagrees with the code may mean the **code** regressed, and rewriting the spec to match would bury the regression it exists to catch. Reports mechanical checks and substantive ones separately — never merged into one reassuring number.
+
+- **Reach for it when:** resume nudges you (~10 checkpoints since the last run), or before you trust `.project/` for anything that matters. Silent drift accumulates fastest in projects maintained *well* — diligent checkpointing records faithfully, it just never re-checks.
 
 ---
 
