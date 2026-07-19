@@ -155,8 +155,9 @@ func modesBlock(modes []string) string {
 var modeBullet = regexp.MustCompile(`(?m)^-[ \t]+(ds-[a-z0-9-]+-mode)[ \t]*$`)
 
 // configuredModes reads the modes a project already lists. It scans the whole
-// file rather than just our block, so a mode the user added by hand is still
-// pre-selected in the prompt instead of silently dropped.
+// file rather than just our block, so a hand-added mode is pre-selected rather
+// than appearing unset. One this binary doesn't ship has no option to select and
+// won't survive in the block — only outside it, which Upsert leaves alone.
 func configuredModes(path string) ([]string, error) {
 	b, err := os.ReadFile(path)
 	if errors.Is(err, fs.ErrNotExist) {
