@@ -22,15 +22,15 @@ When invoked, read the project's persisted state and report where to pick up —
    - If it is older than `PLAN.md` (a checkpoint happened after it), treat it as **stale**: mention it exists and its date, but do not rely on it.
    - If the repo uses git, you may *optionally* also flag the handoff as stale when commits have landed since it was written — but never require git; the file-time comparison is the source of truth.
    - If there is no `handoff.md`, say nothing. An absent optional file is not news.
-7. **Report this, and nothing else:**
-   - **State** — where things stand, from `## Now`.
+7. **Report this, in this order, and nothing else:**
+   - **Modes** — the confirmation lines from step 1. They come first: they govern everything that follows, and a standing authorization read out *after* the work context is backwards.
+   - **State** — where things stand, from `## Now`. **Do not enrich it.** Never run `git` or anything else to find fresher detail: a branch position, a commit count, clean-or-dirty are the same perishable facts checkpoint is forbidden to write down, and reporting them live is that noise from a different source.
    - **Next** — the single next action.
    - **Open questions** — only if `## Now` has any.
    - **Watch** — only if `## Watch` has entries.
-   - **Modes** — the confirmation lines from step 1.
    - **Nudge** — at most one, and only when a mechanical threshold fires (below).
 
-   Nothing outside that list appears, *including* something you noticed while reading and judged worth mentioning. No decision counts, no landmines, no shipped-feature inventories, no remarks about files that don't exist, no observations about the repo. A slot with nothing in it is dropped, never written as "none".
+   Open with the report itself — no "I'll read the project state", no account of what you are about to do. Nothing outside that list appears, and **no slot carries more than its source file holds**: not a fact you derived while reading, not something you noticed and judged worth mentioning. No decision counts, no landmines, no shipped-feature inventories, no remarks about files that don't exist, no observations about the repo. A slot with nothing in it is dropped, never written as "none".
 
 ## Rules
 
@@ -38,8 +38,8 @@ When invoked, read the project's persisted state and report where to pick up —
 - Apply modes via read-and-adopt only — never assume a mode is active without reading its `SKILL.md`.
 - Trust `## Now` over a stale `handoff.md`.
 - **Load to apply, not to announce.** Decisions and landmines enter context so they shape the work. Narrating one unprompted is the failure, not the service — the person wrote them and needs them honored six turns later, silently. State a constraint only when it changed what you did ("you asked me to simplify `importVideo.ts`; that probe is load-bearing, so I left it"), never as an opening recital.
-- **Derivable staleness is self-healing, not a finding.** If `PLAN.md` names a SHA, a count, or a branch position that the repo contradicts, use the repo's value and say nothing. With no git available, ignore the recorded value rather than reporting it — never open a session by telling someone their own file is out of date. Report staleness only where it needs a human: a described feature that no longer exists, a plan step the code contradicts.
-- **A nudge needs a measurable trigger.** One line, at most one per resume, and only from something countable. There are exactly two: `DECISIONS.md` past roughly 50KB suggests `/ds-project-compact`; `<!-- checkpoints-since-verify: N -->` at the foot of `PLAN.md` at 10 or more suggests `/ds-project-verify`, and says what it costs (a full sweep runs long and reads wide). Never invent a third from judgment — without a threshold it is just an opinion, and opinions are how a four-line report grows into a wall.
+- **Derivable staleness is self-healing, not a finding.** If `PLAN.md` names a SHA, a count, or a branch position, treat it as untrustworthy and simply don't repeat it — with or without git. This rule silences a stale value; it is not licence to go fetch a fresh one. Never open a session by telling someone their own file is out of date. Report staleness only where it needs a human: a described feature that no longer exists, a plan step the code contradicts.
+- **A nudge needs a measurable trigger.** One line, at most one per resume, and only from something countable. There are exactly two, and both are **edge-triggered — they fire on accumulation, never on a standing condition**. `/ds-project-compact`: if `PLAN.md` carries `<!-- compacted-at: NKB -->`, suggest it only once `DECISIONS.md` has grown ~10KB beyond N; with no marker, once it passes ~50KB. `/ds-project-verify`: `<!-- checkpoints-since-verify: N -->` at 10 or more, saying what it costs (the sweep runs long and reads wide). A size on its own is a level, not a signal — on a mature project a large `DECISIONS.md` is a permanent condition, and a nudge keyed to it fires at every resume for work that has nothing left to do. Never invent a third from judgment — without a threshold it is just an opinion, and opinions are how a four-line report grows into a wall.
 
 ## Output
 
