@@ -23,6 +23,7 @@ When invoked, read the actual codebase and write (or refresh) `.project/PROJECT.
 - Keep it short. This is a map, not documentation. Reference real files and dirs by path.
 - Do not record current state or tasks here — that lives in `.project/PLAN.md`.
 - **On a rerun, human edits win by default.** Code-derived sections are refreshed freely, but anything you can't re-derive from the code is preserved unless the user agrees to change it — and when something would be lost, ask rather than assume.
+- **`## Landmines` is never yours to touch.** `/ds-project-checkpoint` appends its rows and `/ds-project-verify` proposes removals; you preserve the section verbatim and keep it out of step 4's ask-list. A landmine is invisible to the code by definition — that is why someone wrote it down — so it would fail every re-derivation test and be offered for deletion on every rerun. Nobody notices a missing warning until they hit the thing it warned about.
 
 ## Output
 

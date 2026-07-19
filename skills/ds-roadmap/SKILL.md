@@ -21,7 +21,7 @@ If nothing is provided, ask once for the goal, then proceed.
 2. Break the input into the smallest **vertically-sliced** tasks — each cuts a narrow but complete path through all layers (schema → logic → API → UI → test), shippable and demoable on its own. A single-layer horizontal slice ("all the schema", "all the endpoints") is the anti-pattern — it can't be shipped or verified alone.
 3. Write them under `## Roadmap` as a status checklist, appending to existing tasks rather than discarding them:
    - `[ ]` todo · `[~]` in progress · `[x]` done
-4. Preserve a `## Now` section if present — that section belongs to `/ds-project-checkpoint`, not here.
+4. Preserve any `## Now` and top-level `## Watch` sections if present — both belong to `/ds-project-checkpoint`, not here. You own `## Roadmap` and nothing else in the file.
 5. Before finalizing, show the breakdown and ask whether the granularity is right — merge or split on the user's steer, don't just emit and move on.
 
 ## Rules
