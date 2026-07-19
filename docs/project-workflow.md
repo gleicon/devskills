@@ -22,6 +22,8 @@ Every file has exactly one writer, and that is the design rather than a conventi
 
 Commit the directory as shared project memory, or add it to `.gitignore` for a local scratch space. Nothing here depends on git.
 
+Carrying a `.project/` from before the rebuild — `PROJECT.md`, `DECISIONS.md`, `PLAN.md` — see [migration.md](migration.md).
+
 ### `state.md` is the one a session actually loads
 
 ```

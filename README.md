@@ -179,6 +179,7 @@ devskills ships no fixed pipeline. Each skill does one job and hands control bac
 - **[docs/skills.md](docs/skills.md)** — every skill: args, behavior, and when to reach for it
 - **[docs/recipes.md](docs/recipes.md)** — worked, multi-step workflows (pre-PR gate, find-then-prove, driving a multi-PR queue, the optional `.project/` memory loop)
 - **[docs/project-workflow.md](docs/project-workflow.md)** — the `.project/` memory model
+- **[docs/migration.md](docs/migration.md)** — porting a pre-rebuild `.project/` onto the four-file model
 - **[docs/grill-me.md](docs/grill-me.md)** · **[docs/tiger-style.md](docs/tiger-style.md)** — the grill playbook and the engineering bar
 - **[docs/ast-grep.md](docs/ast-grep.md)** — the optional structural pass for `/ds-security-review`
 
