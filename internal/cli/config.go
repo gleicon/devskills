@@ -109,8 +109,10 @@ func parseModeCSV(csv string, avail []string) ([]string, error) {
 func promptConfig(avail, current []string) ([]string, error) {
 	opts := make([]huh.Option[string], len(avail))
 	for i, m := range avail {
-		opts[i] = huh.NewOption(m, m).Selected(slices.Contains(current, m))
+		opts[i] = huh.NewOption(m, m)
 	}
+	// Binding the current set is what preselects: huh derives option state from
+	// the bound value, and rebuilds that value from the options on submit.
 	modes := slices.Clone(current)
 	form := huh.NewForm(huh.NewGroup(
 		huh.NewMultiSelect[string]().
