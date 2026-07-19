@@ -22,13 +22,18 @@ When invoked, read the project's persisted state and report where to pick up —
    - If it is older than `PLAN.md` (a checkpoint happened after it), treat it as **stale**: mention it exists and its date, but do not rely on it.
    - If the repo uses git, you may *optionally* also flag the handoff as stale when commits have landed since it was written — but never require git; the file-time comparison is the source of truth.
    - If there is no `handoff.md`, say nothing. An absent optional file is not news.
-7. **Report this, in this order, and nothing else:**
+7. **Check both nudge triggers** — they are measurements, not impressions, so take them before writing anything:
+   - `DECISIONS.md`'s size against a `<!-- compacted-at: NKB -->` marker at the foot of `PLAN.md` (grown ~10KB beyond N, or past ~50KB when there is no marker).
+   - `<!-- checkpoints-since-verify: N -->` at the foot of `PLAN.md` (10 or more).
+
+   Neither is inferable from having read the files — check them explicitly or they never fire.
+8. **Report this, in this order, and nothing else:**
    - **Modes** — the confirmation lines from step 1. They come first: they govern everything that follows, and a standing authorization read out *after* the work context is backwards.
    - **State** — where things stand, from `## Now`. **Do not enrich it.** Never run `git` or anything else to find fresher detail: a branch position, a commit count, clean-or-dirty are the same perishable facts checkpoint is forbidden to write down, and reporting them live is that noise from a different source.
    - **Next** — the single next action.
    - **Open questions** — only if `## Now` has any.
    - **Watch** — only if `## Watch` has entries.
-   - **Nudge** — at most one, and only when a mechanical threshold fires (below).
+   - **Nudge** — at most one, from whichever trigger step 7 found (verify wins if both fired).
 
    Open with the report itself — no "I'll read the project state", no account of what you are about to do. Nothing outside that list appears, and **no slot carries more than its source file holds**: not a fact you derived while reading, not something you noticed and judged worth mentioning. No decision counts, no landmines, no shipped-feature inventories, no remarks about files that don't exist, no observations about the repo. A slot with nothing in it is dropped, never written as "none".
 
@@ -39,8 +44,8 @@ When invoked, read the project's persisted state and report where to pick up —
 - Trust `## Now` over a stale `handoff.md`.
 - **Load to apply, not to announce.** Decisions and landmines enter context so they shape the work. Narrating one unprompted is the failure, not the service — the person wrote them and needs them honored six turns later, silently. State a constraint only when it changed what you did ("you asked me to simplify `importVideo.ts`; that probe is load-bearing, so I left it"), never as an opening recital.
 - **Derivable staleness is self-healing, not a finding.** If `PLAN.md` names a SHA, a count, or a branch position, treat it as untrustworthy and simply don't repeat it — with or without git. This rule silences a stale value; it is not licence to go fetch a fresh one. Never open a session by telling someone their own file is out of date. Report staleness only where it needs a human: a described feature that no longer exists, a plan step the code contradicts.
-- **A nudge needs a measurable trigger.** One line, at most one per resume, and only from something countable. There are exactly two, and both are **edge-triggered — they fire on accumulation, never on a standing condition**. `/ds-project-compact`: if `PLAN.md` carries `<!-- compacted-at: NKB -->`, suggest it only once `DECISIONS.md` has grown ~10KB beyond N; with no marker, once it passes ~50KB. `/ds-project-verify`: `<!-- checkpoints-since-verify: N -->` at 10 or more, saying what it costs (the sweep runs long and reads wide). A size on its own is a level, not a signal — on a mature project a large `DECISIONS.md` is a permanent condition, and a nudge keyed to it fires at every resume for work that has nothing left to do. When one fires, name the command and nothing else — never characterise the project's history around it. Never invent a third from judgment — without a threshold it is just an opinion, and opinions are how a four-line report grows into a wall.
+- **A nudge needs a measurable trigger.** One line, at most one per resume, and only from the two step 7 measures — never a third invented from judgment. Both are **edge-triggered: they fire on accumulation, never on a standing condition.** The verify one says what it costs (the sweep runs long and reads wide). A size on its own is a level, not a signal — on a mature project a large `DECISIONS.md` is a permanent condition, and a nudge keyed to it fires at every resume for work that has nothing left to do. When one fires, name the command and nothing else — never characterise the project's history around it. Without a threshold a nudge is just an opinion, and opinions are how a four-line report grows into a wall.
 
 ## Output
 
-Step 7's list and nothing beyond it — enough to start working immediately. Most resumes are a handful of lines; a clean project with nothing in flight should produce almost none.
+Step 8's list and nothing beyond it — enough to start working immediately. Most resumes are a handful of lines; a clean project with nothing in flight should produce almost none.
