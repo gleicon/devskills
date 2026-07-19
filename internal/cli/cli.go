@@ -21,6 +21,7 @@ func NewRootCmd(catalog fs.FS) *cobra.Command {
 	root.AddCommand(newVersionCmd())
 	root.AddCommand(newInstallCmd(catalog))
 	root.AddCommand(newInitCmd(catalog))
+	root.AddCommand(newConfigCmd(catalog))
 	root.AddCommand(newDoctorCmd())
 	return root
 }
