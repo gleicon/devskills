@@ -391,6 +391,8 @@ you → "implement the first task"
 
 If you inherit a long design doc, run `/ds-tldt ./DESIGN.md` first to compress it before it goes into context.
 
+If the project already has a `.project/` from before the rebuild — `PROJECT.md`, `DECISIONS.md`, `PLAN.md` — port it with [migration.md](migration.md) instead of mapping over it.
+
 ### Periodic quality pass
 
 No feature — just paying down entropy. The trick is turning findings *into tasks* instead of fixing ad hoc.
