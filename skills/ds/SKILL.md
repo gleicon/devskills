@@ -79,12 +79,11 @@ Each reviews with Tiger Style constraints plus that language's idioms; reach for
 
 Durable context across sessions. The workflow runs fine without any of these.
 
-- `/ds-project-map` — map the repo into `.project/PROJECT.md`.
-- `/ds-project-config` — set project preferences (e.g. modes auto-applied on resume) in `.project/config.md`.
-- `/ds-project-resume` — restore where you left off and apply configured modes. Start an ongoing project here.
-- `/ds-project-checkpoint` — sweep the session and route durable context to its owning file before `/clear` or end of session.
-- `/ds-project-compact` — housekeeping over the persisted `.project/` state.
-- `/ds-project-verify` — reconcile the persisted `.project/` state against the source and report what has drifted.
+- `/ds-project-map` — map the repo into `.project/map.md`.
+- `/ds-project-resume` — read `.project/` state and apply configured modes. Start an ongoing project here.
+- `/ds-project-checkpoint` — write the session's state to `.project/state.md` before `/clear` or end of session.
+
+Preferences live in `.project/config.md` — written by `devskills config`, never by a skill.
 
 ## Local knowledge & utilities
 

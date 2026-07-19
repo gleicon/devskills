@@ -54,7 +54,30 @@ var legacyCommandFiles = slices.Concat(legacyCommands, renamedCommands)
 // on every user's machine. A test catches the rename half: an old name still
 // pointing at a live skill.
 //
-//	ds-typeset      — removed; off-identity Markdown-typeset utility.
-//	ds-senior-mode  — removed; a composite of git/test/step/deslop that had to be
-//	                  hand-synced with all four, and drifted from them instead.
-var retiredSkills = []string{"ds-typeset", "ds-senior-mode"}
+//	ds-typeset          — removed; off-identity Markdown-typeset utility.
+//	ds-senior-mode      — removed; a composite of git/test/step/deslop that had to
+//	                      be hand-synced with all four, and drifted from them instead.
+//	ds-project-config   — removed; .project/config.md is written by `devskills
+//	                      config`, so the file the user guards the assistant with
+//	                      is not one any skill can edit.
+//	ds-project-compact  — removed; state.md is bounded by its own format, so it
+//	                      never grows into something needing housekeeping.
+//	ds-project-verify   — removed; map.md is regenerated wholesale and state.md
+//	                      holds one line per entry, so neither drifts into prose
+//	                      to reconcile.
+//
+// The remainder are command-era names that also reached at least one harness as
+// skill directories: ds-caveman-lite-mode, ds-caveman-ultra-mode and
+// ds-quality-gate-mode were found installed under ~/.codex/skills with a SKILL.md
+// and a generated sidecar, long after the catalog dropped them — nothing swept
+// them because only their .md command form was ever listed. They are retired as a
+// class rather than one at a time: the prune is remove-if-present, so a name that
+// never landed as a directory costs nothing, and the ds- prefix is what makes each
+// one provably ours to delete.
+var retiredSkills = []string{
+	"ds-typeset", "ds-senior-mode",
+	"ds-project-config", "ds-project-compact", "ds-project-verify",
+	"ds-caveman-lite-mode", "ds-caveman-ultra-mode", "ds-quality-gate-mode",
+	"ds-code-review", "ds-modes", "ds-project-plan", "ds-review",
+	"ds-workflow", "ds-write-a-command",
+}
