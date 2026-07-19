@@ -18,9 +18,11 @@ Drift is silent by construction, so it accumulates in projects that are being ma
    - **`SPEC.md`** — FR/NFR/AC the code contradicts.
    - **`PROJECT.md` prose** — Overview and Constraints claims the code contradicts.
 4. **Correct only what is knowable without the user.** Show the batch once and let them strike items:
-   - add a supersession marker to an unmarked reversed decision — additive, and the reversal is already recorded;
+   - add a supersession marker to a decision that a **later entry in `DECISIONS.md`** reversed — additive, and the successor is already on record to point at. A decision the *code* contradicts is not this case: there is no successor entry, and whether the decision drifted or the code did is a judgment. Flag it instead;
    - remove a `## Landmines` row whose scope resolves to nothing.
-5. **Flag everything else** into `PLAN.md`'s `## Watch`, one line each, naming the file and what the code says instead.
+5. **Split what remains by what it actually is**, and never merge the two:
+   - **Documentation drift** — a recorded claim the source no longer matches. One line each into `PLAN.md`'s `## Watch`, naming the file and what the code shows instead.
+   - **Code defects** — a requirement the code fails, a bug the reconciliation exposed. These are *work*, not notes: report them separately for `/ds-roadmap`, which takes a pasted bug list, and keep them out of `## Watch`. A real defect filed as a flag reads as background noise beside a stale doc bullet, and gets recited at every resume instead of fixed.
 6. **Reset the counter** — set `<!-- checkpoints-since-verify: 0 -->` at the foot of `PLAN.md`.
 7. **Report by what you actually checked** (see Rules).
 
@@ -34,4 +36,4 @@ Drift is silent by construction, so it accumulates in projects that are being ma
 
 ## Output
 
-Findings grouped by file, each with the claim and what the code shows; the batch of corrections applied; the flags written to `## Watch`; and an explicit line stating which checks ran and which did not — mechanical scope resolution and substantive truth are reported separately, never merged into one number.
+Findings grouped by file, each with the claim and what the code shows; the batch of corrections applied; the documentation drift written to `## Watch`; any code defects listed separately for `/ds-roadmap`, never folded in with the drift; and an explicit line stating which checks ran and which did not — mechanical scope resolution and substantive truth are reported separately, never merged into one number.
