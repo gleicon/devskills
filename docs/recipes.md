@@ -362,8 +362,8 @@ No code yet, so map comes last — there's nothing to map until something exists
 
 ```
 you → "I want a CLI that watches a dir and uploads new files to S3"
-/ds-spec                       # WHAT + acceptance criteria → .project/SPEC.md
-/ds-explore --web              # research stack/approach options → .project/EXPLORE.md
+/ds-spec                       # WHAT + acceptance criteria → SPEC.md
+/ds-explore --web              # research stack/approach options → EXPLORE.md
 /ds-grill-me --record          # decide the open branches → GRILL.md
 /ds-roadmap               # turn the decisions into an ordered roadmap → .project/roadmap.md
 /ds-tiger-style-mode                # engineering bar on for the session
@@ -417,7 +417,7 @@ Run it on a cadence (end of a sprint, before a release). Branch-scope the review
 
 ```
 /ds-project-resume             # orient: where we are, what's next
-/ds-spec                       # if the feature is non-trivial → .project/SPEC.md  (optional)
+/ds-spec                       # if the feature is non-trivial → SPEC.md  (optional)
 /ds-explore                    # at a design fork: lay out approaches (add --web to research)
 /ds-grill-me --record          # decide → GRILL.md
 /ds-roadmap               # add the feature's tasks to the roadmap
