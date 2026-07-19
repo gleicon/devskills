@@ -81,7 +81,7 @@ Apply any `config.md` modes (read-and-adopt; `--no-modes` skips, still listing t
 
 ### `/ds-project-compact` — action
 
-Housekeeping over the persisted `.project/` state, loss-free. Classifies each `DECISIONS.md` entry as active (stays), superseded (archived; residual truth re-recorded as a fresh active decision), or expired (archived), and moves completed `## Roadmap` sections out — all to an append-only `.project/archive/<file>-<date>.md`, so every pre-compact entry stays findable in live ∪ archive. Never touches `## Now` or `## Watch`; `/ds-project-resume` never reads the archive. Every classification and reader-affecting write is approved per item. Sorts by whether an entry still governs — it never opens the code, so a compacted file is tidy, not verified.
+Housekeeping over the persisted `.project/` state, loss-free. Classifies each `DECISIONS.md` entry as active (stays), superseded (archived; residual truth re-recorded as a fresh active decision), or expired (archived), and moves completed `## Roadmap` sections out — all to an append-only `.project/archive/<file>-<date>.md`, so every pre-compact entry stays findable in live ∪ archive. Never touches `## Now` or `## Watch`; `/ds-project-resume` never reads the archive. Marked supersessions archive on their own; unmarked classifications come back as one batched list, a line each, to strike from. Sorts by whether an entry still governs — it never opens the code, so a compacted file is tidy, not verified.
 
 - **Reach for it when:** `.project/` has grown long enough that superseded decisions and finished roadmap sections are adding noise (and tokens) to every resume.
 
