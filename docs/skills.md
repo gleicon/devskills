@@ -89,7 +89,7 @@ Housekeeping over the persisted `.project/` state, loss-free. Classifies each `D
 
 The only project skill that reads the source. Reconciles `SPEC.md`, `DECISIONS.md`, and `PROJECT.md` against the code and finds claims that were true when written and were quietly falsified since — drift nothing else catches, because checkpoint sweeps the session and compact sorts by governance. Corrects only what's knowable without you (supersession markers on unmarked reversals; landmine rows whose scope no longer resolves) and flags the rest into `## Watch`. Never edits `SPEC.md`: a spec that disagrees with the code may mean the **code** regressed, and rewriting the spec to match would bury the regression it exists to catch. Reports mechanical checks and substantive ones separately — never merged into one reassuring number.
 
-- **Reach for it when:** resume nudges you (~10 checkpoints since the last run), or before you trust `.project/` for anything that matters. Silent drift accumulates fastest in projects maintained *well* — diligent checkpointing records faithfully, it just never re-checks.
+- **Reach for it when:** the `<!-- checkpoints-since-verify: N -->` counter at the foot of `PLAN.md` is past ~10, or before you trust `.project/` for anything that matters. Resume often points this out, but the nudge is best-effort and misses — the counter is durable, the reminder isn't. Silent drift accumulates fastest in projects maintained *well*: diligent checkpointing records faithfully, it just never re-checks.
 
 ---
 

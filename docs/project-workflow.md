@@ -57,7 +57,7 @@ Housekeeping for a `.project/` that's grown heavy. Classifies each `DECISIONS.md
 
 ### `/ds-project-verify` → reconciles the files against the code
 
-The only skill here that reads the source. Checkpoint sweeps the *session* and compact sorts by governance; neither notices a claim that was true when written and was quietly falsified by a later change. That drift is silent, so it accumulates fastest in projects being maintained well — every session checkpointed, every write approved. It corrects only what is knowable without you (supersession markers on unmarked reversals, landmine rows whose scope no longer resolves) and **flags** the rest into `## Watch`, because a spec disagreeing with the code can equally mean the code regressed — and rewriting the spec to match would bury the regression it was meant to catch. Resume nudges you to run it after ~10 checkpoints.
+The only skill here that reads the source. Checkpoint sweeps the *session* and compact sorts by governance; neither notices a claim that was true when written and was quietly falsified by a later change. That drift is silent, so it accumulates fastest in projects being maintained well — every session checkpointed, every write approved. It corrects only what is knowable without you (supersession markers on unmarked reversals, landmine rows whose scope no longer resolves) and **flags** the rest into `## Watch`, because a spec disagreeing with the code can equally mean the code regressed — and rewriting the spec to match would bury the regression it was meant to catch. `PLAN.md` carries a `<!-- checkpoints-since-verify: N -->` counter that checkpoint bumps and verify resets. Resume often surfaces it past ~10 — but that nudge is best-effort and does miss, so treat the counter as something to read yourself rather than a reminder that will arrive.
 
 ---
 
@@ -84,7 +84,7 @@ The only skill here that reads the source. Checkpoint sweeps the *session* and c
 # next session:
 /ds-project-resume               # pick up exactly where you left off
 
-# every so often — resume nudges you when either is due
+# every so often — resume may nudge, but don't wait on it
 /ds-project-compact              # trim spent decisions + finished roadmap
 /ds-project-verify               # reconcile the files against the code
 ```
