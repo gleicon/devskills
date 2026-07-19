@@ -54,5 +54,7 @@ var legacyCommandFiles = slices.Concat(legacyCommands, renamedCommands)
 // on every user's machine. A test catches the rename half: an old name still
 // pointing at a live skill.
 //
-//	ds-typeset — removed; off-identity Markdown-typeset utility.
-var retiredSkills = []string{"ds-typeset"}
+//	ds-typeset      — removed; off-identity Markdown-typeset utility.
+//	ds-senior-mode  — removed; a composite of git/test/step/deslop that had to be
+//	                  hand-synced with all four, and drifted from them instead.
+var retiredSkills = []string{"ds-typeset", "ds-senior-mode"}

@@ -8,15 +8,16 @@
 //
 // # Acceptance criteria
 //
-// The overhaul's acceptance criteria are AC-1…AC-18. Their canonical statements
-// live in .project/SPEC.md, which is not shipped (.project/ is git-ignored), so
-// this is the in-repo record — what each id means and where it is verified.
+// The overhaul's acceptance criteria are AC-1…AC-18. This is their canonical
+// record: the spec that first stated them was archived once the overhaul
+// shipped, and .project/ is git-ignored either way.
 //
 // Verified by the integration tests in this package (TestInstall/Init/Doctor/Version):
 //
 //	AC-4   install --all: 47 skills per harness; a ds-* legacy command is purged
-//	       with no backup; a non-ds legacy command is backed up to .bak before
-//	       purge; a retired skill dir (ds-typeset) is pruned.
+//	       with no backup; a non-ds legacy command is left untouched (the ledger
+//	       only sweeps names provably ours); a retired skill dir (ds-typeset) is
+//	       pruned.
 //	AC-5   install --dry-run leaves $HOME and the project byte-for-byte unchanged.
 //	AC-6   every installed Codex skill carries agents/openai.yaml pinning
 //	       allow_implicit_invocation: false.
@@ -41,8 +42,6 @@
 //	AC-11  no live references to removed/renamed names in README/docs/agents-md — grep.
 //	AC-12  commands.md/PUBLISHING.md/scripts/bin/package.json are absent; skills.md
 //	       and install.sh are present — static.
-//	AC-14  ds-senior-mode read-and-adopts the git/test/step siblings, with no
-//	       restated rule text — skill content.
 //	AC-15  doc-quality-review drops --comments; comment-review flags planning-artifact
 //	       cruft — skill content.
 //	AC-16  go/python/java reviews carry a version companion; zig/rust/ts are

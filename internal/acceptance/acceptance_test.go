@@ -3,7 +3,7 @@
 // End-to-end acceptance for the built binary — the durable form of the one-off
 // acceptance.sh harness. It builds the real binary once, then drives
 // install/init/doctor/version against a throwaway $HOME and asserts the
-// sandbox acceptance criteria from .project/SPEC.md (AC-4/5/6/7/13/17/18).
+// sandbox acceptance criteria AC-4/5/6/7/13/17/18 (see doc.go).
 //
 // Opt-in, never part of `go test ./...`:  go test -tags integration ./internal/acceptance/
 //
@@ -65,7 +65,7 @@ func TestInstall(t *testing.T) {
 	cCmds := filepath.Join(sb, ".claude", "commands")
 
 	// seed a bash-era layout: a ds- legacy command, a non-ds legacy command
-	// (user-owned, must be backed up before purge), and a retired skill dir.
+	// (unprovable as ours, must survive untouched), and a retired skill dir.
 	writeFile(t, filepath.Join(cCmds, "ds-code-review.md"), "legacy\n")
 	writeFile(t, filepath.Join(cCmds, "test.md"), "user command\n")
 	writeFile(t, filepath.Join(cSkills, "ds-typeset", "SKILL.md"), "stale\n")
@@ -86,11 +86,12 @@ func TestInstall(t *testing.T) {
 		}
 	}
 
-	// AC-4: purge + backup semantics.
+	// AC-4: purge semantics — the ledger only ever touches names it can prove
+	// are devskills', so a bare non-ds- command is left alone entirely.
 	assertAbsent(t, "AC-4 ds- legacy purged", filepath.Join(cCmds, "ds-code-review.md"))
 	assertAbsent(t, "AC-4 ds- purge leaves no .bak", filepath.Join(cCmds, "ds-code-review.md.bak"))
-	assertAbsent(t, "AC-4 non-ds legacy purged", filepath.Join(cCmds, "test.md"))
-	assertPresent(t, "AC-4 non-ds legacy backed up", filepath.Join(cCmds, "test.md.bak"))
+	assertPresent(t, "AC-4 non-ds legacy untouched", filepath.Join(cCmds, "test.md"))
+	assertAbsent(t, "AC-4 non-ds legacy not backed up", filepath.Join(cCmds, "test.md.bak"))
 	assertAbsent(t, "AC-4 retired skill pruned", filepath.Join(cSkills, "ds-typeset"))
 
 	// AC-6: Codex sidecar on every installed skill.

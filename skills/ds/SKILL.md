@@ -62,7 +62,6 @@ To persist `.project/` state before shipping, see `/ds-project-checkpoint` under
 Turn one on and it governs the rest of the session; several can be active at once.
 
 - `/ds-tiger-style-mode` — safety + explicitness engineering bar.
-- `/ds-senior-mode` — write like a super-senior engineer everywhere: terse, step-gated, no slop (folds in git/test/deslop/step).
 - `/ds-git-mode` — commit each working unit as it lands, terse messages, never pushes.
 - `/ds-step-mode` — smallest reviewable step, then hand back.
 - `/ds-test-mode` — keep the core tested by risk as you build.
@@ -85,6 +84,7 @@ Durable context across sessions. The workflow runs fine without any of these.
 - `/ds-project-resume` — restore where you left off and apply configured modes. Start an ongoing project here.
 - `/ds-project-checkpoint` — sweep the session and route durable context to its owning file before `/clear` or end of session.
 - `/ds-project-compact` — housekeeping over the persisted `.project/` state.
+- `/ds-project-verify` — reconcile the persisted `.project/` state against the source and report what has drifted.
 
 ## Local knowledge & utilities
 

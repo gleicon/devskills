@@ -8,7 +8,7 @@ Everything here relies only on the skills, `git`, and `gh` — no external orche
 
 ## Modes stack — run several at once
 
-A **mode** (`/ds-tiger-style-mode`, `/ds-ui-mode`, `/ds-data-mode`, `/ds-senior-mode`, `/ds-test-mode`, `/ds-tdd-mode`, `/ds-git-mode`, `/ds-step-mode`) doesn't do a job and return — it changes *how* the agent works for the rest of the session. Modes **compose**: turn on as many as fit the work. Building a tested UI to a strict bar, committed cleanly as you go, is four at once —
+A **mode** (`/ds-tiger-style-mode`, `/ds-ui-mode`, `/ds-data-mode`, `/ds-test-mode`, `/ds-tdd-mode`, `/ds-git-mode`, `/ds-step-mode`) doesn't do a job and return — it changes *how* the agent works for the rest of the session. Modes **compose**: turn on as many as fit the work. Building a tested UI to a strict bar, committed cleanly as you go, is four at once —
 
 ```
 /ds-tiger-style-mode             # safety + explicitness bar
@@ -580,7 +580,6 @@ Indexed by *what you want to do*, not by kind — for the suffix taxonomy (`-mod
 | Keep the core tested as you work (mode) | `/ds-test-mode` |
 | Build a data pipeline correctly as you go (mode) | `/ds-data-mode` |
 | Commit clean, human-readable history as you build (mode) | `/ds-git-mode` |
-| Work like a super-senior everywhere, no slop (mode) | `/ds-senior-mode` |
 | Execute step-by-step, keeping control at every break (mode) | `/ds-step-mode` |
 | Remove AI slop from a fresh branch | `/ds-deslop` |
 | Bring a codebase's comments to discipline | `/ds-comment-review` |

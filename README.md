@@ -95,7 +95,6 @@ Turn one on and it governs the rest of the session; several can be active at onc
 
 | Mode | Posture |
 |------|---------|
-| `/ds-senior-mode` | write like a super-senior engineer everywhere — terse, step-gated, no slop (folds in git + test + deslop + step) |
 | `/ds-tiger-style-mode` | the safety + explicitness engineering bar |
 | `/ds-git-mode` | commit each working unit as it lands; terse messages; never pushes |
 | `/ds-step-mode` | smallest reviewable step, then hand back |
