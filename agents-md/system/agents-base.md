@@ -69,7 +69,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 **Pull context on demand. Locate before you read.**
 
 - Search to find the right place; read scoped regions, not whole files "to be safe".
-- If `PROJECT.md` exists, read its map first and prefer it over re-deriving structure. When the map and the code disagree, the code wins — reread the file.
+- If `.project/map.md` exists, read it first and prefer it over re-deriving structure. When the map and the code disagree, the code wins — reread the file.
 - Delegate broad searches to a sub-agent where one is available, so the sweep stays out of your context.
 - Sufficiency beats thrift: when unsure, read more. A wrong answer costs far more than the tokens.
 

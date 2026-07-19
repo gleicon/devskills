@@ -43,7 +43,7 @@ A target-architecture blueprint:
 Rules:
 
 - No structural element without a requirement behind it. Name the requirement.
-- Before committing to a structure, check `.project/DECISIONS.md` (if present) so you don't re-decide something already settled there; if the blueprint would override a recorded decision, say so explicitly.
+- Before committing to a structure, check `# settled` in `.project/state.md` (if present) so you don't re-decide something already made; if the blueprint would override one, say so explicitly.
 - Prefer the simpler structure; when unsure, defer and say what would justify escalating.
 - `Safety > Performance > Developer Experience`.
 - Change nothing. The output is the blueprint.

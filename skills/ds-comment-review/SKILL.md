@@ -16,7 +16,7 @@ When invoked, audit the comments in scope against one question: **does each comm
 
 1. **Restating code** — comments that narrate what the code plainly does (`// increment i`, `// loop over users`). Delete.
 2. **Obvious / ceremonial** — section banners, `// constructor`, getter/setter narration, docstrings that just repeat the signature. Delete.
-3. **Planning-artifact references** — pointers into the project's planning trail: decision IDs (`D-12`), `DECISIONS.md`/roadmap/step/spec-requirement citations ("as per step 3"), author-stamped notes, a commit message pasted as a comment. A comment must stand on the code alone — these rot by design as housekeeping archives and renumbers those artifacts. Strip.
+3. **Planning-artifact references** — pointers into the project's planning trail: decision IDs (`D-12`), roadmap/step/spec-requirement citations ("as per step 3"), author-stamped notes, a commit message pasted as a comment. A comment must stand on the code alone — these rot by design, since the artifacts they point into get rewritten and renumbered. Strip.
 4. **Buried WHY** — a genuine reason wrapped in five lines of prose. Tighten to one line.
 5. **Drifted** — comments describing behavior the code no longer has. Treat as a correctness issue: fix or delete.
 6. **Keep — and respect — the rare legitimately-long comment**: a non-obvious algorithm, a subtle invariant, a hard-won workaround. Don't cut these; they are the signal. Make sure they still read as important.
