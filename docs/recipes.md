@@ -57,14 +57,14 @@ Stress-test the *approach* of a change before you ask a human to review it.
    ```
    /ds-grill-me --record  the approach in this PR: <paste PR URL or describe the diff>
    ```
-   It interviews you one branch at a time — edge cases, alternatives you skipped, invariants you're assuming — and logs each resolved decision to `DECISIONS.md`.
-3. **Incorporate** the decisions: make the code changes, and let `DECISIONS.md` become (or seed) the PR description so reviewers see the *why*.
+   It interviews you one branch at a time — edge cases, alternatives you skipped, invariants you're assuming — and logs each resolved decision to `GRILL.md`.
+3. **Incorporate** the decisions: make the code changes, and let `GRILL.md` become (or seed) the PR description so reviewers see the *why*.
 4. **Mark ready:**
    ```bash
    gh pr ready
    ```
 
-Why this order: the cheapest time to discover the design is wrong is *before* a reviewer spends their attention on it. The draft PR gives the conversation an anchor; `DECISIONS.md` gives the reviewer your reasoning for free.
+Why this order: the cheapest time to discover the design is wrong is *before* a reviewer spends their attention on it. The draft PR gives the conversation an anchor; `GRILL.md` gives the reviewer your reasoning for free.
 
 `/ds-grill-me` does far more than PR review — requirements discovery, design stress-testing, refactor planning, domain/terminology sharpening, even non-coding decisions. See [grill-me.md](grill-me.md) for the full menu.
 
@@ -152,7 +152,7 @@ This loop covers the full spec-to-ship ground — spec, plan, build, verify, shi
 ```
 /ds-spec                    # 1. WHAT: a SPEC.md with acceptance criteria (optional)
 /ds-explore                 # 2. at a fork: lay out approaches → EXPLORE.md (--web to research)
-/ds-grill-me --record       # 3. decide the open branches → DECISIONS.md
+/ds-grill-me --record       # 3. decide the open branches → GRILL.md
 /ds-zoom-out                # 4. in unfamiliar code: map the area before changing it
 /ds-tiger-style-mode             # 5. engineering bar on (stack /ds-test-mode to keep the core covered, /ds-git-mode to land each working unit as a clean commit)
    ...build it, driving the design yourself...
@@ -161,7 +161,7 @@ This loop covers the full spec-to-ship ground — spec, plan, build, verify, shi
 /ds-verify-this <claim>     # 8. prove the acceptance criteria hold
 ```
 
-Ship with plain `git` + `gh`. The artifacts that persist your thinking are `SPEC.md` and `DECISIONS.md` — commit them. This is deliberately lighter than a phase-based engine: fewer moving parts, no background state, faster to start.
+Ship with plain `git` + `gh`. The artifacts that persist your thinking are `SPEC.md` and `GRILL.md` — commit them. This is deliberately lighter than a phase-based engine: fewer moving parts, no background state, faster to start.
 
 To carry plan and state *across* sessions (so `/clear` is always safe), layer the `.project/` memory skills on top — `/ds-project-map`, `/ds-project-checkpoint`, `/ds-project-resume` — and seed the plan with `/ds-roadmap`. The full `.project/` playbook is [below](#working-with-project-memory).
 
@@ -171,11 +171,11 @@ To carry plan and state *across* sessions (so `/clear` is always safe), layer th
 
 When you have a backlog of independent changes to land as *separate* PRs — a queue of issues, or a big refactor split into reviewable chunks — the `.project/` files turn it into a loop that survives `/clear` and hands cleanly between sessions. The plan *is* the protocol.
 
-1. **Map once, plan the queue.** `/ds-project-map` writes `.project/PROJECT.md` (the repo facts every issue shares). Then capture the queue in `.project/PLAN.md`: issue order, a **Current** pointer (which issue, which step), and the per-issue loop (branch → implement → run the tests → draft PR → grill → ready → merged → sync). Putting the protocol *in the plan* is what makes the session reconstructible after a `/clear`.
-2. **One branch + one draft PR per issue.** Branch off fresh `main`, implement surgically from the issue's spec, run the tests, open a **draft** PR. Record the PR URL under Current in `PLAN.md`.
+1. **Map once, plan the queue.** `/ds-project-map` writes `.project/map.md` (the repo facts every issue shares). Put the issue order in `.project/roadmap.md`, and let `state.md` carry the pointer: `# now` is the issue and step you're on, `# next` is the single action that moves it. That split is what makes the session reconstructible after a `/clear` — the queue is durable, the cursor is one line.
+2. **One branch + one draft PR per issue.** Branch off fresh `main`, implement surgically from the issue's spec, run the tests, open a **draft** PR. Record the PR URL in `# now` — it identifies the work in flight.
 3. **Grill the draft, then mark ready.** Point `/ds-grill-me` at the open PR to stress-test the *approach* one decision at a time; apply what it surfaces, then `gh pr ready`. (This is [the draft-PR grill loop](#the-draft-pr-grill-loop) used as one step of the larger loop.)
 4. **Confirm-then-advance at the gates.** Treat *mark-ready* and *merged* as human checkpoints — never assume a merge. Once merged: `git fetch upstream && git checkout main && git merge --ff-only upstream/main`, delete the branch, tick the issue off, and move the Current pointer to the next one.
-5. **Checkpoint before `/clear`.** Because `PLAN.md` always holds Current issue + step + PR URL, you can `/clear` between issues (or hand to a fresh agent via `/ds-project-resume`) and resume exactly where you left off — no transcript needed.
+5. **Checkpoint before `/clear`.** Because `# now` always holds the issue, the step, and the PR, you can `/clear` between issues (or hand to a fresh agent via `/ds-project-resume`) and resume exactly where you left off — no transcript needed.
 
 Why it holds up: each issue is an isolated branch+PR (small, reviewable, revertible), the queue's state lives in a file instead of the conversation, and the ready/merged gates stay human. `.project/` is the shared memory; `git` + `gh` do the rest.
 
@@ -364,11 +364,11 @@ No code yet, so map comes last — there's nothing to map until something exists
 you → "I want a CLI that watches a dir and uploads new files to S3"
 /ds-spec                       # WHAT + acceptance criteria → .project/SPEC.md
 /ds-explore --web              # research stack/approach options → .project/EXPLORE.md
-/ds-grill-me --record          # decide the open branches → .project/DECISIONS.md
-/ds-roadmap               # turn the decisions into an ordered roadmap → .project/PLAN.md
+/ds-grill-me --record          # decide the open branches → GRILL.md
+/ds-roadmap               # turn the decisions into an ordered roadmap → .project/roadmap.md
 /ds-tiger-style-mode                # engineering bar on for the session
 you → "implement task 1: project scaffold + the dir-watch loop"
-/ds-project-map                # now there's code — capture PROJECT.md (description + repo map)
+/ds-project-map                # now there's code — capture map.md (description + repo map)
 /ds-deslop                     # clean the generated code
 /ds-verify-this "watcher emits an event within 1s of a new file appearing"
 /ds-project-checkpoint         # persist state, then /clear is safe
@@ -381,7 +381,7 @@ Next session: `/ds-project-resume` and keep going.
 The code already exists, so **map first** — establish ground truth before planning.
 
 ```
-/ds-project-map                # scan the existing repo → .project/PROJECT.md
+/ds-project-map                # scan the existing repo → .project/map.md
 /ds-zoom-out                   # map the area you're about to touch (responsibility, callers, boundaries)
 /ds-roadmap               # seed the roadmap from your current goals / backlog
 you → "implement the first task"
@@ -402,7 +402,7 @@ No feature — just paying down entropy. The trick is turning findings *into tas
 /ds-test-quality-review --full             # is the critical code actually tested — and are those tests any good?
 /ds-doc-quality-review --full              # docs entropy too: drift vs. code, dead links, bloat
 you → paste the findings into:
-/ds-roadmap                           # findings become ordered tasks in PLAN.md
+/ds-roadmap                           # findings become ordered tasks in roadmap.md
 /ds-go-review        (or /ds-ts-review, /ds-rust-review)   # language idioms + security
 you → "fix roadmap tasks 1–3"
 /ds-verify-this "the auth refactor preserves the existing token behavior"
@@ -417,7 +417,7 @@ Run it on a cadence (end of a sprint, before a release). Branch-scope the review
 /ds-project-resume             # orient: where we are, what's next
 /ds-spec                       # if the feature is non-trivial → .project/SPEC.md  (optional)
 /ds-explore                    # at a design fork: lay out approaches (add --web to research)
-/ds-grill-me --record          # decide → DECISIONS.md
+/ds-grill-me --record          # decide → GRILL.md
 /ds-roadmap               # add the feature's tasks to the roadmap
 /ds-zoom-out                   # if it touches unfamiliar code
 /ds-tiger-style-mode                # engineering bar on
@@ -503,16 +503,16 @@ Big changes span sessions, so lean hard on checkpoint/resume and incremental pha
 ```
 /ds-zoom-out                   # map the current architecture broadly
 /ds-explore --web              # research target patterns / approaches → EXPLORE.md
-/ds-grill-me --record          # decide; the hard-to-reverse choices go in DECISIONS.md (ADR-worthy)
+/ds-grill-me --record          # decide; the hard-to-reverse choices land in GRILL.md
 /ds-roadmap               # break it into ordered, individually-shippable phases
 /ds-tiger-style-mode
 you → "implement phase 1: introduce the new interface behind the old one"
 /ds-code-quality-review        # audit each phase
 /ds-verify-this "behavior is unchanged after phase 1"   # the refactor invariant
-/ds-project-checkpoint --handoff   # rich handoff before you stop — this will span sessions
+/ds-project-checkpoint         # persist before you stop — this will span sessions
 # ...next session...
-/ds-project-resume             # picks up PLAN.md + the fresh handoff
-/ds-project-map                # refresh PROJECT.md once the shape has changed
+/ds-project-resume             # picks up # now and # next
+/ds-project-map                # regenerate map.md once the shape has changed
 /ds-doc-quality-review         # the shape changed — hunt docs the refactor silently rotted (renames, moved files, dead links)
 ```
 
@@ -521,49 +521,33 @@ Checkpoint between *every* phase so you can `/clear` and resume with a clean con
 ### Resuming after time away
 
 ```
-/ds-project-resume             # reads PLAN.md ## Now; flags handoff.md if it's stale
-/ds-project-map                # re-run if the code drifted while you were away (refreshes the map)
+/ds-project-resume             # reads state.md: # now and # next
+/ds-project-map                # re-run if the code drifted while you were away
 /ds-zoom-out                   # re-familiarize with the area you'll touch
 ```
-
-If `/ds-project-resume` reports a stale `handoff.md`, trust `## Now` over it (and delete the stale file — see below).
 
 ### Handing the project to someone else
 
 ```
-/ds-project-checkpoint --handoff   # writes a rich .project/handoff.md (context, what was tried, gotchas)
+/ds-handoff                    # a rich, tool-agnostic handoff in a temp dir
 ```
 
-They (or a fresh agent) start with `/ds-project-resume`, which loads `PROJECT.md` (the map), `PLAN.md` (`## Now` + roadmap), and the fresh `handoff.md`. `DECISIONS.md` answers "why is it like this?" without a meeting.
+That one is for a *person*: context, what was tried, the gotchas. A fresh agent needs none of it — it starts with `/ds-project-resume` and gets `# now`, `# next`, and silently, everything `# settled` and `# hazards` record.
 
 ### Keeping `.project/` clean
 
-The files have different lifetimes — some durable, some scratch — and left alone the directory rots. **`/ds-project-compact` is the housekeeping skill for exactly this:** it archives superseded `DECISIONS.md` entries and completed `## Roadmap` sections into a dated `.project/archive/` file — losslessly, with per-item approval, never touching `## Now`. Run it whenever the directory grows unwieldy. Knowing the lifetimes still helps you see what it'll flag:
+There is no housekeeping skill, because there is nothing to keep house over. `.project/` holds four files, each with one writer, and each bounded by its own shape:
 
-**`PLAN.md` — living, prune it.**
-- `/ds-project-checkpoint` marks tasks `[x]` and overwrites `## Now`; `## Now` never needs manual cleanup.
-- The `## Roadmap` accumulates `[x]` tasks. When a feature or milestone ships, **prune the completed tasks** so the roadmap shows what's *left* (or let `/ds-project-compact` archive them). git and `DECISIONS.md` already hold the history, so deleting is fine.
-- Rule of thumb: if you can't see the next three things to do without scrolling, prune.
+- **`state.md`** — one line per entry. `# now` and `# next` are overwritten every checkpoint; `# settled` and `# hazards` only accept a line that forbids something or names what breaks. It doesn't grow into prose, so it never needs compacting.
+- **`map.md`** — regenerated wholesale by `/ds-project-map`, and holds nothing that isn't re-derivable from the source. Re-run it when the repo's shape drifts; there's no incremental state to reconcile.
+- **`roadmap.md`** — `/ds-roadmap` appends and `[x]`s tasks. Prune shipped ones by hand when the list stops showing you what's left; git holds the history.
+- **`config.md`** — yours, small, stable. Change it when your preferred modes change.
 
-**`EXPLORE.md` — scratch, disposable.**
-- Overwritten on every `/ds-explore`. Once you've decided (`/ds-grill-me` → `DECISIONS.md`), its content is captured where it matters. Delete it or just let the next `/ds-explore` overwrite it. Never cite it as a durable record.
+The scratch files aren't in there at all. `SPEC.md`, `GRILL.md`, and `EXPLORE.md` are work products in your working directory: read them, feed them into the next skill, delete them when they've served their purpose. Nothing reads them at session start, so a stale one can't mislead a fresh session.
 
-**`handoff.md` — point-in-time, expires.**
-- Written only by `/ds-project-checkpoint --handoff`. `/ds-project-resume` ignores it once it's older than `PLAN.md`. After a successful resume, `rm .project/handoff.md` so it doesn't linger and confuse — `## Now` is the source of truth, not a past handoff.
+The one thing worth doing by hand: if a `# settled` line stops being true, delete it. A reversed call that stays on the list governs work it shouldn't.
 
-**`PROJECT.md` / `DECISIONS.md` / `config.md` — durable, keep.**
-- `PROJECT.md`: refresh with `/ds-project-map` when the repo's shape drifts; otherwise leave it.
-- `DECISIONS.md`: append-only "why" log, fed by `/ds-grill-me --record` and `/ds-project-checkpoint`'s sweep, surfaced by `/ds-project-resume`. Don't prune it by hand — `/ds-project-compact` archives superseded entries losslessly when it grows unwieldy.
-- `config.md`: per-project preferences (the modes auto-applied on resume). Hand-edited or via `/ds-project-config`; small and stable. Leave it unless your preferred modes change.
-
-**Git hygiene.** Commit the durable set (`PROJECT.md`, `PLAN.md`, `DECISIONS.md`, `config.md`) as shared memory; the scratch files don't belong in history. If you commit `.project/`, ignore the scratch:
-
-```gitignore
-.project/EXPLORE.md
-.project/handoff.md
-```
-
-Or git-ignore the whole `.project/` directory for a purely local workflow — nothing here depends on git.
+**Git hygiene.** Commit `.project/` as shared project memory, or git-ignore the whole directory for a purely local workflow — nothing here depends on git either way.
 
 ---
 
