@@ -25,9 +25,12 @@ and that's the migration working.
 
 1. `devskills install`
 
-2. `devskills config`
+2. `devskills init` — refreshes the managed blocks in `AGENTS.md`.
 
-3. **Audit the old files.** One pass, one row per entry. Paste this:
+3. `rm -f .project/config.md`, then `devskills config`. The prompt preselects
+   from the existing file, so an old one seeds it with a pre-rebuild mode list.
+
+4. **Audit the old files.** One pass, one row per entry. Paste this:
 
    ```
    Read these, top level of .project/ only: PROJECT.md, DECISIONS.md, PLAN.md,
@@ -66,7 +69,7 @@ and that's the migration working.
    Write no files.
    ```
 
-4. **`/ds-project-checkpoint`**, with this alongside it:
+5. **`/ds-project-checkpoint`**, with this alongside it:
 
    ```
    Sweep only the CONFIRMED and carry rows from that table. Ignore STALE and desc.
@@ -76,14 +79,14 @@ and that's the migration working.
    audit answered *is this true*, and checkpoint answers *does a future session
    need it*. Both questions have to be asked, and neither answers the other.
 
-5. **`/ds-roadmap`** — only if `PLAN.md` had unchecked `## Roadmap` items; paste
+6. **`/ds-roadmap`** — only if `PLAN.md` had unchecked `## Roadmap` items; paste
    them as the argument. Nothing open means no `roadmap.md`; don't create an empty
    one.
 
-6. **`/ds-project-map`** — writes `map.md` from the code. Nothing carries over
+7. **`/ds-project-map`** — writes `map.md` from the code. Nothing carries over
    into it; it regenerates wholesale by design.
 
-7. **Delete the leftovers.** `PROJECT.md`, `DECISIONS.md`, `PLAN.md` and
+8. **Delete the leftovers.** `PROJECT.md`, `DECISIONS.md`, `PLAN.md` and
    `handoff.md` are done. `SPEC.md` / `GRILL.md` / `EXPLORE.md` are work products —
    move them to the repo root if you still want them. `.project/` holds only its
    four files.
@@ -91,4 +94,4 @@ and that's the migration working.
    `.project/` is usually gitignored, so there is no `git checkout` to fall back
    on. Copy it aside before this step.
 
-8. Start a fresh session and run **`/ds-project-resume`**.
+9. Start a fresh session and run **`/ds-project-resume`**.
