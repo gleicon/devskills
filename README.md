@@ -95,7 +95,6 @@ Turn one on and it governs the rest of the session; several can be active at onc
 
 | Mode | Posture |
 |------|---------|
-| `/ds-senior-mode` | write like a super-senior engineer everywhere — terse, step-gated, no slop (folds in git + test + deslop + step) |
 | `/ds-tiger-style-mode` | the safety + explicitness engineering bar |
 | `/ds-git-mode` | commit each working unit as it lands; terse messages; never pushes |
 | `/ds-step-mode` | smallest reviewable step, then hand back |
@@ -116,11 +115,11 @@ Durable context across `/clear` and session ends. The workflow runs fine without
 
 | Skill | What it does |
 |-------|--------------|
-| `/ds-project-map` | map the repo into `.project/PROJECT.md` |
-| `/ds-project-config` | set preferences (e.g. modes auto-applied on resume) |
-| `/ds-project-resume` | restore where you left off and apply configured modes |
-| `/ds-project-checkpoint` | sweep the session, route durable context to its owning file |
-| `/ds-project-compact` | housekeeping over the persisted `.project/` state |
+| `/ds-project-map` | map the repo into `.project/map.md` |
+| `/ds-project-resume` | read `.project/` state and apply configured modes |
+| `/ds-project-checkpoint` | write the session's state to `.project/state.md` |
+
+Preferences (the modes resume auto-applies) live in `.project/config.md`, written by `devskills config` — no skill can edit it.
 
 ### Utilities
 
@@ -141,10 +140,13 @@ One binary, four commands:
 |---------|------|
 | `devskills install` | sync the skills into Claude Code / OpenCode / Codex (`--local`, `--harness`, `--dry-run`, `--uninstall`) |
 | `devskills init` | scaffold a project's `AGENTS.md` + a `CLAUDE.md` import (`--lang`, `--concise`, `--phases`) |
+| `devskills config` | pick the modes a session starts with (`--modes`, `--dry-run`) |
 | `devskills doctor` | check — or, with `--fix`, install — the external tools some skills need |
 | `devskills version` | print version and build info |
 
 `init` builds `AGENTS.md` from stacked, independently-managed blocks marked `<!-- BEGIN/END devskills:<id> -->`, so re-running is idempotent and swapping a language replaces only that block. It's harness-agnostic — Claude Code reads the `CLAUDE.md` import; OpenCode and Codex read `AGENTS.md` directly.
+
+`config` writes `.project/config.md`, listing the `ds-*-mode` skills `/ds-project-resume` applies at session start. It offers the modes this binary ships, so you don't have to remember names, and manages one marker block, so anything else you put in the file survives — including a mode of your own, added by hand. It's a command and not a skill on purpose: `config.md` is where you tell the assistant how to behave, so nothing the assistant runs can rewrite it.
 
 ### Language profiles
 
@@ -177,6 +179,7 @@ devskills ships no fixed pipeline. Each skill does one job and hands control bac
 - **[docs/skills.md](docs/skills.md)** — every skill: args, behavior, and when to reach for it
 - **[docs/recipes.md](docs/recipes.md)** — worked, multi-step workflows (pre-PR gate, find-then-prove, driving a multi-PR queue, the optional `.project/` memory loop)
 - **[docs/project-workflow.md](docs/project-workflow.md)** — the `.project/` memory model
+- **[docs/migration.md](docs/migration.md)** — porting a pre-rebuild `.project/` onto the four-file model
 - **[docs/grill-me.md](docs/grill-me.md)** · **[docs/tiger-style.md](docs/tiger-style.md)** — the grill playbook and the engineering bar
 - **[docs/ast-grep.md](docs/ast-grep.md)** — the optional structural pass for `/ds-security-review`
 

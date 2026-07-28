@@ -14,10 +14,10 @@ The mechanics are the same whatever you point it at:
 
 - **One question at a time**, each with a *recommended answer*. If you agree, just say "yes" and move on — that's what makes a 30–45 minute session cover so much ground.
 - It **explores the codebase instead of asking** whenever a question is answerable from the code. Don't answer things it can verify itself.
-- **`--record`** appends each resolved decision (question, answer, one-line rationale) to `DECISIONS.md`. Use it — the artifact is half the value.
+- **`--record [path]`** appends each resolved decision (question, answer, one-line rationale) to `GRILL.md`, or to a path you name. Use it — the artifact is half the value.
 - It **ends** when no decision branch is left unresolved, with a summary of the resolved plan.
 
-> Tip: the output is an input. Feed the summary or `DECISIONS.md` into `/ds-spec`, into a PR description, or into your issue tracker — don't let a 45-minute conversation evaporate.
+> Tip: the output is an input. Feed the summary or `GRILL.md` into `/ds-spec`, into a PR description, or into your issue tracker — don't let a 45-minute conversation evaporate.
 
 ## The recipes
 
@@ -61,7 +61,7 @@ Forces the rollout order, the backwards-compat window, and the failure/rollback 
 
 ### 5. Architecture decision → capture an ADR
 
-When the grilling lands on a decision that is **hard to reverse, surprising without context, and the result of a real trade-off**, capture it as an ADR (Architecture Decision Record) so the *why* survives. Ask the agent to write a short `docs/adr/NNNN-<slug>.md` with: context, the decision, the alternatives considered, and the consequences. Offer ADRs *sparingly* — if a decision isn't all three of the above, a line in `DECISIONS.md` is enough.
+When the grilling lands on a decision that is **hard to reverse, surprising without context, and the result of a real trade-off**, capture it as an ADR (Architecture Decision Record) so the *why* survives. Ask the agent to write a short `docs/adr/NNNN-<slug>.md` with: context, the decision, the alternatives considered, and the consequences. Offer ADRs *sparingly* — if a decision isn't all three of the above, an entry in `GRILL.md` is enough.
 
 ### 6. Domain & terminology grilling
 
@@ -81,7 +81,7 @@ Nothing about `/ds-grill-me` is code-specific. It's just as good on a product ro
 
 - **Don't rubber-stamp the recommended answers.** The speed comes from agreeing fast — but the *value* comes from the branches where you disagree. Slow down there.
 - **Timebox it.** A full tree can run long; stop when the branches that matter for the next step are resolved, not when every conceivable branch is.
-- **Record, then use.** A session with no `DECISIONS.md` and nothing fed into a spec/PR was entertainment, not work.
+- **Record, then use.** A session with no `GRILL.md` and nothing fed into a spec/PR was entertainment, not work.
 - **Let it read the code.** Answering questions it could verify itself wastes the session and risks you stating something the code contradicts.
 - **Sequence it:** `/ds-zoom-out` (understand) → `/ds-grill-me` (decide) → `/ds-spec` or build. Grilling in code you don't understand yet produces shallow questions.
 

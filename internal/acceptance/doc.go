@@ -8,15 +8,16 @@
 //
 // # Acceptance criteria
 //
-// The overhaul's acceptance criteria are AC-1…AC-18. Their canonical statements
-// live in .project/SPEC.md, which is not shipped (.project/ is git-ignored), so
-// this is the in-repo record — what each id means and where it is verified.
+// The overhaul's acceptance criteria are AC-1…AC-18. This is their canonical
+// record: the spec that first stated them was archived once the overhaul
+// shipped, and .project/ is git-ignored either way.
 //
 // Verified by the integration tests in this package (TestInstall/Init/Doctor/Version):
 //
-//	AC-4   install --all: 47 skills per harness; a ds-* legacy command is purged
-//	       with no backup; a non-ds legacy command is backed up to .bak before
-//	       purge; a retired skill dir (ds-typeset) is pruned.
+//	AC-4   install --all: 44 skills per harness; a ds-* legacy command is purged
+//	       with no backup; a non-ds legacy command is left untouched (the ledger
+//	       only sweeps names provably ours); a retired skill dir (ds-typeset) is
+//	       pruned.
 //	AC-5   install --dry-run leaves $HOME and the project byte-for-byte unchanged.
 //	AC-6   every installed Codex skill carries agents/openai.yaml pinning
 //	       allow_implicit_invocation: false.
@@ -30,19 +31,17 @@
 //
 // Verified elsewhere (unit tests, static checks, or skill-prompt review):
 //
-//	AC-1   skills/ holds 47 skills and none of the removed/renamed names — static.
+//	AC-1   skills/ holds 44 skills and none of the removed/renamed names — static.
 //	AC-2   every SKILL.md: name==dir, a description, disable-model-invocation:true
 //	       — the internal/catalog validator (go test ./...).
-//	AC-3   the /ds router names every other skill exactly once (46) — static.
+//	AC-3   the /ds router names every other skill exactly once (43) — static.
 //	AC-8   go test ./... passes and golangci-lint run is clean — the gate itself.
-//	AC-9   ds-project-compact archives spent decisions/roadmap losslessly and never
-//	       touches ## Now — skill (prompt) behavior; confirmed by SKILL.md review.
-//	AC-10  ds-project-resume never reads .project/archive/ — skill behavior; ditto.
+//	AC-9   retired — ds-project-compact is gone; state.md is bounded by its format
+//	       and has nothing to archive. Numbering kept so AC-n stays stable.
+//	AC-10  retired — .project/archive/ no longer exists (see AC-9).
 //	AC-11  no live references to removed/renamed names in README/docs/agents-md — grep.
 //	AC-12  commands.md/PUBLISHING.md/scripts/bin/package.json are absent; skills.md
 //	       and install.sh are present — static.
-//	AC-14  ds-senior-mode read-and-adopts the git/test/step siblings, with no
-//	       restated rule text — skill content.
 //	AC-15  doc-quality-review drops --comments; comment-review flags planning-artifact
 //	       cruft — skill content.
 //	AC-16  go/python/java reviews carry a version companion; zig/rust/ts are

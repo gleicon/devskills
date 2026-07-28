@@ -8,7 +8,9 @@ When invoked, stress-test every aspect of the plan. Walk down each branch of the
 
 ## Arguments
 
-If invoked with `--record`, append each resolved decision **worth keeping** to `.project/DECISIONS.md` if `.project/` exists, else `DECISIONS.md` in the current directory, as the interview proceeds. Record the ones that are hard to reverse, surprising without context, or the product of a real trade-off — skip the trivial and the self-evident. One entry per decision: the question, the chosen answer, and a one-line rationale. Plain Markdown, no fixed schema. Without the flag, keep decisions in the conversation only.
+`--record [path]` — append each resolved decision **worth keeping** to `GRILL.md` in the current directory, or to `path` if you name one, as the interview proceeds. Record the ones that are hard to reverse, surprising without context, or the product of a real trade-off — skip the trivial and the self-evident. One entry per decision: the question, the chosen answer, and a one-line rationale. Plain Markdown, no fixed schema. Without the flag, keep decisions in the conversation only.
+
+Write it where the user works, never into `.project/` — that directory holds session state with one writer per file, and this is a work product: something to feed into `/ds-spec`, a PR description, or the next person. On a project that uses `.project/`, `/ds-project-checkpoint` reads the *session* and distils whatever now constrains future work into one-line `# settled` entries. The two are independent — the artifact keeps the full reasoning, `# settled` keeps only what forbids something.
 
 ## Process
 
@@ -22,4 +24,4 @@ If invoked with `--record`, append each resolved decision **worth keeping** to `
 
 ## Output
 
-End when no unresolved decision branches remain. Summarize the resolved plan. If `--record` was passed, also report the path to the updated `DECISIONS.md`.
+End when no unresolved decision branches remain. Summarize the resolved plan. If `--record` was passed, also report the path it was written to.

@@ -23,19 +23,19 @@ Everything except `-mode` runs once and finishes; a `-mode` stays on. The per-sk
 Turn a rough description into a structured specification (the WHAT, not the HOW).
 
 - **Args:** an optional description. With one, it proceeds directly; without, it asks three focused questions (primary user action, what success looks like, hard constraints) then writes the spec.
-- **Output:** `.project/SPEC.md` if `.project/` exists, else `SPEC.md` in the current directory, shown inline. Sections: Problem, Scope, Users, Functional/Non-Functional Requirements, Interfaces, Constraints, Acceptance Criteria, Open Questions.
+- **Output:** `SPEC.md` in the current directory (or a path you name), shown inline. Sections: Problem, Scope, Users, Functional/Non-Functional Requirements, Interfaces, Constraints, Acceptance Criteria, Open Questions.
 - **Reach for it when:** you have an idea and want a verifiable contract before any code.
 
 ### `/ds-roadmap` — action
 
-Turn a goal, a `SPEC.md`, or another skill's output (e.g. `/ds-code-quality-review` findings, a bug list) into an ordered `## Roadmap` task checklist. The companion to `/ds-spec` — spec defines the WHAT, this orders the work to get there. Sequences and scopes; does not choose architecture.
+Turn a goal, a `SPEC.md`, or another skill's output (e.g. `/ds-code-quality-review` findings, a bug list) into an ordered task checklist. The companion to `/ds-spec` — spec defines the WHAT, this orders the work to get there. Sequences and scopes; does not choose architecture.
 
-- **Output:** `.project/PLAN.md` if `.project/` exists, else `PLAN.md` in the current directory (`.project/` is never created for you). Appends to existing tasks; preserves a `## Now` section (that belongs to `/ds-project-checkpoint`).
+- **Output:** `.project/roadmap.md` if `.project/` exists, else `roadmap.md` in the current directory (`.project/` is never created for you). Appends to existing tasks; it owns the whole file.
 - **Reach for it when:** you have a spec, a goal, or a pile of findings and want them turned into an ordered, shippable task list.
 
 ### `/ds-explore` — action
 
-Surface candidate approaches to a problem with their trade-offs — suggests, never decides, never implements. Reads `.project/` state and decisions (and the code) so options respect reality; can do bounded, cited web research with `--web` (off by default — and if local context is too thin for good options, it says so and suggests `--web` rather than guessing). Writes a scratch `.project/EXPLORE.md` (or a temp path) and lists the open questions the choice hinges on.
+Surface candidate approaches to a problem with their trade-offs — suggests, never decides, never implements. Reads `.project/` state and the code so options respect reality; can do bounded, cited web research with `--web` (off by default — and if local context is too thin for good options, it says so and suggests `--web` rather than guessing). Writes a scratch `EXPLORE.md` and lists the open questions the choice hinges on.
 
 - **Args:** a problem/question; `--web` to opt into web research.
 - **Reach for it when:** facing a "how should I build this?" fork and you want options laid out before deciding. It's the upstream of `/ds-grill-me`: explore generates the options, `/ds-grill-me` walks you through choosing.
@@ -52,8 +52,8 @@ Design a target architecture for a **new** system from its requirements — modu
 
 Interview you relentlessly about a plan or design until you share the same understanding. One question at a time, each with a recommended answer; explores the codebase instead of asking when it can.
 
-- **Args:** `--record` appends every resolved decision to `DECISIONS.md` (question, answer, one-line rationale).
-- **Output:** a resolved-plan summary once no decision branches remain; the `DECISIONS.md` path if `--record` was used.
+- **Args:** `--record [path]` appends every resolved decision to `GRILL.md`, or to a path you name (question, answer, one-line rationale). Never into `.project/` — it's a work product, not session state.
+- **Output:** a resolved-plan summary once no decision branches remain; the artifact path if `--record` was used.
 - **Reach for it when:** a plan feels under-specified, or you want to pressure-test a design (including the approach in a draft PR) before committing to it.
 - **More:** `/ds-grill-me` is unusually versatile — see [grill-me.md](grill-me.md) for a full menu of uses (requirements discovery, design/refactor/architecture, domain terminology, non-coding decisions).
 
@@ -61,29 +61,21 @@ Interview you relentlessly about a plan or design until you share the same under
 
 ## Project memory (`.project/`)
 
-A minimal, file-backed project memory — five skills that keep a durable description, plan, session state, and preferences in plain markdown under `.project/`, so any session is safe to `/clear` or end. (The plan's `## Roadmap` is seeded by `/ds-roadmap` above; these maintain and restore it.) These are *scribes, not pilots*: they record what you decide, never steer architecture. Walkthrough: [project-workflow.md](project-workflow.md). Worked use cases: [recipes.md](recipes.md).
+A minimal, file-backed project memory — three skills over three files under `.project/`, so any session is safe to `/clear` or end. These are *scribes, not pilots*: they record what you decide, never steer architecture. Walkthrough: [project-workflow.md](project-workflow.md). Worked use cases: [recipes.md](recipes.md).
+
+Every file has exactly one writer. `state.md` is the model's, `map.md` is regenerated wholesale, and `config.md` is yours — written by `devskills config`, editable by no skill, which is what lets it hold standing instructions the assistant can't quietly drop.
 
 ### `/ds-project-map` — action
 
-Scan the repo and write/refresh `.project/PROJECT.md` (overview, stack, repo map, constraints). Facts only — describes what exists. Run once at start; re-run when the repo drifts.
-
-### `/ds-project-config` — action
-
-Create/edit `.project/config.md`, the per-project preferences — today, the **modes** that `/ds-project-resume` auto-applies. Discovers your installed `ds-*-mode` skills, writes a `## Modes` bullet list (bare names), warns on an unknown name. Touches only `config.md`.
+Scan the repo and write `.project/map.md` (overview, stack, repo map). Facts only, and only facts re-derivable from the source — so it regenerates wholesale every run, with nothing to preserve and nothing to ask about. Re-run when the repo drifts.
 
 ### `/ds-project-checkpoint` — action
 
-**Sweep the session and route durable context to its owning file:** decisions append to `DECISIONS.md`, a new structural fact appends to `PROJECT.md` (additive, with approval; broad drift flagged for `/ds-project-map`), a scope change is recorded as a decision and `SPEC.md` flagged stale (never edited). Then ticks roadmap statuses and overwrites `## Now`. Reader-affecting writes are approved one at a time; the `PLAN.md` update is automatic; nothing durable → fast no-op. Run before `/clear` or end of session. `--handoff` also writes a richer `.project/handoff.md`.
+Write `.project/state.md`, the only file it touches. Four sections: `# now` and `# next` (one line each, overwritten), `# settled` and `# hazards` (one line each, appended). A `# settled` line must forbid something — if it doesn't stop a future session from redoing a call, it isn't state. A `# hazards` line needs a scope and what breaks. Reversing a call deletes its line and appends the replacement; there are no supersession markers, because an entry short enough to delete needs no pointer. Run at any point and before `/clear`.
 
 ### `/ds-project-resume` — action
 
-Apply any `config.md` modes (read-and-adopt; `--no-modes` skips, still listing them), then read `.project/PLAN.md` (+ `PROJECT.md`), surface `DECISIONS.md` (count + recent few), and report where to pick up. Loads `handoff.md` only if it's newer than the plan (by file time — no git dependency, so `.project/` can be git-ignored), else flags it stale. Doesn't modify `.project/` files.
-
-### `/ds-project-compact` — action
-
-Housekeeping over the persisted `.project/` state, loss-free. Classifies each `DECISIONS.md` entry as active (stays), superseded (archived; residual truth re-recorded as a fresh active decision), or expired (archived), and moves completed `## Roadmap` sections out — all to an append-only `.project/archive/<file>-<date>.md`, so every pre-compact entry stays findable in live ∪ archive. Never touches `## Now`; `/ds-project-resume` never reads the archive. Every classification and reader-affecting write is approved per item.
-
-- **Reach for it when:** `.project/` has grown long enough that superseded decisions and finished roadmap sections are adding noise (and tokens) to every resume.
+Apply any `config.md` modes (read-and-adopt; `--no-modes` skips, still naming them), read `.project/state.md`, and report the modes, `# now`, and `# next`. `# settled` and `# hazards` load into context to govern the work and are never recited back at the person who wrote them. Writes nothing.
 
 ---
 
@@ -106,13 +98,6 @@ UI mode, framework-agnostic (React/Svelte/Vue/Solid/vanilla, any runtime). Two h
 Data-engineering discipline, tool-agnostic (Spark/Airflow/dbt/Flink/plain scripts, batch **and** streaming). Counters the naive ETL shape LLMs default to (read-all → transform → overwrite, assume data arrives once and in order, crash on a bad record, no replay) by encoding constraints up front: **idempotent** transforms (upsert on a key) with no wall-clock/random/order dependence, real-world data handling (event-time windowing with explicit watermarks, dedup on a business key safe under at-least-once, quarantine malformed rows, explicit schema-drift contracts), reprocessing & recovery (replayable/backfillable with no double-counting, time-partitioned, checkpointed, no destructive overwrite without a recovery path), boundary data-quality assertions that **fail the run**, and E/T/L separation with testable pure transforms. Matches the project's existing stack rather than imposing a framework.
 
 - **Reach for it when:** building or extending a data pipeline or transform. Stacks with `/ds-tiger-style-mode` + `/ds-test-mode`. The after-the-fact audit counterpart is `/ds-data-review` (the store) and `/ds-data-review --pipelines` (the pipeline code itself) — mode shapes the build, review audits it.
-
-### `/ds-senior-mode` — mode
-
-Write like a super-senior engineer in **everything**, not just the code. One habit — precise, direct, no filler — applied across code, comments, commit messages, PR descriptions, docs, and your own replies. A composite standing posture: it folds in the commit discipline of `/ds-git-mode` (terser — one-line messages, body the exception), the test-by-risk pragmatism of `/ds-test-mode`, the anti-slop judgment of `/ds-deslop`, and the step-gated control of `/ds-step-mode` — all **applied as you write, not as a later pass**, so comments/commits/PRs don't need cleaning up afterward. Comment discipline is imposed regardless of the file's existing habits (matching neighbor slop only spreads it). Works in small reviewable steps and hands control back in prose so the human can steer fast; replies follow the concise response style.
-
-- **Reach for it when:** you keep re-applying the same modes to every task and re-correcting AI bloat in comments, commit messages, and PR bodies. The proactive front-end to `/ds-deslop` and `/ds-comment-review` (which stay as the after-the-fact net). Supersedes running `/ds-git-mode` + `/ds-test-mode` + `/ds-step-mode` separately. Because it's step-gated (stop and hand back at each step), it's for work you want to **steer**, not long autonomous batch runs — widen the cadence live with "bigger steps" when needed.
-- **Stacking:** when combined with `/ds-tiger-style-mode`, tiger-style wins on safety, assertions, and naming; senior-mode governs voice and process. Entry/exit and boundary assertions are never "slop."
 
 ### `/ds-git-mode` — mode
 

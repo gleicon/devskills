@@ -253,4 +253,9 @@ func joinIDs(ids []harness.ID) string {
 	return strings.Join(s, ", ")
 }
 
-func isTTY() bool { return term.IsTerminal(os.Stdout.Fd()) }
+// isTTY reports whether a huh form can run: it reads stdin and draws to stdout,
+// so a terminal on only one of them is not enough — piped stdin would otherwise
+// reach form.Run() and fail there instead of on the flag-missing path.
+func isTTY() bool {
+	return term.IsTerminal(os.Stdin.Fd()) && term.IsTerminal(os.Stdout.Fd())
+}

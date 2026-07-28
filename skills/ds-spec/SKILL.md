@@ -81,6 +81,6 @@ If a language profile is active, add a "Technical Profile" section:
 
 ## Output
 
-Write the spec to `.project/SPEC.md` if `.project/` exists, else `SPEC.md` in the current directory; then display it inline for review.
+Write the spec to `SPEC.md` in the current directory — or to a path the user names — then display it inline for review. Never into `.project/`, which holds session state with one writer per file; a spec is a work product, something to read, hand to `/ds-roadmap`, and retire once its work has shipped.
 
 Ask: "Should I proceed to planning with `/ds-roadmap`?" after displaying the spec.

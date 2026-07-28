@@ -56,7 +56,7 @@ Then **ordered steps**, ranked by leverage (impact ÷ risk-effort) within orderi
 Rules:
 
 - **No recommendation without a concrete symptom in this codebase.** Generic best-practice with no local evidence is banned.
-- Before proposing a change, check `.project/DECISIONS.md` (if present) so you don't re-litigate a decision already settled there; if a proposal would override one, say so explicitly.
+- Before proposing a change, check `# settled` in `.project/state.md` (if present) so you don't re-litigate a call already made; if a proposal would override one, say so explicitly.
 - **Simplicity first** — prefer the change that removes structure over the one that adds it; resist speculative generality.
 - Weight impact by **churn** — a fix in a frequently-changed hot spot (`git log`) pays off more than the same fix in stable code.
 - Behavior-preserving: refactors keep observable behavior; recommend characterization tests before risky moves.

@@ -1,34 +1,27 @@
 ---
 name: ds-project-resume
-description: "Restore working context from `.project/PLAN.md` (and a fresh handoff, if any), and apply any configured modes."
+description: "Read .project/ state and report where to pick up."
 disable-model-invocation: true
 ---
 
-When invoked, read the project's persisted state and report where to pick up — the counterpart to `/ds-project-checkpoint`. Safe to run at the start of any session.
+When invoked, load the project's state and report where to pick up — the counterpart to `/ds-project-checkpoint`. Safe to run at the start of any session. It writes nothing.
 
 ## Arguments
 
-- `--no-modes` — skip applying the modes in `.project/config.md`. Resume still lists what the project configures, so opting out never hides them.
+- `--no-modes` — read `.project/config.md` but don't apply what it lists. Still name the modes it configures, so opting out never hides them.
 
 ## Process
 
-1. **Apply configured modes** (unless `--no-modes`). If `.project/config.md` exists, read its `## Modes` list and, for each mode, read that mode's installed skill file — `<name>/SKILL.md` under your assistant's skills directory (`~/.claude/skills/`, `$CLAUDE_CONFIG_DIR/skills/`, `~/.codex/skills/`, `~/.config/opencode/skills/`) — and adopt its rules for the rest of the session (read-and-adopt). Echo which modes you applied; for a mode that grants an authorization or destructive-ish behavior — e.g. `ds-git-mode`'s standing authorization to commit without asking — spell out that consequence in the echo so it is never a surprise. If a listed mode can't be found, say so and tell the user to apply it manually — never silently skip. With `--no-modes`, don't apply them but still list what `config.md` configures. If `.project/config.md` is absent, drop a one-line hint that the user can create one with `/ds-project-config` to auto-apply modes.
-2. If `.project/PLAN.md` does not exist, say so and suggest `/ds-project-map` then `/ds-roadmap`. Stop.
-3. Read `.project/PLAN.md` — focus on `## Now` (state, next, open questions) and the `## Roadmap` status.
-4. Read `.project/PROJECT.md` if present, for the repo map and constraints.
-5. Read `.project/DECISIONS.md` if present — note how many decisions it records and surface the most recent few if they bear on the next action. Never dump the whole file; it grows over time.
-6. If `.project/handoff.md` exists, check whether it is still current — by **file modification time, not git** (the workflow must work when `.project/` is git-ignored or the repo has no git):
-   - If `handoff.md` is newer than `.project/PLAN.md`, load it — it's the freshest context.
-   - If it is older than `PLAN.md` (a checkpoint happened after it), treat it as **stale**: mention it exists and its date, but do not rely on it.
-   - If the repo uses git, you may *optionally* also flag the handoff as stale when commits have landed since it was written — but never require git; the file-time comparison is the source of truth.
-7. Summarize: current state, the next action, open questions, recorded decisions worth recalling, the modes applied, and anything stale worth noting.
+1. **Apply the modes in `.project/config.md`.** For each one, read that mode's `SKILL.md` from your assistant's skills directory (`~/.claude/skills/`, `$CLAUDE_CONFIG_DIR/skills/`, `~/.codex/skills/`, `~/.config/opencode/skills/`) and adopt its rules for the session. Each mode ends with its own confirmation line — those are the echo; don't restate the list as prose. Where a mode grants a standing authorization, name it inline on that line. If a listed mode isn't installed, say so and tell the user to apply it by hand — never skip one silently.
+2. Read `.project/state.md`. If it is absent, say so, suggest `/ds-project-map` then `/ds-project-checkpoint`, and stop.
+3. Report the mode confirmations, then `# now`, then `# next`.
 
 ## Rules
 
-- Resume does not modify `.project/` files — it reads them. Applying a configured mode is part of resume; once applied, that mode governs the session under its own rules.
-- Apply modes via read-and-adopt only — never assume a mode is active without reading its `SKILL.md`.
-- Trust `## Now` over a stale `handoff.md`.
+- **Two sections are reported, two are loaded.** `# now` and `# next` are the report. `# settled` and `# hazards` enter context so they govern what you do — never say them back to the person who wrote them. Name one only when it changed what you did: "that probe is load-bearing, so I left it."
+- **Report the file, not around it.** No git, no counts, no branch position, no observations about the repo. A fact `state.md` doesn't hold is not part of the report, however useful it looks.
+- **Modes come first.** A standing authorization read out after the work context is backwards.
 
 ## Output
 
-A short orientation — where we are, the next step, open questions, and which modes were applied (or skipped) — enough to start working immediately.
+Mode confirmations, `# now`, `# next`. Usually four lines.

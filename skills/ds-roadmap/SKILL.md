@@ -4,25 +4,24 @@ description: "Turn a goal or another command's output into an ordered task roadm
 disable-model-invocation: true
 ---
 
-When invoked, sequence work into a `## Roadmap` checklist. You order the work; you do not choose the architecture or make technical decisions — those are the engineer's. The companion to `/ds-spec`: spec defines the WHAT, this orders the work to get there.
+When invoked, sequence work into a roadmap checklist. You order the work; you do not choose the architecture or make technical decisions — those are the engineer's. The companion to `/ds-spec`: spec defines the WHAT, this orders the work to get there.
 
 ## Input
 
 Use whatever the user provides as the source of tasks:
 - a goal or feature description,
-- a `SPEC.md` (`.project/SPEC.md` if present),
+- a `SPEC.md`,
 - pasted output from another command (e.g. `/ds-code-quality-review` findings, a list of bugs).
 
 If nothing is provided, ask once for the goal, then proceed.
 
 ## Process
 
-1. Resolve the target file: `.project/PLAN.md` if `.project/` exists, else `PLAN.md` in the current directory. Read it first if it already exists. Do not create `.project/` — write to the current directory when it's absent.
+1. Resolve the target file: `.project/roadmap.md` if `.project/` exists, else `roadmap.md` in the current directory. Read it first if it already exists. Do not create `.project/` — write to the current directory when it's absent.
 2. Break the input into the smallest **vertically-sliced** tasks — each cuts a narrow but complete path through all layers (schema → logic → API → UI → test), shippable and demoable on its own. A single-layer horizontal slice ("all the schema", "all the endpoints") is the anti-pattern — it can't be shipped or verified alone.
-3. Write them under `## Roadmap` as a status checklist, appending to existing tasks rather than discarding them:
+3. Write them as a status checklist, appending to existing tasks rather than discarding them:
    - `[ ]` todo · `[~]` in progress · `[x]` done
-4. Preserve a `## Now` section if present — that section belongs to `/ds-project-checkpoint`, not here.
-5. Before finalizing, show the breakdown and ask whether the granularity is right — merge or split on the user's steer, don't just emit and move on.
+4. Before finalizing, show the breakdown and ask whether the granularity is right — merge or split on the user's steer, don't just emit and move on.
 
 ## Rules
 
@@ -31,7 +30,8 @@ If nothing is provided, ask once for the goal, then proceed.
 - Sequence enabling cleanup **first**: if a prefactor makes the real change easy, make it its own early task — make the change easy, then make the easy change.
 - **Wide mechanical refactors** (rename a shared symbol/column that breaks every call site at once) don't fit one vertical slice. Sequence **expand → migrate → contract**: add the new form beside the old, migrate call sites in blast-radius-sized batches (each shippable, CI green), then delete the old last, only after every migration batch has landed.
 - Keep it terse. No estimates, no owners, no ceremony.
+- The roadmap is the whole file and you are its only writer — nothing else lives there, so there is nothing in it to preserve or work around.
 
 ## Output
 
-Display the updated `## Roadmap` and the path.
+Display the updated roadmap and the path.

@@ -4,7 +4,7 @@ description: "Activate step mode for this session."
 disable-model-invocation: true
 ---
 
-When active, execute work in small, user-gated steps instead of long autonomous runs. Do the smallest meaningful, reviewable step, then stop and hand control back so the user can approve, steer, change the plan, or checkpoint before the next step. The user drives; you take one step at a time. Invoked with a plan — `/ds-step-mode current plan`, a path like `.project/PLAN.md`, or pasted text — read it and work through it step by step with these breakpoints.
+When active, execute work in small, user-gated steps instead of long autonomous runs. Do the smallest meaningful, reviewable step, then stop and hand control back so the user can approve, steer, change the plan, or checkpoint before the next step. The user drives; you take one step at a time. Invoked with a plan — `/ds-step-mode current plan`, a path like `.project/roadmap.md`, or pasted text — read it and work through it step by step with these breakpoints.
 
 ## The loop
 
