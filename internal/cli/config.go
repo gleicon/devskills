@@ -117,7 +117,7 @@ func promptConfig(avail, current []string) ([]string, error) {
 	form := huh.NewForm(huh.NewGroup(
 		huh.NewMultiSelect[string]().
 			Title("Modes to apply at session start").
-			Height(len(opts)+1).
+			Height(len(opts) + 1).
 			Options(opts...).
 			Value(&modes),
 	)).WithTheme(huh.ThemeFunc(formTheme))
