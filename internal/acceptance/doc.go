@@ -31,10 +31,12 @@
 //
 // Verified elsewhere (unit tests, static checks, or skill-prompt review):
 //
-//	AC-1   skills/ holds 46 skills and none of the removed/renamed names — static.
+//	AC-1   skills/ holds 46 skills and none of the removed/renamed names — the
+//	       count by catalog.TestSkillCountsStayInSync, the names static.
 //	AC-2   every SKILL.md: name==dir, a description, disable-model-invocation:true
 //	       — the internal/catalog validator (go test ./...).
-//	AC-3   the /ds router names every other skill exactly once (45) — static.
+//	AC-3   the /ds router, README.md and docs/skills.md each name every other
+//	       skill — catalog.TestReferenceDocsNameEverySkill.
 //	AC-8   go test ./... passes and golangci-lint run is clean — the gate itself.
 //	AC-9   retired — ds-project-compact is gone; state.md is bounded by its format
 //	       and has nothing to archive. Numbering kept so AC-n stays stable.
