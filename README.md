@@ -64,6 +64,7 @@ The **phase spine** follows the arc of a change. The groups below it — modes, 
 | Phase | Skill | What it does |
 |-------|-------|--------------|
 | **Orient** | `/ds-zoom-out` | step up a level — map how the code fits before you change it |
+| | `/ds-onboarding` | brief a new teammate: ownership, rituals, a safe first contribution |
 | **Spec** | `/ds-spec` | turn a description into a structured spec with acceptance criteria |
 | | `/ds-explore` | at a fork, lay out candidate approaches without deciding |
 | | `/ds-grill-me` | get interviewed about a plan until the gaps are exposed |

@@ -19,7 +19,7 @@ Use these as **mechanical aids**, not replacements for reading the code. A match
 
 - **`ast-grep`** (`command -v ast-grep`): read the companion **`ast-grep.md`** and run a structural pass. It enumerates known-dangerous patterns — injection sinks, risky-API call sites, untrusted-type flows — that a skim of a large diff can miss. If ast-grep isn't installed, review normally.
 
-- **`/ds-semgrep`** (`/ds-semgrep`): run a local SAST scan with Semgrep for fast, rule-based security findings. It covers dependency SCA (`/ds-osv`) with source SAST. If semgrep isn't installed, skip the SAST step and rely on the manual review.
+- **`/ds-semgrep`** (`command -v semgrep`): run a local SAST scan for fast, rule-based security findings — source SAST to `/ds-osv`'s dependency SCA. If semgrep isn't installed, skip the SAST step and rely on the manual review.
 
 If neither tool is installed, the full read is still the baseline.
 

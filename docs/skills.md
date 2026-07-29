@@ -257,6 +257,13 @@ Scan the project's dependency manifests and lockfiles for known vulnerabilities 
 - **Args:** an optional scope (manifest, lockfile, or directory); defaults to the project root. `--fix` bumps **direct** dependencies to a patched version where one exists; transitive-only advisories are reported, not force-bumped.
 - **Reach for it when:** before a release or PR that changes dependencies, or on a schedule to catch newly-disclosed advisories. Needs `osv-scanner` on PATH — `devskills doctor` installs it.
 
+### `/ds-semgrep` — review
+
+Local SAST: run Semgrep over the source for dangerous patterns — injection sinks, leaked secrets, auth-bypass shapes — and report them classified by the scanner's own confidence (blocking / warning / info). It is the source-code counterpart to `/ds-osv`'s dependency scanning, and the mechanical front-half of `/ds-security-review`: it produces leads fast, the review traces them for exploitability.
+
+- **Args:** an optional path (defaults to the current directory); `--config <id>` selects a ruleset (`p/default`, `p/security-audit`, `p/owasp-top-ten`), `--json` emits machine-readable output. There is no autofix — Semgrep's is experimental and unsafe for security rules.
+- **Reach for it when:** before `/ds-security-review` to surface leads, or after a change to confirm no new dangerous pattern crept in. Needs `semgrep` on PATH — `devskills doctor` installs it.
+
 ---
 
 ## Plans
@@ -307,6 +314,12 @@ Prove or disprove a **falsifiable** claim with fresh local evidence — not a re
 Step up one layer of abstraction and map how an area fits the bigger picture: its responsibility, neighbouring modules, callers, and boundaries. No line-by-line read, no code dumps.
 
 - **Reach for it when:** entering unfamiliar code, or before planning a change in an area you don't hold in your head.
+
+### `/ds-onboarding` — action
+
+The arrival brief for a person, not a code tour: who owns what, the review and on-call rituals, where decisions get recorded, the build/test/run entry points, the guardrails and the pitfalls that aren't written down anywhere — closing with one small, low-risk first contribution and the reviewer to ping. `/ds-zoom-out` is for understanding code you're about to change; this is for a teammate who has just joined.
+
+- **Reach for it when:** someone new joins the project, or a contractor or reviewer needs to be productive without stepping on the team.
 
 ---
 

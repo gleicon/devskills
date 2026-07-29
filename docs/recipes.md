@@ -562,6 +562,7 @@ Indexed by *what you want to do*, not by kind — for the suffix taxonomy (`-mod
 | Turn an idea into a verifiable contract | `/ds-spec` |
 | Pressure-test a plan or PR approach | `/ds-grill-me` |
 | Understand unfamiliar code before changing it | `/ds-zoom-out` |
+| Bring a new teammate up to speed on the project | `/ds-onboarding` |
 | Build with real, refactor-proof tests | `/ds-tdd-mode` |
 | Keep the core tested as you work (mode) | `/ds-test-mode` |
 | Build a data pipeline correctly as you go (mode) | `/ds-data-mode` |
@@ -573,6 +574,7 @@ Indexed by *what you want to do*, not by kind — for the suffix taxonomy (`-mod
 | Find real bugs (correctness) | `/ds-bug-review` |
 | Audit security, language-agnostic | `/ds-security-review` |
 | Scan dependencies for known CVEs | `/ds-osv` |
+| Scan source for dangerous patterns (SAST) | `/ds-semgrep` |
 | Check the data is correct, consistent, and well-modeled | `/ds-data-review` |
 | Check whether the right things are tested | `/ds-test-quality-review` |
 | Plan a performance optimization (costed) | `/ds-perf-plan` |
