@@ -212,4 +212,6 @@ golangci-lint run                                   # lint gate (golangci-lint v
 gofmt -w .                                          # format
 ```
 
-Skills and profiles live in `skills/` and `agents-md/` and are embedded into the binary at build time — edit the source there, not an installed copy. Releases are cut by pushing a `v*` tag (goreleaser, via `.github/workflows/release.yml`); `goreleaser build --snapshot --clean` dry-runs the cross-build locally.
+Skills and profiles live in `skills/` and `agents-md/` and are embedded into the binary at build time — edit the source there, not an installed copy.
+
+A release is a `VERSION` bump. Merging that bump to `main` runs the checks above and, if `v<VERSION>` isn't tagged yet, tags it and hands off to goreleaser (`.github/workflows/release.yml`, upstream only). Merges that leave `VERSION` alone release nothing. `goreleaser build --snapshot --clean` dry-runs the cross-build locally.
