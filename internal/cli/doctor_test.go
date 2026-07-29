@@ -34,9 +34,15 @@ func TestRunDoctorCheckReportsStatus(t *testing.T) {
 	if !strings.Contains(s, "missing") || !strings.Contains(s, "ast-grep") || !strings.Contains(s, "ds-security-review") {
 		t.Errorf("expected ast-grep missing with its skill:\n%s", s)
 	}
+	if !strings.Contains(s, "missing") || !strings.Contains(s, "semgrep") || !strings.Contains(s, "ds-semgrep") {
+		t.Errorf("expected semgrep missing with its skill:\n%s", s)
+	}
 	// Missing but brew present → check surfaces the install command.
 	if !strings.Contains(s, "brew install ast-grep") {
 		t.Errorf("expected the install hint for ast-grep:\n%s", s)
+	}
+	if !strings.Contains(s, "brew install semgrep") {
+		t.Errorf("expected the install hint for semgrep:\n%s", s)
 	}
 }
 
@@ -56,6 +62,7 @@ func TestRunDoctorFixRunsInstallers(t *testing.T) {
 	want := [][]string{
 		{"brew", "install", "osv-scanner"},
 		{"brew", "install", "ast-grep"},
+		{"brew", "install", "semgrep"},
 		{"go", "install", "github.com/gleicon/tldt/cmd/tldt@latest"},
 	}
 	if !equalCmds(ran, want) {

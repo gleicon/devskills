@@ -76,6 +76,7 @@ The **phase spine** follows the arc of a change. The groups below it — modes, 
 | **Review** | `/ds-code-quality-review` | maintainability + single source of truth |
 | | `/ds-bug-review` | correctness — real bugs, not style |
 | | `/ds-security-review` | exploitable weaknesses; each finding names the attack |
+| | `/ds-semgrep` | local SAST scan with Semgrep (pairs with /ds-security-review) |
 | | `/ds-data-review` | data correctness, integrity, migration safety |
 | | `/ds-test-quality-review` | is the risky logic actually covered, and are the tests real? |
 | | `/ds-doc-quality-review` | docs accuracy against the code, dead links, staleness |
@@ -170,6 +171,7 @@ One binary, four commands:
 |------|-------|---------|
 | [osv-scanner](https://github.com/google/osv-scanner) | `/ds-osv` | supply-chain vulnerability scan against the OSV/CVE database |
 | [ast-grep](https://github.com/ast-grep/ast-grep) | `/ds-security-review` | structural pattern search that widens the security pass ([cookbook](docs/ast-grep.md)) |
+| [semgrep](https://semgrep.dev/) | `/ds-semgrep` | local SAST scan for code-level security patterns |
 | [tldt](https://github.com/gleicon/tldt) | `/ds-tldt` | extractive text summarization — no LLM, no cost |
 
 ## Docs
@@ -201,17 +203,29 @@ MIT — see [LICENSE](LICENSE).
 
 ## Development
 
-No Makefile — it's a plain Go module (needs **Go 1.26+**). The common tasks:
+It's a plain Go module (needs **Go 1.26+**). A `Makefile` wraps the common tasks; the raw commands are identical:
 
 ```bash
-go build .                                          # build the ./devskills binary
-go run . --help                                     # run the CLI without building first
-go test -race ./...                                 # unit tests (embed integrity, sync, scaffold, cli, …)
-go test -tags integration ./internal/acceptance/    # end-to-end acceptance — builds the binary, drives it in a sandbox
-golangci-lint run                                   # lint gate (golangci-lint v2; config in .golangci.yml)
-gofmt -w .                                          # format
+make build                    # build the ./devskills binary
+make install                  # install the current tree to $GOPATH/bin/devskills
+make test                     # unit tests (embed integrity, sync, scaffold, cli, …)
+make test-integration         # end-to-end acceptance — builds the binary, drives it in a sandbox
+make lint                     # lint gate (golangci-lint v2; config in .golangci.yml)
+make fmt                      # format
+make snapshot                 # goreleaser cross-build dry-run
+make clean                    # remove ./devskills and ./dist
+```
+
+Raw equivalents:
+
+```bash
+go build -ldflags "-s -w -X github.com/gleicon/devskills/internal/cli.version=$(cat VERSION)" -o ./devskills .
+go test -race ./...
+go test -tags integration ./internal/acceptance/
+golangci-lint run
+gofmt -w .
 ```
 
 Skills and profiles live in `skills/` and `agents-md/` and are embedded into the binary at build time — edit the source there, not an installed copy.
 
-A release is a `VERSION` bump. Merging that bump to `main` runs the checks above and, if `v<VERSION>` isn't tagged yet, tags it and hands off to goreleaser (`.github/workflows/release.yml`, upstream only). Merges that leave `VERSION` alone release nothing. `goreleaser build --snapshot --clean` dry-runs the cross-build locally.
+A release is a `VERSION` bump. Merging that bump to `main` runs the checks above and, if `v<VERSION>` isn't tagged yet, tags it and hands off to goreleaser (`.github/workflows/release.yml`, upstream only). Merges that leave `VERSION` alone release nothing. `make snapshot` runs `goreleaser build --snapshot --clean` for a local cross-build dry-run.

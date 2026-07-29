@@ -13,9 +13,15 @@ When invoked, audit the code in scope against one question: **how would an attac
 - Freeform scope ("the auth handler", "the upload path") is interpreted reasonably.
 - `--fix` → after reporting, apply only the findings whose fix is **mechanical and unambiguous** — a single obvious edit, no design judgment (e.g. removing a secret committed to source, tightening over-permissive file modes). A wrong fix to a security finding is worse than none, so anything that changes behavior or rests on an assumption you couldn't verify **stays report-only**. After applying, re-run any build/test/lint check already in the loop and revert any fix that breaks it — or that touched more than the intended mechanical edit. Close with a summary of what was applied and what was left.
 
-## ast-grep structural pass (when available — experimental)
+## Tool-aided passes (when available — additive)
 
-When `ast-grep` is installed (`command -v ast-grep`), read the companion **`ast-grep.md`** (same directory as this file) and run a structural pass. It's an **additive** aid: it mechanically enumerates known-dangerous patterns — injection sinks, risky-API call sites, untrusted-type flows — that a skim of a large diff can miss, turning each match into one more branch to trace in full context. It never narrows what you read, and a match is a lead, not a verdict. If ast-grep isn't installed, review normally — the full read is the baseline.
+Use these as **mechanical aids**, not replacements for reading the code. A match is a lead; you still trace it to confirm exploitability.
+
+- **`ast-grep`** (`command -v ast-grep`): read the companion **`ast-grep.md`** and run a structural pass. It enumerates known-dangerous patterns — injection sinks, risky-API call sites, untrusted-type flows — that a skim of a large diff can miss. If ast-grep isn't installed, review normally.
+
+- **`/ds-semgrep`** (`/ds-semgrep`): run a local SAST scan with Semgrep for fast, rule-based security findings. It covers dependency SCA (`/ds-osv`) with source SAST. If semgrep isn't installed, skip the SAST step and rely on the manual review.
+
+If neither tool is installed, the full read is still the baseline.
 
 ## What to check
 
