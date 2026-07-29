@@ -2,22 +2,93 @@ name: release
 
 on:
   push:
-    tags: ["v*"]
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: write
 
+concurrency:
+  group: release-${{ github.ref }}
+
 jobs:
-  goreleaser:
+  gate:
+    # The fork must never release; its Actions are disabled, but the guard is
+    # what keeps that true if they are ever turned back on.
+    if: github.repository == 'gleicon/devskills'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: format
+        run: |
+          gofmt -w .
+          git diff --exit-code
+
+      - name: deps
+        run: |
+          go mod tidy
+          git diff --exit-code go.mod go.sum
+
+      # Pinned: a golangci-lint release must never turn the gate red on an
+      # untouched tree. .golangci.yml is v2, which needs action v8.
+      - uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.11.4
+
+      - name: unit tests
+        run: go test -race ./...
+
+      # Tag-gated — a plain `go test ./...` skips this package and still reports green.
+      - name: acceptance tests
+        run: go test -tags integration ./internal/acceptance/
+
+  # Tagging and releasing share a job on purpose: a tag pushed with GITHUB_TOKEN
+  # does not trigger workflows, so a separate tag-then-release pair never fires.
+  release:
+    needs: gate
+    if: github.repository == 'gleicon/devskills'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # goreleaser needs full history for the changelog
+
+      - name: resolve version
+        id: version
+        run: |
+          set -euo pipefail
+          version=$(tr -d '[:space:]' < VERSION)
+          if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "VERSION is not semver: '$version'" >&2
+            exit 1
+          fi
+          if git rev-parse -q --verify "refs/tags/v$version" >/dev/null; then
+            echo "v$version is already released — nothing to do"
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "release=true" >> "$GITHUB_OUTPUT"
+            echo "version=$version" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Lightweight tag: an annotated one would need a bot identity configured
+      # for no gain, since goreleaser reads either.
+      - name: tag
+        if: steps.version.outputs.release == 'true'
+        run: |
+          git tag "v${{ steps.version.outputs.version }}"
+          git push origin "v${{ steps.version.outputs.version }}"
+
       - uses: actions/setup-go@v5
+        if: steps.version.outputs.release == 'true'
         with:
           go-version-file: go.mod
+
       - uses: goreleaser/goreleaser-action@v6
+        if: steps.version.outputs.release == 'true'
         with:
           version: "~> v2"
           args: release --clean
