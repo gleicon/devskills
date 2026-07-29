@@ -78,4 +78,4 @@ Each rule's matches are leads — trace the source→sink path in the surroundin
 
 ## Install
 
-`brew install ast-grep` (macOS) or `npm i -g @ast-grep/cli` (anywhere with Node). `install.sh` does this for you (Homebrew → npm fallback); `scripts/upgrade-deps.sh` upgrades it.
+`brew install ast-grep` (macOS) or `npm i -g @ast-grep/cli` (anywhere with Node) — or let `devskills doctor --fix` install it for you.
