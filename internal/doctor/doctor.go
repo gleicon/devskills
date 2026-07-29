@@ -42,6 +42,15 @@ var Tools = []Tool{
 		},
 	},
 	{
+		Name:   "semgrep",
+		Skill:  "ds-semgrep",
+		DocURL: "https://semgrep.dev/docs/getting-started/",
+		Installers: []Installer{
+			{Requires: "brew", GOOS: "darwin", Command: []string{"brew", "install", "semgrep"}},
+			{Requires: "pip", Command: []string{"pip", "install", "semgrep"}},
+		},
+	},
+	{
 		Name:   "tldt",
 		Skill:  "ds-tldt",
 		DocURL: "https://github.com/gleicon/tldt",

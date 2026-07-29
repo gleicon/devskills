@@ -1,39 +1,48 @@
 ---
 name: ds-onboarding
-description: "Get a new developer oriented in a codebase: map the entry points, conventions, and risks they need to know before making changes."
+description: "Onboard a new team member to a project: team context, ownership, rituals, and the first safe contribution path — not a generic code tour."
 disable-model-invocation: true
 ---
 
-Onboarding is not a tour of every file. It is a focused brief that lets a new developer make a safe first change.
+`/ds-onboarding` is for team growth, not personal navigation. It answers: *what does a new teammate need to know to participate without stepping on the team?* Use `/ds-zoom-out` when you need to understand code before a change; use `/ds-handoff` when compacting a session for someone else to continue. This skill is the arrival brief for a new contributor.
 
 ## When To Use
 
 - A new teammate joins the project.
-- The user asks "how does this repo work?" or "what should I know before touching X?".
-- You are returning to a codebase after a long break.
+- A contractor or reviewer needs to become productive quickly.
+- The user asks "what should a new team member know before their first PR?".
+
+Do not use this for your own "what does this file do?" questions — reach for `/ds-zoom-out` instead.
 
 ## Workflow
 
-1. Identify the user's role and goal: backend, frontend, infra, reviewer, or full-stack?
-2. Map the entry points: build/test commands, main package, key config files, and how to run locally.
-3. Summarize the codebase shape: major directories, module boundaries, and the data flow for one representative path.
-4. Surface the guardrails: test conventions, lint/format gates, required env vars, auth patterns, and any sensitive areas.
-5. Flag the common pitfalls: coupling traps, implicit state, magic files, or places where copy-paste fails.
-6. Suggest a safe first change and the tests to run.
+1. Identify the new contributor's role: backend, frontend, infra, data, reviewer, or full-stack?
+2. Surface team context: owner names, review rituals, Slack/Discord channels, on-call rotation, and where decisions are recorded.
+3. Map project entry points: build, test, local run, and CI checks.
+4. Summarize the codebase shape: major modules, data flow for one representative path, and which parts are owned by which team.
+5. List guardrails: conventions, lint/format gates, required env/auth, and sensitive areas.
+6. Flag common pitfalls: coupling traps, implicit state, magic files, tribal knowledge, or areas where copy-paste fails.
+7. Propose a safe first contribution: a small, low-risk task, the reviewer to ping, and the tests to run.
 
 ## Output
 
 Use this shape:
 
 ```text
+## Team context
+- owners: <names/teams>
+- rituals: <standups, reviews, incident process>
+- decisions: <ADR, RFC, or docs location>
+
 ## Entry points
 - build: <command>
 - test: <command>
 - run locally: <command>
+- CI: <command / link>
 
 ## Codebase shape
-- <dir/file>: <what it owns>
-- <dir/file>: <what it owns>
+- <dir/module>: <what it owns>
+- <dir/module>: <what it owns>
 
 ## Guardrails
 - <convention/tool>: <what it enforces>
@@ -42,8 +51,8 @@ Use this shape:
 ## Common pitfalls
 - <area>: <what to watch for>
 
-## Suggested first change
-- <small, low-risk task> — run <tests> after.
+## Suggested first contribution
+- <small, low-risk task> — review with <owner/reviewer> — run <tests>.
 ```
 
 Keep it short enough to read in one sitting. Link to longer docs only when asked.

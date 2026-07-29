@@ -12,7 +12,7 @@ The phase spine is the usual arc of a change; the groups below it (modes, langua
 
 ### Orient — *"Where am I? What does this code do?"*
 - `/ds-zoom-out` — step up a level and map how the current code fits the bigger picture, before you change it.
-- `/ds-onboarding` — get a new developer oriented: entry points, conventions, guardrails, and a safe first change.
+- `/ds-onboarding` — onboard a new team member to a project: team context, ownership, rituals, and a safe first contribution.
 
 To restore a persisted session, see `/ds-project-resume` under Project memory.
 
@@ -47,6 +47,7 @@ Turn on the relevant **Modes** (below) for the build — they set the engineerin
 - `/ds-notebook-review` — notebook state, output hygiene, reproducibility.
 - `/ds-quality-gate` — run the review pipeline as a gate over the whole branch/feature.
 - `/ds-osv` — scan dependencies for known vulnerabilities (OSV).
+- `/ds-semgrep` — run a local SAST scan with Semgrep for code-level security patterns.
 
 For a specific language, prefer its **Language review** (below) — it folds in idioms and security.
 
