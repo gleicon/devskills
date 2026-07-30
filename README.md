@@ -57,6 +57,22 @@ To give a project a persistent engineering baseline, scaffold its `AGENTS.md` (a
 devskills init --lang go
 ```
 
+## Hello world — a composable workflow
+
+devskills is intentionally not a fixed pipeline. You invoke the skills you need, when you need them, like shell commands. If you are unsure where to start, try this sequence for a single change:
+
+```
+/ds-spec                 # turn the idea into a structured spec
+/ds-tiger-style-mode     # set the engineering bar for the session
+/ds-blueprint            # design the target shape (new) or /ds-architecture-plan (existing)
+/ds-debug                # build it; use /ds-verify-this for each claim
+/ds-security-review      # audit the diff for exploitable weaknesses
+/ds-verify-this          # prove the change does what the spec claimed
+/ds-handoff              # compact the session for the next person
+```
+
+Skip any step that doesn't fit. The [recipes](docs/recipes.md) show more worked sequences — pre-PR gates, multi-PR queues, and the optional `.project/` memory loop.
+
 ## The catalog
 
 The **phase spine** follows the arc of a change. The groups below it — modes, language reviews, project memory, utilities — cut across phases; reach for them whenever they apply. Everything works standalone: no skill requires `.project/` or any other.
@@ -174,6 +190,12 @@ One binary, four commands:
 | [ast-grep](https://github.com/ast-grep/ast-grep) | `/ds-security-review` | structural pattern search that widens the security pass ([cookbook](docs/ast-grep.md)) |
 | [semgrep](https://semgrep.dev/) | `/ds-semgrep` | local SAST scan for code-level security patterns |
 | [tldt](https://github.com/gleicon/tldt) | `/ds-tldt` | extractive text summarization — no LLM, no cost |
+
+### Compliance and secure development
+
+`/ds-security-review`, `/ds-osv`, and `/ds-semgrep` are **author-time** tools: they run in your assistant and produce evidence you can capture, share, or attach to a PR. They help you build secure code and demonstrate due diligence, but they are **not tamper-proof** — a user can skip the skill or edit the output.
+
+For compliance regimes that require tamper-evident enforcement, you still need a server-side gate: pre-commit checks, PR checks, or release-pipeline scanners. The heavy model — machine-readable output from these skills fed into a CI gate — is a valid future direction; the default is lightweight aid for the developer.
 
 ## Docs
 
