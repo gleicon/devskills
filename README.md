@@ -90,6 +90,7 @@ The **phase spine** follows the arc of a change. The groups below it — modes, 
 | | `/ds-perf-plan` | a graded, ranked optimization plan with a cost model |
 | **Build** | `/ds-debug` | root-cause a failure: reproduce, isolate, fix, prove |
 | **Clean** | `/ds-deslop` | strip AI slop from the diff before any review |
+| **Structural** | `/ds-structural-diff` | map the structural delta of a large change: functions, types, public API, imports |
 | **Review** | `/ds-code-quality-review` | maintainability + single source of truth |
 | | `/ds-bug-review` | correctness — real bugs, not style |
 | | `/ds-security-review` | exploitable weaknesses; each finding names the attack |

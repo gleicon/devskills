@@ -11,6 +11,7 @@ Scope: the changed files on the current branch (same as `/ds-code-quality-review
 ## The pipeline (in order)
 
 ```
+0. /ds-structural-diff     — optional pre-pass: map the structural delta (new/removed/modified functions, types, public API, imports) for large changes
 1. /ds-deslop              — strip narrating comments, defensive overkill, type escape hatches (clean the incoming diff)
 2. /ds-code-quality-review — single source of truth + structure: delete duplicates, competing implementations, and dead abstractions, then is the diff making the codebase worse? (run early, so later passes don't audit code that should have been deleted)
 3. /ds-test-quality-review — is the risky logic covered with real, non-trivial tests?
@@ -20,6 +21,8 @@ Scope: the changed files on the current branch (same as `/ds-code-quality-review
 7. /ds-doc-quality-review  — is the public API, config, and non-obvious behavior documented?
 8. /ds-deslop              — final cleanup: re-run to strip any slop the between-pass fixes introduced
 ```
+
+The `/ds-structural-diff` pass is optional. Run it when the change is large, unfamiliar, or you need to know what changed at the architectural level before the deeper passes. It is report-only and does not alter files.
 
 Each pass answers a **different question**. They do not overlap. The order matters: strip noise *first* so the structural and correctness passes see signal, not slop — and strip it *again last*, because this gate implements accepted fixes between passes, and those fixes are themselves freshly-generated code that can carry slop.
 

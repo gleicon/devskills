@@ -132,6 +132,14 @@ Pragmatic testing mode: as you build normally, ensure the code that matters gets
 
 ## Quality & cleanup
 
+### `/ds-structural-diff` — review
+
+Structural delta for a large change: added, removed, or modified functions, types, public APIs, and imports. Runs `ast-grep` against the base and current versions of the changed files, normalizes the matches, and produces a human-scannable map so you know where the architectural surface moved before the deeper reviews. Report-only; a useful pre-pass for `/ds-quality-gate`.
+
+- **Args:** no args (base = `main`/`master` merge-base), `--base <commit>`, `--full` (compare whole base tree), `--lang <Language>` (e.g. `Go`, `TypeScript`), `--scope <path>`.
+- **Output:** added surface, removed surface, modified signatures, slop signals (duplicates, unused new dependencies, new public API without docs/tests), and a next-steps recommendation.
+- **Reach for it when:** a large agent generation or refactor lands, or as the first step of `/ds-quality-gate` to orient the later passes. Needs `ast-grep` on PATH — `devskills doctor` installs it.
+
 ### `/ds-code-quality-review` — review
 
 Extremely strict maintainability audit: abstraction quality, file sprawl (the 1k-line smell), spaghetti-condition growth — plus **single source of truth**: duplicate implementations, constant drift, parallel-agent conflicts (two agents introducing competing helpers), pattern violations, over-engineered abstractions with one implementation, and unjustified dependencies (the single-source-of-truth checks, once their own review). Ambitiously hunts "code judo" — restructurings that delete whole categories of complexity while preserving behavior.

@@ -35,6 +35,9 @@ Turn on the relevant **Modes** (below) for the build — they set the engineerin
 ### Clean — *"Strip the AI slop before anyone looks at it."*
 - `/ds-deslop` — remove narrating comments, defensive overkill, and type escape hatches; align the diff with the surrounding code. Run before any review.
 
+### Structural — *"What changed at the architectural level?"*
+- `/ds-structural-diff` — map the structural delta of a large change: added/removed/modified functions, types, public APIs, and imports. Use as a standalone pass or as the first step of `/ds-quality-gate`.
+
 ### Review — *"Is it correct, safe, idiomatic, maintainable?"*
 - `/ds-code-quality-review` — maintainability + single-source-of-truth: is the diff making the codebase worse?
 - `/ds-bug-review` — correctness: real bugs, not style.

@@ -383,6 +383,7 @@ The code already exists, so **map first** — establish ground truth before plan
 ```
 /ds-project-map                # scan the existing repo → .project/map.md
 /ds-zoom-out                   # map the area you're about to touch (responsibility, callers, boundaries)
+/ds-structural-diff --full     # full-repo structural inventory: surface, public APIs, dependencies
 /ds-roadmap               # seed the roadmap from your current goals / backlog
 you → "implement the first task"
 ...
@@ -498,7 +499,21 @@ gh pr ready
 
 The draft-PR → `/ds-grill-me` → ready loop is [documented in detail above](#the-draft-pr-grill-loop); the `.project/` skills just add persistent state around it.
 
-### A big change (architecture / large refactor)
+### Mapping a large change before deep review
+
+When a branch dumps a lot of generated or refactored code, the line-by-line diff is too much to hold in your head. `/ds-structural-diff` produces a compact map of what moved at the architectural level — new/removed/modified functions, types, public APIs, and imports — so you know where to aim the deeper skills.
+
+```
+/ds-structural-diff            # map the architectural surface that changed
+/ds-code-quality-review        # now judge the structure: duplicates, dead surface, competing implementations
+/ds-security-review            # new public API / input paths / network or I/O surface
+/ds-bug-review                 # correctness pass on the changed areas
+/ds-verify-this "<headline claim>"  # prove the behavior that matters
+```
+
+Use it as a standalone sequence, or as the first pass of `/ds-quality-gate` on a big branch. The structural diff is report-only; it narrows the scope of the expensive passes rather than replacing them.
+
+## A big change (architecture / large refactor)
 
 Big changes span sessions, so lean hard on checkpoint/resume and incremental phases. Understand and decide *before* touching anything.
 
@@ -509,6 +524,7 @@ Big changes span sessions, so lean hard on checkpoint/resume and incremental pha
 /ds-roadmap               # break it into ordered, individually-shippable phases
 /ds-tiger-style-mode
 you → "implement phase 1: introduce the new interface behind the old one"
+/ds-structural-diff            # confirm the phase's surface matches the plan
 /ds-code-quality-review        # audit each phase
 /ds-verify-this "behavior is unchanged after phase 1"   # the refactor invariant
 /ds-project-checkpoint         # persist before you stop — this will span sessions
@@ -570,6 +586,7 @@ Indexed by *what you want to do*, not by kind — for the suffix taxonomy (`-mod
 | Execute step-by-step, keeping control at every break (mode) | `/ds-step-mode` |
 | Remove AI slop from a fresh branch | `/ds-deslop` |
 | Bring a codebase's comments to discipline | `/ds-comment-review` |
+| Map the structural surface of a large change | `/ds-structural-diff` |
 | Judge structure / find simplifications | `/ds-code-quality-review` |
 | Find real bugs (correctness) | `/ds-bug-review` |
 | Audit security, language-agnostic | `/ds-security-review` |
