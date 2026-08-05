@@ -67,6 +67,28 @@ Canonical fix, mechanical enough to encode as a rule:
 > One topic per question. Whenever tempted to join two ideas with "and" or "or",
 > split them.
 
+### 3.1b Second defect — mid-message pivot
+
+Found in-session, after the first was diagnosed, and **not covered by any of the three
+sources**.
+
+A handback listed actions in order — create branch, add, commit, then run
+`/ds-project-checkpoint` — and only afterwards stated the condition that made the
+checkpoint premature. The user reads and executes at the same time, so by the time the
+condition arrived, the checkpoint call was already typed and had to be cleared.
+
+Every individual line was correct. The message was still broken.
+
+> A message containing actions must be executable top to bottom without backtracking.
+> Anything that defers, conditions, or invalidates an instruction goes **before** that
+> instruction, never after. Check: could the reader run every line in order and be
+> correct?
+
+Same shape as the mid-sentence pivot, one level up. Survey design has no execution
+step; plain language has no reader-as-actor; and i-have-adhd's rule 3 — "end with one
+concrete next action" — points the wrong way for an agent handing back several
+commands, so it would have produced the same bug.
+
 ### 3.2 Convergent prior art — `ayghri/i-have-adhd`
 
 Reached part of the same answer from ADHD working-memory limits rather than survey
@@ -205,15 +227,11 @@ respectively. That is good evidence these rules are real rather than taste.
 
 ## 5. The test instrument
 
-Run against a 14-file documentation set in a separate project. **Results pending —
-paste them into the build session.** Report-only, before/after, no file edits: for a
-test, the rewrite is what proves a rule earns its place.
+Run against `doc/overquota/` — 14 files, 4,650 lines, 4,279 prose units. A technical
+reference set, already carefully written. Report-only, before/after, no file edits: for
+a test, the rewrite is what proves a rule earns its place.
 
-The closing section is the actual experiment. Rules that fire constantly are probably
-real. Rules that fire once are noise not worth shipping. Rules that fought the
-document's purpose are the flattens-nuance risk showing up in practice. **The
-exceptions list is the most valuable output — it tells us what the agents.md version
-must not say.**
+**Results in §5.2.** The prompt is reproduced first so the two can be read together.
 
 ```
 Review the Markdown files in this project for plain-language defects.
@@ -268,6 +286,104 @@ Close with:
 - Any place where two rules disagreed, or where a rule fought the
   document's purpose.
 ```
+
+### 5.2 Results
+
+31 distinct findings — 28 single-site, 3 cross-file — plus an 802-item census under
+rule 3. **Caveat that governs every number below: one corpus, and a good one.** These
+documents are careful technical reference prose, not raw AI output. Low yield here is
+evidence about *this* register, not proof a rule is worthless.
+
+| Rule | Fired | Verdict |
+|---|---:|---|
+| 1 — two ideas, one sentence | 7 | **Keep.** Highest-value rule. Caught a vacuous comparison in the opening argument of the whole set — "the clearest comprehension defect in the set". |
+| 2 — mid-sentence pivot | 3 | **Keep.** Low count, high precision. One hit was the named pattern verbatim ("not X so much as Y"). Our signature defect. |
+| 3 — length | 802 | **Redesign.** See §5.3. |
+| 4 — term drift | 2 (×42 and ×36 sites) | **Keep, highest leverage.** Cross-file, invisible to a human reading one file at a time. |
+| 5 — actorless passive | 8 | **Keep, with a carve-out.** See §5.4. |
+| 6 — stacked hedges | 1 | Near-dead here. |
+| 7 — noun pile | 3 | Weak-keep. Insight: the corpus hyphenates compounds, and hyphenation *is* the fix — so the rule is quiet wherever that discipline holds. |
+| 8 — dropped articles | 2 | Near-dead here. Both justified by inconsistency with their own table, not by the rule. |
+| 9 — elegant variation | 2 | **Merge into rule 4.** Both are "one thing, two names". |
+| 10 — plainer twin | **0** | Zero hits in 4,650 lines, after checking ~30 words and clearing 3 false positives. |
+
+**Review yield and prevention value are different axes.** Rules 6, 8 and 10 barely
+fire on well-written prose, but stating them preventively costs one clause each and
+they are trivially cheap to obey. They may belong in the agents.md block while failing
+to earn a place in the review skill. Do not conflate "found nothing" with "not worth
+saying".
+
+### 5.3 Rule 3 broke, and how it broke matters
+
+At the specified threshold it fires on **802 of 4,279 prose units — 19% of all prose in
+the set**. That is not a finding list, it is a description of the house style.
+
+The diagnosis is the valuable part. These sentences routinely carry a claim, its
+measured magnitude, its direction and its citation *together*, because the set's own
+stated standard is that every mechanism is verified and every measurement is stated
+with the query that produced it. The reviewer's example: a 30-word sentence that is
+"four facts that must be read together to be usable. Splitting it into four sentences
+would satisfy the rule and make the passage harder to act on."
+
+**This is the flattens-nuance risk from §4.1, confirmed empirically rather than
+predicted.**
+
+Three things follow:
+
+1. **The instruction cap held; the description cap did not.** 20 words for an
+   instruction was sound — the worst single finding in the set is a 68-word
+   *instruction* opening a ~400-word paragraph containing three further actions. 25
+   words for description was far too tight.
+2. **A rule that must be silently reinterpreted to be useful is badly specified.** The
+   reviewer re-thresholded on its own initiative to ~45 words describing / 25
+   instructing, then reported a census instead of 800 findings. That was the right
+   call, and it should be *specified* rather than improvised.
+3. **The output contract needs a bound.** Left unbounded, rule 3 would have buried the
+   25 findings under rules 1, 2, 4, 5, 6, 7, 8 and 9 — the ones actually worth acting
+   on. A review skill needs "report the N worst, census the rest" written into it.
+
+Candidate reformulation for the build session: drop the raw word count for description
+and test the *structure* instead — a sentence may carry one claim plus its evidence;
+it may not carry a chain of qualifications. Word count stays as the instruction rule,
+where it worked.
+
+### 5.4 Rule conflicts observed in practice
+
+These are the most transferable findings, because each one is a resolution we would
+otherwise have had to guess at.
+
+- **Rule 1 beats rule 3.** Splitting for ideas sometimes leaves a 33-word first half.
+  The reviewer took rule 1 as governing and noted the residue, reasoning that a clear
+  33-word sentence beats two muddled ones — and that rule 3's own instruction is
+  "split it; do not compress it". Correct, and worth encoding as a precedence rule.
+- **Rule 5 has a person/system boundary.** Where the missing actor is a *system* — the
+  Demand API, the three services, this document — naming it costs nothing and adds
+  precision. Where the missing actor is a *person*, the passive is required and
+  correct. The reviewer declined those, citing a standing no-blame constraint. The
+  carve-out has to be in the rule, not discovered per-run.
+- **Rule 4 can create ambiguity instead of removing it.** For one contested pair,
+  collapsing onto a single name was wrong because that name was already overloaded —
+  a code identifier, a gate, and a measurement column. Resolution: **declare the
+  distinction once, then hold to it.** "Pick one name" is the wrong instruction when
+  the collision is with code.
+- **A missing rule surfaced.** The reviewer flagged a British spelling in a bolded
+  instruction, against the set's own documented convention — outside all ten rules.
+  That is *convention consistency*, distinct from term drift. Candidate rule 11.
+
+### 5.5 The exceptions list
+
+Three declines, each with a reason worth keeping:
+
+1. A four-part parallel sentence where "the single-sentence form **is** the argument" —
+   splitting it would lose the claim that these are one work item, not four.
+2. A derivation where each clause's bound depends on the previous one — "splitting it
+   turns a derivation into a list of assertions, and the reader loses the chain that
+   makes the conclusion follow."
+3. A passive whose actor is a person, protected by a standing no-blame constraint.
+
+**These three sentences are the shape of what the agents.md block must not forbid.**
+Parallel structure, derivation chains, and protective passives are all correct writing
+that a naive plain-language rule would destroy.
 
 ---
 
@@ -394,19 +510,32 @@ architectural. Assessed against `agents-md/system/agents-base.md`.
 
 ## 8. Open — decide in the build session
 
-1. **Read the 14-file test results.** Which rules fired constantly (ship), which fired
-   once (drop), which fought the document's purpose (the exceptions list).
-2. **Name the artifacts** — the `-mode` skill and the two new skills. Convention:
+1. **Reformulate rule 3** (§5.3) — structural test for description, word count kept
+   for instruction. Then re-run against the same corpus to confirm the fire rate drops
+   without losing the genuine finds.
+2. **Run a second corpus, ideally raw AI output.** Rules 6, 8 and 10 scored near zero
+   on careful prose. That is one sample of one register, and it cannot settle whether
+   they belong in the review skill.
+3. **Name the artifacts** — the `-mode` skill and the two new skills. Convention:
    `ds-` prefix on every skill, `-mode` suffix on modes.
-3. **Decide the source-of-truth direction** between the agents.md block and the mode,
+4. **Merge rule 9 into rule 4**, and add the "declare the distinction once" escape for
+   names that collide with code identifiers (§5.4).
+5. **Write the person/system carve-out into rule 5** rather than leaving it to be
+   rediscovered per-run.
+6. **Encode rule 1 > rule 3 precedence**, and decide whether other pairs need one.
+7. **Decide on candidate rule 11** — convention consistency, distinct from term drift
+   (§5.4).
+8. **Specify the output contract** for the review skill: report the N worst, census the
+   rest. Unbounded output buried the findings that mattered (§5.3).
+9. **Decide the source-of-truth direction** between the agents.md block and the mode,
    and whether a guard test is worth its ceiling.
-4. **Reconcile** "prefer established libraries" against "unjustified dependencies".
-5. **Write the scope condition** for the backward-compatibility rule.
-6. **Decide whether to build `evals/`.** Without it, no agents.md wording change can be
-   shown to have helped. The 14-file run is a manual eval; encoding it is the
-   difference between measuring and guessing.
-7. **Audit the existing base** — `agents-base.md`, `concise.md`, `phase-hints.md` — for
-   behaviour-related items to fold into the same branch.
+10. **Reconcile** "prefer established libraries" against "unjustified dependencies".
+11. **Write the scope condition** for the backward-compatibility rule.
+12. **Decide whether to build `evals/`.** Without it, no agents.md wording change can be
+    shown to have helped. The 14-file run is a manual eval; encoding it is the
+    difference between measuring and guessing.
+13. **Audit the existing base** — `agents-base.md`, `concise.md`, `phase-hints.md` — for
+    behaviour-related items to fold into the same branch.
 
 ---
 
