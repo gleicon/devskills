@@ -385,6 +385,120 @@ Three declines, each with a reason worth keeping:
 Parallel structure, derivation chains, and protective passives are all correct writing
 that a naive plain-language rule would destroy.
 
+### 5.6 Run 2 — same corpus, revised prompt, clean session
+
+Changes tested: rule 3 reformulated as an assertion-count test with two backstops;
+rule 9 folded into rule 4; person/system carve-out written into rule 5; rule 1 > rule 3
+precedence stated; rule 11 (convention breach) added; output contract bounded at 12
+findings per rule plus a census.
+
+**Rule 3's reformulation worked, decisively.**
+
+| | Run 1 | Run 2 |
+|---|---:|---:|
+| Rule 3 hits | 802 | **48** |
+| Prose units | 4,279 | 3,092 |
+| Fire rate | 18.7% | **1.6%** |
+| Total findings | 31 | 65 |
+
+The denominators are not identical — run 2 excluded fenced code and counted units of
+four or more words — but 802 against 48 is not a counting artifact. Word count was
+never the real signal. **Assertion count was.**
+
+**The instruction backstop found a systematic defect the first run missed.** All 27
+over-length instructions are recommendations, and **11 are literally `**Recommended
+action:**` lines**, each carrying the verb, the file, the both-copies caveat and the
+rationale welded into one sentence. That is a template defect with a single fix, not 27
+separate problems.
+
+**Rule 11 earned its place** — 6 findings, all real: unit spacing (`sub-50ms` against 14
+sites of `sub-50 ms`), numeral-versus-word where **lines 3 and 17 of the same document
+disagree**, `Inflight` versus `In-flight` in prose, two citation formats a reader cannot
+navigate between, and a possessive on a slash compound.
+
+**The carve-outs worked.** Rule 5 correctly declined three passives whose actor is a
+person. Rule 4's collision exception correctly refused to collapse "external API" into
+"self-service API", since the former names a code package. Both were discovered by the
+first run and encoded before the second.
+
+### 5.7 The reliability problem — the most important finding
+
+Two careful runs, same corpus, produced roughly 60% overlap and **two direct
+contradictions**.
+
+1. **Opposite fixes for the same defect.** On `silently no-ops` versus `silently
+   passes`, run 1 recommended standardising on *no-ops* ("the more accurate one: the
+   function returns `False` without evaluating the threshold"). Run 2 recommended
+   *passes* ("the accurate one: the function returns `False`, which is a permissive
+   verdict, not an absence of behavior"). Same evidence, same reasoning move, opposite
+   conclusions, both stated with confidence.
+2. **Act versus decline on the same sentence.** `Current_Bugs.md:47` was an explicit
+   *exception* in run 1 ("the single-sentence form is the argument") and a *reported
+   finding* in run 2, rewritten as a list. Run 2's resolution is better — it splits at
+   the colon and keeps the parallel intact — but the runs disagreed on whether to act
+   at all.
+3. **Census numbers do not match.** Run 1 counted the calc-type drift as "42 uses
+   each"; run 2 counted 45 short-form against 26 long-form, 71 sites. Both cannot be
+   right.
+4. **Run 1's best finding vanished.** `Cold_Start_Data_Sufficiency.md:11`, which run 1
+   called "the clearest comprehension defect in the set", does not appear anywhere in
+   run 2.
+5. **Rule attribution is unstable.** `Proposed_Roadmap.md:95` and
+   `Quota_V2_Roadmap_Assessment.md:3` were rule 1 in run 1 and rule 3 in run 2 — same
+   text, different rule. Defensible either way, which is the problem.
+
+Three consequences, and they point in different directions:
+
+- **For the review skill:** findings are leads, not verdicts. That framing already
+  exists in `ds-security-review`'s ast-grep companion and should be inherited verbatim.
+  A single run is a sample, not an audit.
+- **For the agents.md block:** largely unaffected. Prevention does not depend on
+  detection reliability. A rule that stops the sentence being written never has to find
+  it afterwards. **This is an argument for weighting the preventive half more heavily
+  than the review half.**
+- **For `evals/`:** this is the empirical case, no longer a speculative one. You cannot
+  eyeball whether a prompt change helped when the same prompt disagrees with itself
+  across two runs. Rule 3's 16× drop is large enough to read without instrumentation;
+  nothing smaller will be.
+
+### 5.8 Spec holes the second run exposed
+
+Each was found by the reviewer flagging what it had to reinterpret — the close item
+added for exactly this purpose, and the highest-yield line in the prompt.
+
+- **Word counting is undefined.** The reviewer counted an inline code span or a
+  markdown link as one word and excluded URLs, noting this "is the only reading that
+  makes the 60-word backstop mean anything in a document with 537 permalinks." **Four
+  sentences sit within five words of the boundary and would move under a different
+  rule.** Any word-count threshold must ship with its counting rule.
+- **"Report every site" contradicts the 12-per-rule cap.** One drifted term at 71 sites
+  would have consumed the entire rule-4 budget. The reviewer resolved it correctly —
+  one term is one finding, sites listed or censused — but that has to be specified.
+- **"A document" in rule 5 is ambiguous.** Read as including *the document doing the
+  writing*, it pulls in first-person-avoidant passives ("Five themes are covered").
+  Three of ten rule-5 findings depend on that reading.
+- **Rule 7's hyphen clause is ambiguous.** The lenient reading excludes three-noun
+  stacks; "a stricter reading would add roughly a dozen more."
+
+**Two defect classes no rule covers**, found anyway:
+
+- A **wrong** article rather than a dropped one ("an researchdesk-api/rdsecured-side
+  change"). Rule 8 only covers omission.
+- **A noun phrase made the subject of a verb it cannot perform**: "The group-update race
+  … *It found* the non-atomic write-side race" — as written, the race finds itself. A
+  consequence of naming findings with imperative phrases and then using the name as a
+  grammatical subject. Candidate rule 12.
+
+### 5.9 Where a rule was actively harmful
+
+`Achievable_Improvements.md:78` states *in the document* that its hedging ("reads as",
+"looks like") is appropriate and must not be firmed up without locating the ticket.
+Rule 6 would have converted an honest uncertainty into a false assertion.
+
+This is the single strongest argument for the exceptions mechanism, and it validates
+the hedging caveat lifted from i-have-adhd in §3.2: *keep a hedge that carries real
+uncertainty; deleting it manufactures confidence.*
+
 ---
 
 ## 6. Cross-cutting decisions
@@ -510,31 +624,37 @@ architectural. Assessed against `agents-md/system/agents-base.md`.
 
 ## 8. Open — decide in the build session
 
-1. **Reformulate rule 3** (§5.3) — structural test for description, word count kept
-   for instruction. Then re-run against the same corpus to confirm the fire rate drops
-   without losing the genuine finds.
-2. **Run a second corpus, ideally raw AI output.** Rules 6, 8 and 10 scored near zero
-   on careful prose. That is one sample of one register, and it cannot settle whether
-   they belong in the review skill.
-3. **Name the artifacts** — the `-mode` skill and the two new skills. Convention:
-   `ds-` prefix on every skill, `-mode` suffix on modes.
-4. **Merge rule 9 into rule 4**, and add the "declare the distinction once" escape for
-   names that collide with code identifiers (§5.4).
-5. **Write the person/system carve-out into rule 5** rather than leaving it to be
-   rediscovered per-run.
-6. **Encode rule 1 > rule 3 precedence**, and decide whether other pairs need one.
-7. **Decide on candidate rule 11** — convention consistency, distinct from term drift
-   (§5.4).
-8. **Specify the output contract** for the review skill: report the N worst, census the
-   rest. Unbounded output buried the findings that mattered (§5.3).
+**Settled by the two runs** — rules 1, 2, 3 (reformulated), 4 (with 9 merged and the
+collision escape), 5 (with the person/system carve-out), 11, and the bounded output
+contract. These ship.
+
+**Still open:**
+
+1. **Build `evals/` — now the highest-priority item, not the last one.** §5.7 shows the
+   same prompt disagreeing with itself across two runs. Every remaining decision below
+   is a prompt-wording judgement that cannot be evaluated by eye.
+2. **Define the word-counting rule** that ships with rule 3's backstops: inline code and
+   links count as one word, URLs and fenced code excluded (§5.8). Four findings move
+   without it.
+3. **Disambiguate "a document" in rule 5** — does it include the document doing the
+   writing? Three findings depend on the answer.
+4. **Disambiguate rule 7's hyphen clause** — lenient or strict. A dozen findings depend
+   on the answer.
+5. **Resolve "report every site" against the per-rule cap** — one drifted term is one
+   finding, with sites listed or censused.
+6. **Decide on candidate rule 12** — a noun phrase made the subject of a verb it cannot
+   perform ("the race finds itself"), and whether rule 8 should cover a *wrong* article
+   as well as a dropped one (§5.8).
+7. **Run a second corpus, ideally raw AI output.** Rules 6, 8 and 10 scored near zero on
+   careful prose twice. That is two samples of one register, and it still cannot settle
+   whether they belong in the review skill.
+8. **Name the artifacts** — the `-mode` skill and the two new skills. Convention: `ds-`
+   prefix on every skill, `-mode` suffix on modes.
 9. **Decide the source-of-truth direction** between the agents.md block and the mode,
    and whether a guard test is worth its ceiling.
 10. **Reconcile** "prefer established libraries" against "unjustified dependencies".
 11. **Write the scope condition** for the backward-compatibility rule.
-12. **Decide whether to build `evals/`.** Without it, no agents.md wording change can be
-    shown to have helped. The 14-file run is a manual eval; encoding it is the
-    difference between measuring and guessing.
-13. **Audit the existing base** — `agents-base.md`, `concise.md`, `phase-hints.md` — for
+12. **Audit the existing base** — `agents-base.md`, `concise.md`, `phase-hints.md` — for
     behaviour-related items to fold into the same branch.
 
 ---
