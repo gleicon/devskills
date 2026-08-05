@@ -499,6 +499,115 @@ This is the single strongest argument for the exceptions mechanism, and it valid
 the hedging caveat lifted from i-have-adhd in §3.2: *keep a hedge that carries real
 uncertainty; deleting it manufactures confidence.*
 
+### 5.10 Run 3 — every spec hole closed
+
+Hypothesis: the run-to-run variance was caused by ambiguity in the prompt, not by the
+model. Every hole §5.8 exposed was closed — counting rule, rule 5's "a document", rule
+7's hyphen clause, "report every site" versus the cap, a majority tiebreak for rule 4,
+rule 1/rule 3 precedence — plus rule 12 and a `mechanical | judgment` tag on every
+finding.
+
+**Verdict: specification bounds variance without eliminating it, and one fix caused a
+new defect.**
+
+| | Run 1 | Run 2 | Run 3 |
+|---|---:|---:|---:|
+| Rule 3 fire rate | 18.7% | 1.6% | **0.74%** |
+| Prose units counted | 4,279 | 3,092 | 4,297 |
+| Reported findings | 31 | 65 | 46 |
+
+**What the tiebreak fixed.** `silently no-ops` versus `silently passes` — the site where
+runs 1 and 2 gave opposite answers — resolved deterministically to *no-ops* on the
+4-against-2 majority, tagged `mechanical`. The coin flip is gone.
+
+**What the tiebreak broke.** On the calc-type drift the majority rule points at "calc
+type" (49 against 41). Run 3 **overrode its own rule**, tagged the finding `judgment`,
+and argued from the platform's own vocabulary — the column is `calculation_type_code_ud`,
+the product article is *Source Quota Calculation Types*. That override is correct, and
+all three runs agree on the outcome. But the rule I wrote would have produced the wrong
+answer unaided. A tiebreak that needs overriding to be right is not a tiebreak.
+
+### 5.11 The precedence rule had a side effect
+
+The `mechanical | judgment` tag paid for itself immediately.
+
+Overall: **28 mechanical (61%), 18 judgment (39%).** Rule 3 came in at 92% mechanical.
+But:
+
+| Rule | Judgment share |
+|---|---:|
+| 1 — two ideas | **100%** (8 of 8) |
+| 2 — mid-sentence pivot | 67% |
+| 4 — name drift | 50% |
+| 11 — convention breach | 33% |
+| 5 — actorless passive | 25% |
+| 12 — impossible subject | 20% |
+| 3 — overloaded | 8% |
+
+The reviewer diagnosed the cause: because rule 3 now absorbs anything with two or more
+independent assertions, **rule 1 is left holding only the cases that had to be argued
+down to one assertion.** The precedence fix did not merely reorder attribution — it
+converted the highest-value rule into a pure-judgment rule.
+
+The visible seam: `Cold_Start_Data_Sufficiency.md:11`, which run 1 called the clearest
+comprehension defect in the set and run 2 missed entirely, **reappeared in run 3** — but
+precedence forced it into rule 3, "where its 44 words look unremarkable."
+
+**Encoding a precedence between two rules can change what a rule is.** Test the tag
+distribution after any precedence change, not just the finding count.
+
+### 5.12 Mechanical counting is not reproducible
+
+Three runs counted the same fixed strings three different ways:
+
+| Measurement | Run 1 | Run 2 | Run 3 |
+|---|---:|---:|---:|
+| "calc type" sites | 42 | 45 | 49 |
+| "calculation type" sites | 42 | 26 | 41 |
+| Prose units in the corpus | 4,279 | 3,092 | 4,297 |
+
+This is not a judgment problem. It is counting occurrences of a literal string, and it
+did not replicate once.
+
+**Design consequence, and it is concrete:** a review skill must never present a census
+as fact. Either report sites and let the reader count, or compute the count with a tool.
+This is the same division devskills already draws in `ds-security-review` — `ast-grep`
+enumerates mechanically, the model judges each match. **Use grep or ast-grep for what is
+countable, the model for what is judgeable.** The pattern exists; extend it here.
+
+### 5.13 Stability across all three runs
+
+| Rule | Run 1 | Run 2 | Run 3 | Read |
+|---|---:|---:|---:|---|
+| 10 — plainer twin | 0 | 0 | 0 | **Perfectly stable.** The only rule with three-run agreement. |
+| 3 — overloaded | 802 | 48 | 32 | Converging, now 92% mechanical. |
+| 12 — impossible subject | — | — | 5 | Justified, but 4 of 5 sit in one file. |
+| 6 — stacked hedges | 1 | 3 | **0** | **Least stable rule.** Run 3 declined the one finding common to runs 1 and 2, arguing the two hedges attach to different propositions. Sophisticated, and irreconcilable with the earlier runs. |
+| 8 — article defects | 2 | 6 | 1 | Run 3 found zero dropped articles where run 2 found six. Contradiction on a nominally mechanical rule. |
+| 11 — convention breach | (1, out of band) | 6 | 6 | Same count, largely different findings. `Parameterise` was found by run 1 outside its rules, missed by run 2, found by run 3. |
+
+### 5.14 New spec holes, and one new defect class
+
+**Holes run 3 exposed:**
+
+- **Rule 7's hyphen clause is self-cancelling as written.** "Hyphenation counts as a fix;
+  flag only where hyphens no longer rescue it" exempts every unhyphenated pile, since a
+  hyphen can rescue almost any of them. Under the strict reading rule 7 has zero
+  findings; under the reviewer's, one.
+- **"Parenthetical citation = one word" needed a boundary.** Counted as one only when it
+  contains a link, a code span, or a §.
+- **Table cells are undefined as prose units.** Two rule-5 findings are summary-table
+  cells. Whether cells count changes both the denominator and the findings.
+- **Rules 4 and 11 overlap.** `de-duplicate`/`deduplicate` is one term in two forms —
+  routed to 11 by form, arguably 4 by drift. The line is arbitrary as drawn.
+- **"Instruction" was undefined.** Read as "main clause is imperative", which excludes
+  `**Purpose:**` lead-ins despite their bold-colon shape.
+
+**A fix can have blast radius beyond the sentence.** One heading uses `&` where eight
+comparable headings use `and`. Fixing it moves the GitHub anchor and breaks **nine
+inbound links**. The reviewer declined it and said why. A prose-review skill that edits
+headings must check inbound anchors first — neither earlier run surfaced this.
+
 ---
 
 ## 6. Cross-cutting decisions
@@ -624,37 +733,46 @@ architectural. Assessed against `agents-md/system/agents-base.md`.
 
 ## 8. Open — decide in the build session
 
-**Settled by the two runs** — rules 1, 2, 3 (reformulated), 4 (with 9 merged and the
-collision escape), 5 (with the person/system carve-out), 11, and the bounded output
-contract. These ship.
+**Settled by three runs — these ship.** Rules 3 (reformulated, 92% mechanical), 5 (with
+the person/system carve-out), 11, 12, the counting rule, and the bounded output
+contract. Rule 10 is the only rule that replicated perfectly, at zero — keep it in the
+preventive block, drop it from the review skill.
+
+**Settled negatively.** Rule 6 fired 1, 3, then 0 across three runs on identical text.
+It is the least stable rule and should not ship in the review skill; the preventive
+block can still say "one hedge, not three".
 
 **Still open:**
 
-1. **Build `evals/` — now the highest-priority item, not the last one.** §5.7 shows the
-   same prompt disagreeing with itself across two runs. Every remaining decision below
-   is a prompt-wording judgement that cannot be evaluated by eye.
-2. **Define the word-counting rule** that ships with rule 3's backstops: inline code and
-   links count as one word, URLs and fenced code excluded (§5.8). Four findings move
-   without it.
-3. **Disambiguate "a document" in rule 5** — does it include the document doing the
-   writing? Three findings depend on the answer.
-4. **Disambiguate rule 7's hyphen clause** — lenient or strict. A dozen findings depend
-   on the answer.
-5. **Resolve "report every site" against the per-rule cap** — one drifted term is one
-   finding, with sites listed or censused.
-6. **Decide on candidate rule 12** — a noun phrase made the subject of a verb it cannot
-   perform ("the race finds itself"), and whether rule 8 should cover a *wrong* article
-   as well as a dropped one (§5.8).
-7. **Run a second corpus, ideally raw AI output.** Rules 6, 8 and 10 scored near zero on
-   careful prose twice. That is two samples of one register, and it still cannot settle
-   whether they belong in the review skill.
-8. **Name the artifacts** — the `-mode` skill and the two new skills. Convention: `ds-`
-   prefix on every skill, `-mode` suffix on modes.
-9. **Decide the source-of-truth direction** between the agents.md block and the mode,
-   and whether a guard test is worth its ceiling.
-10. **Reconcile** "prefer established libraries" against "unjustified dependencies".
-11. **Write the scope condition** for the backward-compatibility rule.
-12. **Audit the existing base** — `agents-base.md`, `concise.md`, `phase-hints.md` — for
+1. **Build `evals/` — the highest-priority item.** Three runs now disagree with each
+   other and with themselves. Every decision below is a prompt-wording judgement that
+   cannot be evaluated by eye.
+2. **Move all counting to a tool** (§5.12). Three runs produced three different counts
+   of a literal string. Follow `ds-security-review`'s division: `grep`/`ast-grep`
+   enumerates, the model judges. Report sites, never an authoritative census.
+3. **Undo or rework the rule 1 / rule 3 precedence** (§5.11). As written it converted
+   rule 1 into a 100%-judgment rule and buried the single best finding in the corpus.
+   Options: let a sentence be reported under both; invert the precedence; or drop rule 3
+   to backstops only and let rule 1 carry the assertion test.
+4. **Replace rule 4's majority tiebreak** (§5.10). It fixed one contradiction and would
+   have produced the wrong answer on another. Candidate: prefer the term the codebase or
+   product uses, and fall back to majority only when neither does.
+5. **Fix rule 7's self-cancelling hyphen clause**, or drop rule 7 — one finding across
+   three runs.
+6. **Define table cells** as prose units or not. Changes both denominator and findings.
+7. **Define "instruction"** — "main clause is imperative" worked; specify it.
+8. **Draw the rule 4 / rule 11 line explicitly** — one term in two forms is currently
+   arbitrary between them.
+9. **Add an anchor-safety check** for any fix that touches a heading (§5.14).
+10. **Run a second corpus, ideally raw AI output.** Rules 6, 8 and 10 scored near zero on
+    careful prose three times. That is three samples of one register.
+11. **Name the artifacts** — the `-mode` skill and the two new skills. Convention: `ds-`
+    prefix on every skill, `-mode` suffix on modes.
+12. **Decide the source-of-truth direction** between the agents.md block and the mode,
+    and whether a guard test is worth its ceiling.
+13. **Reconcile** "prefer established libraries" against "unjustified dependencies".
+14. **Write the scope condition** for the backward-compatibility rule.
+15. **Audit the existing base** — `agents-base.md`, `concise.md`, `phase-hints.md` — for
     behaviour-related items to fold into the same branch.
 
 ---
