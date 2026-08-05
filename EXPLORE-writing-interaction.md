@@ -608,6 +608,83 @@ comparable headings use `and`. Fixing it moves the GitHub anchor and breaks **ni
 inbound links**. The reviewer declined it and said why. A prose-review skill that edits
 headings must check inbound anchors first — neither earlier run surfaced this.
 
+### 5.15 Run 4 — five lines, no rules
+
+The three preceding runs were a rabbit hole: tuning a rule list instead of testing the
+approach. Run 4 tests the approach. The entire prompt:
+
+> Review the .md files in this project against the Federal Plain Language Guidelines,
+> with Grice's maxims of manner and quantity in mind. Skip fenced code, inline code,
+> URLs, and quoted material. Report only — no edits. For each finding: file:line,
+> before, after. Where a rewrite would lose nuance, don't rewrite — report it as an
+> exception and say what would be lost.
+
+**It beat all three rule-based runs, and not narrowly.**
+
+24 findings, no census padding, **organised by reader impact rather than by rule**:
+ambiguity that lets a reader reach the wrong conclusion, then structure, then word
+choice, then quantity. That ordering is ISO 24495's reader-first principle emerging on
+its own — the rule-ordered reports buried important findings under whichever rule
+happened to fire.
+
+**Defects no rule of mine could reach:**
+
+- **A document contradicting itself.** `Current_Bugs.md:66` says compat mode resolves
+  the group-update race; `:284` says it delivers half. A reader cannot tell which. No
+  sentence-level rule finds that.
+- **Length contradicting stated priority.** `Current_Bugs.md:12` claims position encodes
+  importance. The longest sections are priority 2, priority 6, and one whose direction
+  is "None"; priority 1 is the shortest. Grice's quantity maxim applied at document
+  scale.
+- **`Redis` where the design it cites says `Valkey`** — a correctness catch wearing
+  terminology's clothes.
+- **and/or** at four sites, which FPLG names specifically. **Double negatives.** A bare
+  method name and four numbers with no sentence. Unglossed jargon ("behind a canary") in
+  the one document whose job is helping a reader decide whether to read on.
+- Filler in headings, each with **its inbound-anchor cost computed**.
+
+**On the sites where the rule runs disagreed with each other:**
+
+- `Cold_Start_Data_Sufficiency.md:11` — found, with the sharpest diagnosis of the four
+  runs: both quoted phrases describe the same observation, so "not meaningfully
+  different from" is vacuous.
+- `Current_Bugs.md:47` — made a list *and* caught the impossible-subject defect inside
+  it ("the first fixes the in-flight window" reads as the window fixing itself). That is
+  rule 12, found without rule 12.
+
+**The exceptions are richer than anything the rules produced.** E4: the stepped
+derivation stays long because "the short version already exists for readers who want it
+— that is the right split, not a reason to shorten this one." E7 separates ~200
+acceptable slash pairs from four genuinely ambiguous ones, with a stated criterion.
+
+**And it reports what it checked and found clean** — no `shall`; `must`/`should` split
+correctly; abbreviations defined at first use; no unexplained acronyms in the document
+carrying the vocabulary. That is FPLG coverage I never wrote a rule for, reported as
+informative negatives rather than as "rule 10: zero findings".
+
+**What it lost.** It missed the `calc type` / `calculation type` drift — the single most
+replicated finding across all three rule runs, 90 sites. So the rules did buy something:
+mechanical exhaustiveness on a known repeated string.
+
+Which lands exactly on §5.12's conclusion. **Grep for what is countable, standards
+reference for what is judgeable.** Neither prompt should be doing the other's job.
+
+### 5.16 What this costs the rule list
+
+Most of the open questions in §8 were artifacts of re-deriving a standard by hand.
+Rule 7's self-cancelling hyphen clause, the definition of "instruction", whether table
+cells are prose units, where rule 4 ends and rule 11 begins, the majority tiebreak, the
+rule 1 / rule 3 precedence and its side effect — **none of these are questions about
+writing.** They are maintenance on a spec that should not exist.
+
+The Federal Plain Language Guidelines do not have those holes. They are a coherent body
+of guidance rather than a list assembled over three iterations.
+
+**Generalisable rule, and it is not about prose:** when a well-known standard covers the
+ground, name it instead of re-deriving it. This is the prose form of the strongest line
+in §7 — *"Do not assume a library lacks a capability without checking its documentation
+and types."* Same failure, different medium.
+
 ---
 
 ## 6. Cross-cutting decisions
@@ -733,47 +810,37 @@ architectural. Assessed against `agents-md/system/agents-base.md`.
 
 ## 8. Open — decide in the build session
 
-**Settled by three runs — these ship.** Rules 3 (reformulated, 92% mechanical), 5 (with
-the person/system carve-out), 11, 12, the counting rule, and the bounded output
-contract. Rule 10 is the only rule that replicated perfectly, at zero — keep it in the
-preventive block, drop it from the review skill.
+**Settled.** The text skill references the standards; it does not enumerate rules.
+Explicit content is limited to three things the standards cannot supply: the output
+contract (before/after, exceptions with reasons), the scope exclusions (fenced code,
+inline code, URLs, quoted material), and a mechanical pass for repeated-string drift
+(§5.12, §5.15).
 
-**Settled negatively.** Rule 6 fired 1, 3, then 0 across three runs on identical text.
-It is the least stable rule and should not ship in the review skill; the preventive
-block can still say "one hedge, not three".
+**Dead — struck, not deferred.** Every one of these was maintenance on a spec that
+should not exist (§5.16): rule 7's hyphen clause, the definition of "instruction",
+whether table cells are prose units, the rule 4 / rule 11 boundary, rule 4's majority
+tiebreak, the rule 1 / rule 3 precedence, per-rule counting rules, and the mechanical /
+judgment tag that existed to diagnose a problem the rule list created.
 
-**Still open:**
+**Open:**
 
-1. **Build `evals/` — the highest-priority item.** Three runs now disagree with each
-   other and with themselves. Every decision below is a prompt-wording judgement that
-   cannot be evaluated by eye.
-2. **Move all counting to a tool** (§5.12). Three runs produced three different counts
-   of a literal string. Follow `ds-security-review`'s division: `grep`/`ast-grep`
-   enumerates, the model judges. Report sites, never an authoritative census.
-3. **Undo or rework the rule 1 / rule 3 precedence** (§5.11). As written it converted
-   rule 1 into a 100%-judgment rule and buried the single best finding in the corpus.
-   Options: let a sentence be reported under both; invert the precedence; or drop rule 3
-   to backstops only and let rule 1 carry the assertion test.
-4. **Replace rule 4's majority tiebreak** (§5.10). It fixed one contradiction and would
-   have produced the wrong answer on another. Candidate: prefer the term the codebase or
-   product uses, and fall back to majority only when neither does.
-5. **Fix rule 7's self-cancelling hyphen clause**, or drop rule 7 — one finding across
-   three runs.
-6. **Define table cells** as prose units or not. Changes both denominator and findings.
-7. **Define "instruction"** — "main clause is imperative" worked; specify it.
-8. **Draw the rule 4 / rule 11 line explicitly** — one term in two forms is currently
-   arbitrary between them.
-9. **Add an anchor-safety check** for any fix that touches a heading (§5.14).
-10. **Run a second corpus, ideally raw AI output.** Rules 6, 8 and 10 scored near zero on
-    careful prose three times. That is three samples of one register.
-11. **Name the artifacts** — the `-mode` skill and the two new skills. Convention: `ds-`
-    prefix on every skill, `-mode` suffix on modes.
-12. **Decide the source-of-truth direction** between the agents.md block and the mode,
-    and whether a guard test is worth its ceiling.
-13. **Reconcile** "prefer established libraries" against "unjustified dependencies".
-14. **Write the scope condition** for the backward-compatibility rule.
-15. **Audit the existing base** — `agents-base.md`, `concise.md`, `phase-hints.md` — for
-    behaviour-related items to fold into the same branch.
+1. **Write the agents.md block.** Nothing has been built. It is the half that ships to
+   every devskills user and the half unaffected by the detection-reliability problem
+   (§5.7).
+2. **Write the Track 1 artifacts** — the interaction block and the `-mode` skill. The
+   original problem, still untouched and untested.
+3. **Add the mechanical drift pass** — `grep` enumerates repeated strings, the model
+   judges which are drift. Neither prompt should do the other's job.
+4. **Name the artifacts** — convention: `ds-` prefix on every skill, `-mode` suffix on
+   modes.
+5. **Decide the source-of-truth direction** between the agents.md block and the mode
+   (§6.1), and whether a guard test is worth its ceiling.
+6. **Reconcile** "prefer established libraries" against "unjustified dependencies" (§7).
+7. **Write the scope condition** for the backward-compatibility rule (§7).
+8. **Audit the existing base** — `agents-base.md`, `concise.md`, `phase-hints.md`.
+9. **Consider `evals/`** — lower priority than when the plan was a tunable rule list,
+   since there is far less wording left to tune. Still the only way to know whether a
+   block change helped.
 
 ---
 
