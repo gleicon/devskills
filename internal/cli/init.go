@@ -24,24 +24,26 @@ import (
 var retiredBlocks = []string{"language"}
 
 type initSelection struct {
-	langs   []string
-	concise bool
-	phases  bool
+	langs      []string
+	concise    bool
+	phases     bool
+	discipline bool
 }
 
 type initOpts struct {
 	langCSV      string
 	concise      bool
 	phases       bool
+	discipline   bool
 	yes          bool
 	tty          bool
-	flagsChanged bool // any of --lang/--concise/--phases explicitly set
+	flagsChanged bool // any of --lang/--concise/--phases/--spec-discipline explicitly set
 }
 
 func newInitCmd(catalog fs.FS) *cobra.Command {
 	var (
-		langCSV                                 string
-		concise, phases, yes, dryRun, uninstall bool
+		langCSV                                             string
+		concise, phases, discipline, yes, dryRun, uninstall bool
 	)
 	cmd := &cobra.Command{
 		Use:   "init",
@@ -60,8 +62,8 @@ func newInitCmd(catalog fs.FS) *cobra.Command {
 				return err
 			}
 			o := initOpts{
-				langCSV: langCSV, concise: concise, phases: phases, yes: yes, tty: isTTY(),
-				flagsChanged: cmd.Flags().Changed("lang") || cmd.Flags().Changed("concise") || cmd.Flags().Changed("phases"),
+				langCSV: langCSV, concise: concise, phases: phases, discipline: discipline, yes: yes, tty: isTTY(),
+				flagsChanged: cmd.Flags().Changed("lang") || cmd.Flags().Changed("concise") || cmd.Flags().Changed("phases") || cmd.Flags().Changed("spec-discipline"),
 			}
 			sel, needPrompt, err := chooseInit(o, avail)
 			if err != nil {
@@ -80,6 +82,7 @@ func newInitCmd(catalog fs.FS) *cobra.Command {
 	f.StringVar(&langCSV, "lang", "", "comma-separated language profiles (e.g. go,typescript)")
 	f.BoolVar(&concise, "concise", false, "add the terse-response directive")
 	f.BoolVar(&phases, "phases", false, "add phase-aware suggestions")
+	f.BoolVar(&discipline, "spec-discipline", false, "add the SPEC/GRILL amendment-discipline rules")
 	f.BoolVarP(&yes, "yes", "y", false, "accept defaults (base only) without prompting")
 	f.BoolVar(&dryRun, "dry-run", false, "print what would change without writing")
 	f.BoolVar(&uninstall, "uninstall", false, "remove devskills' blocks from AGENTS.md/CLAUDE.md")
@@ -95,7 +98,7 @@ func chooseInit(o initOpts, avail []string) (initSelection, bool, error) {
 		if err != nil {
 			return initSelection{}, false, err
 		}
-		return initSelection{langs: langs, concise: o.concise, phases: o.phases}, false, nil
+		return initSelection{langs: langs, concise: o.concise, phases: o.phases, discipline: o.discipline}, false, nil
 	}
 	if o.tty && !o.yes {
 		return initSelection{}, true, nil
@@ -128,8 +131,8 @@ func promptInit(avail []string) (initSelection, error) {
 		langOpts[i] = huh.NewOption(l, l)
 	}
 	var (
-		langs           []string
-		concise, phases bool
+		langs                       []string
+		concise, phases, discipline bool
 	)
 	form := huh.NewForm(huh.NewGroup(
 		huh.NewMultiSelect[string]().
@@ -139,11 +142,12 @@ func promptInit(avail []string) (initSelection, error) {
 			Value(&langs),
 		huh.NewConfirm().Title("Add the terse-response directive (concise)?").Value(&concise),
 		huh.NewConfirm().Title("Add phase-aware suggestions (phases)?").Value(&phases),
+		huh.NewConfirm().Title("Add SPEC/GRILL amendment-discipline rules (spec-discipline)?").Value(&discipline),
 	)).WithTheme(huh.ThemeFunc(formTheme))
 	if err := form.Run(); err != nil {
 		return initSelection{}, err
 	}
-	return initSelection{langs: langs, concise: concise, phases: phases}, nil
+	return initSelection{langs: langs, concise: concise, phases: phases, discipline: discipline}, nil
 }
 
 // runInit writes AGENTS.md's managed blocks (base + selected layers) and points
@@ -175,6 +179,11 @@ func runInit(out io.Writer, catalog fs.FS, root string, sel initSelection, dryRu
 	}
 	if sel.phases {
 		if err := add("phases", "system/phase-hints.md"); err != nil {
+			return err
+		}
+	}
+	if sel.discipline {
+		if err := add("spec-discipline", "system/spec-discipline.md"); err != nil {
 			return err
 		}
 	}
