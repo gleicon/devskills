@@ -56,6 +56,7 @@ For a specific language, prefer its **Language review** (below) — it folds in 
 
 ### Ship — *"Hand it off."*
 - `/ds-handoff` — compact the session into a handoff doc so a fresh agent or another person can continue.
+- `/ds-retro` — after a release, compare what SPEC/GRILL decided against what shipped and distill rules for the next cycle.
 
 To persist `.project/` state before shipping, see `/ds-project-checkpoint` under Project memory. Then `git push` + `gh pr create`.
 
