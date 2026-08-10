@@ -94,6 +94,9 @@ devskills config                 # optional: modes to auto-apply → .project/co
 /ds-project-checkpoint           # persist state, then /clear or stop
 # next session:
 /ds-project-resume               # pick up exactly where you left off
+
+# after the release ships:
+/ds-retro --record               # decided vs shipped → RETRO.md rules for the next cycle
 ```
 
 Every step is engineer-driven and self-contained. The only persistent artifacts are four small files — readable, diffable, and yours to edit by hand at any time.
@@ -104,6 +107,7 @@ Every step is engineer-driven and self-contained. The only persistent artifacts 
 
 - `/ds-spec` and `/ds-roadmap` are a pair: spec defines the WHAT as a work product, roadmap turns it into `.project/roadmap.md`.
 - `/ds-grill-me --record` writes `GRILL.md`. Checkpoint reads the *session*, not the file, and distils whatever now constrains future work into one-line `# settled` entries — so the artifact keeps the full reasoning and `state.md` keeps only what forbids something.
+- `/ds-retro` closes the loop after a release: it compares what `SPEC.md`/`GRILL.md` decided against what shipped, and with `--record` distills the lessons into `RETRO.md` — which `/ds-spec` and `/ds-grill-me` read back as priors at their next invocation.
 - `/ds-handoff` stays separate and ephemeral: a temp dir, tool-agnostic, for handing work to a person.
 - `/ds-step-mode .project/roadmap.md` drives the roadmap one user-gated step at a time — the execution complement to these note-taking skills.
 

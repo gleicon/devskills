@@ -6,6 +6,8 @@ disable-model-invocation: true
 
 When invoked, gather information and produce a spec document that defines WHAT the system does, not HOW it is implemented. The spec becomes the input to planning — hand it to `/ds-roadmap` to sequence the work.
 
+Before writing, look for `RETRO.md` (current directory, then repo root). Its rule bullets are priors distilled from past releases by `/ds-retro`: cite a rule when it bears on a spec decision — the user can override it; never let it steer silently.
+
 ## Process
 
 If the user has provided a description: proceed directly.
