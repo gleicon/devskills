@@ -6,6 +6,8 @@ disable-model-invocation: true
 
 When invoked, stress-test every aspect of the plan. Walk down each branch of the decision tree, resolving dependencies between decisions one at a time.
 
+Before the first question, look for `RETRO.md` (current directory, then repo root). Its rule bullets are priors distilled from past releases by `/ds-retro`: cite a rule when it bears on the question at hand — the user can override it; never let it steer silently.
+
 ## Arguments
 
 `--record [path]` — append each resolved decision **worth keeping** to `GRILL.md` in the current directory, or to `path` if you name one, as the interview proceeds. Record the ones that are hard to reverse, surprising without context, or the product of a real trade-off — skip the trivial and the self-evident. One entry per decision: the question, the chosen answer, and a one-line rationale. Plain Markdown, no fixed schema. Without the flag, keep decisions in the conversation only.

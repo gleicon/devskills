@@ -57,6 +57,14 @@ Interview you relentlessly about a plan or design until you share the same under
 - **Reach for it when:** a plan feels under-specified, or you want to pressure-test a design (including the approach in a draft PR) before committing to it.
 - **More:** `/ds-grill-me` is unusually versatile — see [grill-me.md](grill-me.md) for a full menu of uses (requirements discovery, design/refactor/architecture, domain terminology, non-coding decisions).
 
+### `/ds-retro` — action
+
+Post-release retrospective over a release range: compare what `SPEC.md`/`GRILL.md` decided against what shipped. Reads the decision files pinned at the range end (never the working tree), filters their in-file dated `Amended YYYY-MM-DD:` lines to the range, and audits git for spec edits that dodged the amendment discipline (scaffolded by `devskills init --spec-discipline`) — drift is itself a finding. The loop-closer to `/ds-spec` and `/ds-grill-me`, which read `RETRO.md` rules back as priors at invocation.
+
+- **Args:** an optional range — `vPREV..vNEXT` verbatim (any git range), a single ref (previous tag..ref), or nothing: it inspects the repo and offers a range — newest-tag..HEAD when unreleased work exists, else the last two version tags; with no tags, a branch retro against the default branch, or it asks. `--record [path]` also writes `RETRO.md` in the current directory or at `path`: newest-first sections, rule bullets before evidence, idempotent per range.
+- **Output:** an in-session report — source inventory, then assumptions measurement killed, decisions that held, spec breaks, accepted-consequence accuracy, unvalidated-at-scale leftovers, and any discipline drift. Needs at least one of `SPEC.md`/`GRILL.md`, else it stops. With `--record`, also the `RETRO.md` path.
+- **Reach for it when:** a release just shipped and you want the next cycle's spec and grill to start from what reality taught, not from scratch.
+
 ---
 
 ## Project memory (`.project/`)
