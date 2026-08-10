@@ -11,7 +11,10 @@ When invoked, run a post-release retrospective over a release range: compare wha
 - A release range, resolved in order:
   - `vPREV..vNEXT` — used verbatim; any valid git range works, branches and SHAs included (`v0.4.0..HEAD` for a retro before tagging).
   - a single ref — the range is previous-version-tag..ref.
-  - nothing — the last two version tags (`git tag --sort=-v:refname`). No tags and no argument: ask for an explicit range, never guess.
+  - nothing — inspect the repo and offer a range; never silently pick one:
+    - HEAD ahead of the newest version tag (`git tag --sort=-v:refname`) → offer newest-tag..HEAD — the unreleased work, the pre-merge case — with the last two tags as the named alternative.
+    - HEAD at the newest tag → the last two version tags.
+    - no tags: on a non-default branch, offer merge-base-with-default-branch..HEAD (a branch retro); on the default branch, ask for an explicit range. Never guess.
 - `--record [path]` — also write the retro to `RETRO.md` in the current directory, or to `path`. Without the flag, the retro lives in the session only.
 
 ## Sources
