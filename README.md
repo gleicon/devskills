@@ -156,7 +156,7 @@ Preferences (the modes resume auto-applies) live in `.project/config.md`, writte
 
 ## The CLI
 
-One binary, four commands:
+One binary, five commands:
 
 | Command | Does |
 |---------|------|
