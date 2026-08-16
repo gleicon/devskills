@@ -8,7 +8,7 @@ Everything here relies only on the skills, `git`, and `gh` — no external orche
 
 ## Modes stack — run several at once
 
-A **mode** (`/ds-tiger-style-mode`, `/ds-ui-mode`, `/ds-data-mode`, `/ds-test-mode`, `/ds-tdd-mode`, `/ds-git-mode`, `/ds-step-mode`) doesn't do a job and return — it changes *how* the agent works for the rest of the session. Modes **compose**: turn on as many as fit the work. Building a tested UI to a strict bar, committed cleanly as you go, is four at once —
+A **mode** (`/ds-tiger-style-mode`, `/ds-ui-mode`, `/ds-data-mode`, `/ds-test-mode`, `/ds-tdd-mode`, `/ds-git-mode`, `/ds-step-mode`, `/ds-interaction-mode`) doesn't do a job and return — it changes *how* the agent works for the rest of the session. Modes **compose**: turn on as many as fit the work. Building a tested UI to a strict bar, committed cleanly as you go, is four at once —
 
 ```
 /ds-tiger-style-mode             # safety + explicitness bar
@@ -19,6 +19,34 @@ A **mode** (`/ds-tiger-style-mode`, `/ds-ui-mode`, `/ds-data-mode`, `/ds-test-mo
 ```
 
 To drop one mid-session, say so ("stop UI mode"). Everything else here — `/ds-spec`, `/ds-bug-review`, `/ds-verify-this`, … — is an **action**: it runs once and returns a result. The recipes below stitch the two together.
+
+---
+
+## Interaction rules at three strengths
+
+The interaction discipline — at most one question per message, placed last, answerable in one read; handbacks that run top to bottom — ships at three strengths. Pick by how permanent you want it.
+
+```
+/ds-interaction-mode             # session-scoped, any harness: on until the session ends
+devskills init --interaction     # always-on, any harness: the `interaction` block in AGENTS.md
+```
+
+**On Claude Code there's a third, stronger form: an output style.** AGENTS.md content is appended context, competing for attention with everything else in the file; an output style's text joins the system prompt itself, and Claude Code reminds the model to adhere to it throughout the session. Same rules, native slot:
+
+1. Run `devskills init --interaction` so the block is in your `AGENTS.md`.
+2. Create `~/.claude/output-styles/interaction.md` with this frontmatter, then paste the `interaction` block's body — everything between its `BEGIN devskills:interaction` / `END` markers in `AGENTS.md` — below it:
+
+   ```markdown
+   ---
+   name: Interaction
+   description: One-pass questions and handbacks
+   keep-coding-instructions: true
+   ---
+   ```
+
+3. Run `/config` → **Output style** → `Interaction`. It takes effect on the next session or `/clear` — the system prompt is read once at session start.
+
+Two things are load-bearing. `keep-coding-instructions: true` — without it the style *replaces* Claude Code's software-engineering instructions instead of adding to it. And the style is sticky: it stays selected across sessions until you switch back in `/config`, unlike the mode, which ends with the session. When the block changes in a `devskills` release, re-paste — the style is a copy you own, and nothing updates it for you.
 
 ---
 
@@ -568,6 +596,7 @@ Indexed by *what you want to do*, not by kind — for the suffix taxonomy (`-mod
 | Build a data pipeline correctly as you go (mode) | `/ds-data-mode` |
 | Commit clean, human-readable history as you build (mode) | `/ds-git-mode` |
 | Execute step-by-step, keeping control at every break (mode) | `/ds-step-mode` |
+| Get one answerable question per handback (mode) | `/ds-interaction-mode` |
 | Remove AI slop from a fresh branch | `/ds-deslop` |
 | Bring a codebase's comments to discipline | `/ds-comment-review` |
 | Judge structure / find simplifications | `/ds-code-quality-review` |
