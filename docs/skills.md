@@ -119,6 +119,12 @@ User-driven, step-gated execution — deliberately **inverts** the default auton
 
 - **Reach for it when:** you want to drive the work yourself, keeping control at every decision point. Composes with `/ds-git-mode` (a "step" ≈ a commit unit), `/ds-tiger-style-mode`, `/ds-test-mode`. Unlike `/ds-tdd-mode` (steps for design reasons) or `/ds-grill-me` (interrogates a plan, doesn't execute), this gates *execution* under your control.
 
+### `/ds-interaction-mode` — mode
+
+One-pass questions and handbacks — counters the interaction defects that push work back to the user: several questions per message, double-barreled asks ("and"/"or" joining two topics), yes/no questions unfolded into "yes, no, or…", mid-question pivots that discard the answer being typed, and action lists that invalidate themselves halfway down. When active: **at most one question per message, placed last**; one topic per question; the answer's form obvious from the ask; conditions stated *before* the instructions they govern (an action message must run top to bottom); a decision handback carries options-as-prose, the context to pick fast, and a recommendation. Plus a pre-send check (drop the announcer, the "anything else?" closer, the sidebar) and two break-glass rules: one short clarifying question beats guessing, and a hedge carrying real uncertainty stays.
+
+- **Reach for it when:** any session where the handbacks matter — pairs naturally with `/ds-step-mode`, which produces one handback per step. The always-on preventive half is the `interaction` block (`devskills init --interaction`); this mode is the session-scoped form for projects without the block.
+
 ---
 
 ## Test & build

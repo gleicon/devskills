@@ -117,6 +117,7 @@ Turn one on and it governs the rest of the session; several can be active at onc
 | `/ds-tiger-style-mode` | the safety + explicitness engineering bar |
 | `/ds-git-mode` | commit each working unit as it lands; terse messages; never pushes |
 | `/ds-step-mode` | smallest reviewable step, then hand back |
+| `/ds-interaction-mode` | one question per message, answerable in one read; handbacks run top to bottom |
 | `/ds-test-mode` | keep the core tested by risk as you build |
 | `/ds-tdd-mode` | drive implementation test-first, one vertical slice at a time |
 | `/ds-ui-mode` | component/state discipline + design craft for UI work |
