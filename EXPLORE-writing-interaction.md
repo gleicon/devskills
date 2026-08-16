@@ -148,6 +148,55 @@ checkable *what*. Cite, do not encode.
 - The short version should be a **strict subset** of the long one, so it cannot
   contradict it.
 
+### 3.5 Delivery — output styles across the three harnesses (added 2026-08-16)
+
+Prompted by <https://x.com/lydiahallie/status/2080378470111256907>: Claude Code
+output styles as an alternative vehicle for the interaction rules.
+
+**Mechanics, Claude Code.** An output style is a Markdown file
+(`~/.claude/output-styles/` or project `.claude/output-styles/`) whose body is
+added to the **system prompt itself**, selected via `/config`, sticky across
+sessions. `keep-coding-instructions` defaults to **false** — a style that only
+means to change communication must set it `true` or it silently strips the
+software-engineering instructions. Styles get adherence reminders injected
+during the conversation — enforcement an AGENTS.md block never gets. Platform
+risk is real: deprecated in v2.0.30, reversed four days later under community
+pressure (`anthropics/claude-code#10671`); the `/output-style` command was
+later removed (v2.1.91), leaving `/config` as the only entry.
+
+**No equivalent elsewhere.** Codex: `/personality` is a fixed enum
+(friendly / pragmatic / none), and the only prompt override —
+`--config experimental_instructions_file` — replaces the entire base prompt,
+experimental, all-or-nothing (`openai/codex#11588` requests the real thing).
+OpenCode: no style picker; the closest analog is a per-agent `prompt` file —
+the right altitude, the wrong artifact, since carrying five lines of
+interaction rules means forking the build agent, and the docs leave
+replace-versus-append unspecified.
+
+**So there is no cross-harness style slot.** The instructions file is the only
+channel all three harnesses share; §3.4's block survives this contact intact.
+
+**Convergence evidence.** The style in the post (ELI5) is itself Track 1:
+"Just tell me what you did, did it work, what do I do now" is the handback
+contract; "2 options max, the context I need to pick fast, and which one you'd
+go with" is cardinality plus the recommendation rule. Two of its five lines are
+our rules, reached independently, in run 4's winning form — five plain lines,
+no rule list. Same argument as §4.4: independent arrival is evidence the rules
+are real rather than taste.
+
+**Decided:**
+
+- The block stays the portable core, and the `-mode` skill stays as planned in
+  §3.4.
+- On Claude the output style is the stronger vehicle — system-prompt altitude
+  plus reinforcement, against a block competing with sixty appended lines — so
+  the docs point to it as the better alternative there. It ships as a **recipe
+  in `docs/recipes.md`**, not an installed artifact: copy the block into
+  `~/.claude/output-styles/` with `keep-coding-instructions: true`. The recipe
+  points at the block, so no third copy exists to drift (§6.1), no Claude-only
+  artifact type enters the installer (the SessionStart-hook precedent, §3.2),
+  and nothing is built on a feature Anthropic has already tried to retire once.
+
 ---
 
 ## 4. Track 2 — Text and writing
@@ -827,8 +876,9 @@ judgment tag that existed to diagnose a problem the rule list created.
 1. **Write the agents.md block.** Nothing has been built. It is the half that ships to
    every devskills user and the half unaffected by the detection-reliability problem
    (§5.7).
-2. **Write the Track 1 artifacts** — the interaction block and the `-mode` skill. The
-   original problem, still untouched and untested.
+2. **Write the Track 1 artifacts** — the interaction block, the `-mode` skill, and
+   the Claude output-style recipe in `docs/recipes.md` (§3.5). The original problem,
+   still untouched and untested.
 3. **Add the mechanical drift pass** — `grep` enumerates repeated strings, the model
    judges which are drift. Neither prompt should do the other's job.
 4. **Name the artifacts** — convention: `ds-` prefix on every skill, `-mode` suffix on
@@ -856,3 +906,9 @@ judgment tag that existed to diagnose a problem the rule list created.
 - Wikipedia, *Signs of AI writing* — <https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing>
 - Double-barreled questions — <https://www.scribbr.com/methodology/double-barreled-question/>
 - Grice's maxims — <https://plato.stanford.edu/entries/implicature/>
+- Output styles (Claude Code) — <https://code.claude.com/docs/en/output-styles>
+- The ELI5 style post — <https://x.com/lydiahallie/status/2080378470111256907>
+- Output-styles deprecation reversal — <https://github.com/anthropics/claude-code/issues/10671>
+- Codex CLI reference — <https://developers.openai.com/codex/cli/reference>
+- Codex system-prompt customization request — <https://github.com/openai/codex/issues/11588>
+- OpenCode agents — <https://opencode.ai/docs/agents/>
