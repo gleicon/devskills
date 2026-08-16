@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 When invoked, audit the documentation in scope against one governing principle: **documentation earns its length.** Readers skim; they don't read. Every sentence that doesn't help someone do something is noise that hides the sentences that do. So hunt two failures with equal energy — docs that are *wrong* (drifted from the code) and docs that are *bloated* (true, but nobody will read them). Be ambitious about cutting: the best fix is often to delete three paragraphs, not to polish them.
 
-Report-only by default — the output is a prioritized list of what needs fixing, no edits unless `--fix` is passed. Inline **code comments** are out of scope; `/ds-comment-review` owns comment discipline.
+Report-only by default — the output is a prioritized list of what needs fixing, no edits unless `--fix` is passed. Inline **code comments** are out of scope; `/ds-comment-review` owns comment discipline. For a dedicated sentence-level pass against the plain-language standards, reach for `/ds-clarity-review` — here, wording is one check among five, judged by whether it blocks the document's job.
 
 ## Arguments
 
@@ -37,7 +37,8 @@ Verify mechanically wherever you can — resolve links against the filesystem, c
 
 **4. Bloat (the headline failure).**
 - Walls of text where a list, a table, or three sentences would carry the same payload.
-- Padding: throat-clearing intros, restating the obvious, marketing adjectives, "as you can see", hedging.
+- Padding: throat-clearing intros, restating the obvious, marketing adjectives, "as you can see", filler phrases ("in order to", "it is important to note").
+- Stacked hedging — multiple qualifiers on one claim ("could potentially"). A single hedge carrying real uncertainty stays; the stack goes.
 - Redundancy: the same point made three times, or duplicated across docs that now must be maintained in lockstep.
 - Sections that exist for completeness but nobody reads — reference dumps that belong next to the code, changelogs nobody updates.
 - Prefer deletion to rewriting. Ask of each section: if this were gone, would a reader miss it?
@@ -45,6 +46,7 @@ Verify mechanically wherever you can — resolve links against the filesystem, c
 **5. Clarity & wording.**
 - Buried lede — the key point arriving in paragraph three.
 - Undefined jargon, vague nouns ("the system handles this"), ambiguous antecedents.
+- Term drift — one concept under two names ("calc type" vs "calculation type") reads as two concepts. Enumerate the variants with `grep`; never count by eye.
 - Where the doc is too *terse*: a step that assumes context the reader lacks, an example that needs one line of "why". This is the rare case where more words help — call it out specifically so it isn't lost among the cut-this findings.
 
 ## Output
