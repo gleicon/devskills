@@ -108,7 +108,7 @@ The **phase spine** follows the arc of a change. The groups below it — modes, 
 | **Ship** | `/ds-handoff` | compact the session into a handoff doc |
 | | `/ds-retro` | post-release: compare decided vs shipped, distill rules |
 
-Every review reports by default and changes nothing; pass `--fix` to apply the mechanical, unambiguous findings, or `--full` to widen scope from the branch diff to the whole codebase.
+Every review reports by default and changes nothing; most take `--fix` to apply the mechanical, unambiguous findings, and `--full` to widen scope from the branch diff to the whole codebase (the tool-backed `/ds-osv` and `/ds-semgrep` scope by path instead).
 
 ### Modes — standing postures, compose anytime
 

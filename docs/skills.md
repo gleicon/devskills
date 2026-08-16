@@ -6,10 +6,10 @@ Every devskills skill is a single `SKILL.md` invoked as `/<name>` in Claude Code
 
 A skill's **suffix tells you its kind**:
 
-- **`-mode`** — persistent, toggleable session behavior; changes *how* the agent works until you turn it off. *tiger-style, ui, data, senior, git, step, tdd, test.*
-- **`-review`** — a findings-list audit. Report-only by default (several take `--fix`); findings are independent and fixable in any order. *bug, security, data, code-quality, doc-quality, test-quality, ui-quality, comment, notebook, osv, and the six language reviews.*
+- **`-mode`** — persistent, toggleable session behavior; changes *how* the agent works until you turn it off. *tiger-style, ui, data, git, step, tdd, test, interaction.*
+- **`-review`** — a findings-list audit. Report-only by default (several take `--fix`); findings are independent and fixable in any order. *bug, security, data, code-quality, doc-quality, test-quality, ui-quality, comment, clarity, notebook, osv, semgrep, and the six language reviews.*
 - **`-plan`** — graded, sequenced moves that each carry a trade-off or dependency, so the output is a *plan*, not a verdict. *perf-plan, architecture-plan.*
-- **no suffix** — a one-shot action that produces a result and returns. *spec, roadmap, explore, blueprint, grill-me, debug, deslop, verify-this, zoom-out, handoff, tldt, the recall trio, and the project-\* family.*
+- **no suffix** — a one-shot action that produces a result and returns. *spec, roadmap, explore, blueprint, grill-me, retro, debug, deslop, humanize, verify-this, zoom-out, onboarding, handoff, tldt, quality-gate, the recall trio, and the project-\* family.*
 - **language profiles** — configured per project via `devskills init --lang`, not invoked as slash commands (see the [README](../README.md#language-profiles)).
 
 Everything except `-mode` runs once and finishes; a `-mode` stays on. The per-skill headings below tag each one with its kind. Each skill is self-contained; a few use an external tool when it's present — `/ds-osv`, `/ds-tldt`, and `/ds-security-review`'s structural pass — which `devskills doctor` can install.
@@ -69,7 +69,7 @@ Post-release retrospective over a release range: compare what `SPEC.md`/`GRILL.m
 
 ## Project memory (`.project/`)
 
-A minimal, file-backed project memory — three skills over three files under `.project/`, so any session is safe to `/clear` or end. These are *scribes, not pilots*: they record what you decide, never steer architecture. Walkthrough: [project-workflow.md](project-workflow.md). Worked use cases: [recipes.md](recipes.md).
+A minimal, file-backed project memory — three skills over the four-file `.project/` directory, so any session is safe to `/clear` or end. These are *scribes, not pilots*: they record what you decide, never steer architecture. Walkthrough: [project-workflow.md](project-workflow.md). Worked use cases: [recipes.md](recipes.md).
 
 Every file has exactly one writer. `state.md` is the model's, `map.md` is regenerated wholesale, and `config.md` is yours — written by `devskills config`, editable by no skill, which is what lets it hold standing instructions the assistant can't quietly drop.
 
@@ -198,7 +198,7 @@ Remove the AI tells from prose — the patterns that read as machine-written: di
 
 Strict review of code comments under one lens — **does each comment earn its place, and is it as short as it can be?** Comments are for humans and explain **WHY, not WHAT** — one line by default, only where the reason isn't obvious, never restating code or citing plan/ticket IDs; a long comment is rare and signals importance. Unlike `/ds-doc-quality-review` (which reviews prose docs) and `/ds-deslop` (branch-diff, matches existing style), this **imposes** the discipline regardless of the codebase's existing habits, works on any scope, and can apply the fix. Comment-only and behavior-preserving — never changes code logic.
 
-- **Args:** treated as scope (files, directories, globs, or the whole codebase); defaults to comments in the code changed on the current branch. `--fix` applies the edits in place instead of only reporting.
+- **Args:** treated as scope (files, directories, globs, or the whole codebase); defaults to comments in the code changed on the current branch. `--full` widens scope to the whole codebase. `--fix` applies the edits in place instead of only reporting.
 - **Output:** by default a prioritized findings list anchored to `file:line`, grouped delete / tighten / drifted (correctness) / kept-as-important, each with the fix. With `--fix`, the edits applied plus a 1–3 sentence summary.
 - **Reach for it when:** a codebase has accumulated comment bloat, or you want a fresh branch's comments brought to standard. Flags restate-the-code, obvious/ceremonial, planning cruft, and buried WHY; keeps and respects the rare legitimately-long comment.
 

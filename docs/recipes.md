@@ -169,7 +169,7 @@ Stitch the quality skills into one gate you run before marking a PR ready:
 /ds-verify-this  <claim>    # 9. prove the headline change actually works
 ```
 
-Then write the PR description from what you learned and `gh pr ready`. Each step answers a *different* question — noise, structure + single-source-of-truth, correctness, exploitability, data correctness, test coverage, performance, language idioms, behavior — so they don't overlap. Not every PR needs all nine: `/ds-code-quality-review` earns its place on any branch (especially when multiple agents touched it — it catches competing implementations); reach for `/ds-security-review` when it touches untrusted input; `/ds-data-review` when it touches schema/queries/migrations; `/ds-test-quality-review` when the logic is non-trivial; `/ds-perf-plan` when a path is hot. Run the questions that apply. To run the core of this as a guided pipeline with fixes applied between passes, use `/ds-quality-gate` — a tighter, deslop-bookended **six-pass** (this manual list adds `/ds-perf-plan`, the language review, and `/ds-verify-this` on top).
+Then write the PR description from what you learned and `gh pr ready`. Each step answers a *different* question — noise, structure + single-source-of-truth, correctness, exploitability, data correctness, test coverage, performance, language idioms, behavior — so they don't overlap. Not every PR needs all nine: `/ds-code-quality-review` earns its place on any branch (especially when multiple agents touched it — it catches competing implementations); reach for `/ds-security-review` when it touches untrusted input; `/ds-data-review` when it touches schema/queries/migrations; `/ds-test-quality-review` when the logic is non-trivial; `/ds-perf-plan` when a path is hot. Run the questions that apply. To run the core of this as a guided pipeline with fixes applied between passes, use `/ds-quality-gate` — a tighter, deslop-bookended **six-pass** that adds `/ds-doc-quality-review` but leaves `/ds-perf-plan`, the language review, and `/ds-verify-this` to run separately.
 
 ---
 
@@ -573,7 +573,7 @@ There is no housekeeping skill, because there is nothing to keep house over. `.p
 - **`roadmap.md`** — `/ds-roadmap` appends and `[x]`s tasks. Prune shipped ones by hand when the list stops showing you what's left; git holds the history.
 - **`config.md`** — yours, small, stable. Change it when your preferred modes change.
 
-The scratch files aren't in there at all. `SPEC.md`, `GRILL.md`, and `EXPLORE.md` are work products in your working directory: read them, feed them into the next skill, delete them when they've served their purpose. Nothing reads them at session start, so a stale one can't mislead a fresh session.
+The scratch files aren't in there at all. `SPEC.md`, `GRILL.md`, and `EXPLORE.md` are work products in your working directory: read them, feed them into the next skill, and commit or delete them once they've served their purpose. Nothing reads them at session start, so a stale one can't mislead a fresh session.
 
 The one thing worth doing by hand: if a `# settled` line stops being true, delete it. A reversed call that stays on the list governs work it shouldn't.
 
