@@ -56,6 +56,8 @@ For multi-step tasks, state a brief plan:
 3. [Step] → verify: [check]
 ```
 
+Sequence the plan in layers: the system works end to end after every step. Never trade a working product for unfinished complexity — a big-bang rewrite that leaves nothing running for steps at a time is a failed plan, not progress.
+
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
 ## 5. Safe at the Boundaries
