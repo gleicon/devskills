@@ -161,7 +161,7 @@ One binary, four commands:
 | Command | Does |
 |---------|------|
 | `devskills install` | sync the skills into Claude Code / OpenCode / Codex (`--local`, `--harness`, `--dry-run`, `--uninstall`) |
-| `devskills init` | scaffold a project's `AGENTS.md` + a `CLAUDE.md` import (`--lang`, `--concise`, `--phases`) |
+| `devskills init` | scaffold a project's `AGENTS.md` + a `CLAUDE.md` import (`--lang`, `--concise`, `--interaction`, `--plain-language`, `--phases`, `--spec-discipline`) |
 | `devskills config` | pick the modes a session starts with (`--modes`, `--dry-run`) |
 | `devskills doctor` | check — or, with `--fix`, install — the external tools some skills need |
 | `devskills version` | print version and build info |
