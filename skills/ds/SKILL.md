@@ -44,6 +44,7 @@ Turn on the relevant **Modes** (below) for the build — they set the engineerin
 - `/ds-doc-quality-review` — docs accuracy against the code, broken links, staleness.
 - `/ds-ui-quality-review` — is the interface soundly engineered, crafted, and accessible?
 - `/ds-comment-review` — do the comments earn their place?
+- `/ds-clarity-review` — is the prose understandable? Plain-language review of any text.
 - `/ds-notebook-review` — notebook state, output hygiene, reproducibility.
 - `/ds-quality-gate` — run the review pipeline as a gate over the whole branch/feature.
 - `/ds-osv` — scan dependencies for known vulnerabilities (OSV).

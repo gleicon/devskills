@@ -194,6 +194,14 @@ Strict review of code comments under one lens — **does each comment earn its p
 - **Output:** by default a prioritized findings list anchored to `file:line`, grouped delete / tighten / drifted (correctness) / kept-as-important, each with the fix. With `--fix`, the edits applied plus a 1–3 sentence summary.
 - **Reach for it when:** a codebase has accumulated comment bloat, or you want a fresh branch's comments brought to standard. Flags restate-the-code, obvious/ceremonial, planning cruft, and buried WHY; keeps and respects the rare legitimately-long comment.
 
+### `/ds-clarity-review` — review
+
+Prose-clarity review governed by the **Federal Plain Language Guidelines**, applied with Grice's maxims of manner and quantity — the standards are the rule set, not a house checklist. Works on any text: docs, README, comment prose, commit text, UI and error strings. Includes a mechanical drift pass: `grep` enumerates suspected one-concept-two-names variants; the model only judges which are drift. Unlike `/ds-doc-quality-review` (the document as artifact: accuracy, links, coverage, bloat), `/ds-comment-review` (whether a comment earns its place), and `/ds-deslop` (code slop on the branch diff), this judges one thing: whether a reader understands the words.
+
+- **Args:** treated as scope (files, directories, globs); defaults to prose changed on the current branch. `--full` widens scope to all prose in the repo.
+- **Output:** findings ordered by reader impact, each anchored to `file:line` with a quoted **before** and a rewritten **after**; where a rewrite would lose nuance, an **exception** naming what would be lost. Changes nothing by default; `--fix` applies the rewrites (exceptions stay).
+- **Reach for it when:** prose is about to ship — docs, release notes, UI copy — or a doc reads fine to its author and confuses everyone else.
+
 ---
 
 ## Quality Gate

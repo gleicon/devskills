@@ -99,6 +99,7 @@ The **phase spine** follows the arc of a change. The groups below it — modes, 
 | | `/ds-doc-quality-review` | docs accuracy against the code, dead links, staleness |
 | | `/ds-ui-quality-review` | UI soundness, craft, and accessibility |
 | | `/ds-comment-review` | do the comments earn their place? |
+| | `/ds-clarity-review` | is the prose understandable? plain-language review of any text |
 | | `/ds-notebook-review` | notebook state, output hygiene, reproducibility |
 | | `/ds-quality-gate` | run the review pipeline as a gate over the whole branch |
 | | `/ds-osv` | scan dependencies for known CVEs (OSV) |
