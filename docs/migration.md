@@ -12,9 +12,10 @@ forward.
 
 That's also why this can't be one sweep. `/ds-project-checkpoint` distils a
 *session* — an hour of context with a handful of decisions in it. Pointed at a
-project's entire accumulated history it silently under-reads, because a filter
-applied while recalling can only reject what it happened to surface. So the old
-files get enumerated and checked first, and checkpoint runs against a list.
+project's entire accumulated history it silently under-reads: it can only
+judge what it happens to surface, and entries it never surfaces are dropped
+unseen. So the old files get enumerated and checked first, and checkpoint runs
+against a list.
 
 `DECISIONS.md` is also a different document from `state.md`. It logs what was
 decided, including everything now plainly visible in the code. `state.md` holds
@@ -27,8 +28,9 @@ and that's the migration working.
 
 2. `devskills init` — refreshes the managed blocks in `AGENTS.md`.
 
-3. `rm -f .project/config.md`, then `devskills config`. The prompt preselects
-   from the existing file, so an old one seeds it with a pre-rebuild mode list.
+3. `rm -f .project/config.md`, then `devskills config`. Delete first because
+   the prompt preselects from the existing file — an old one would seed it
+   with a pre-rebuild mode list.
 
 4. **Audit the old files.** One pass, one row per entry. Paste this:
 

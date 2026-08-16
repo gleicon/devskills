@@ -236,7 +236,7 @@ The review skills are a **layered gate, not competing alternatives** — cheapes
 
 ### `/ds-bug-review` — review
 
-Language-agnostic **correctness** audit — the bug-hunting pass. Asks one thing: *will this misbehave at runtime?* Hunts logic errors, null/absent-value derefs, swallowed errors and half-done failure paths, resource leaks, races (TOCTOU, lock ordering), boundary/overflow mistakes, and contract misuse. Distinct from `/ds-code-quality-review` (which is maintainability, not bugs) — the same split the harness draws between cleanup and correctness.
+Language-agnostic **correctness** audit — the bug-hunting pass. Asks one thing: *will this misbehave at runtime?* Hunts logic errors, null/absent-value derefs, swallowed errors and half-done failure paths, resource leaks, races (TOCTOU, lock ordering), boundary/overflow mistakes, and contract misuse. Distinct from `/ds-code-quality-review` (which is maintainability, not bugs) — the same split the assistant draws between cleanup and correctness.
 
 - **Args:** treated as scope (files, directories, globs); defaults to code changed on the current branch. `--full` widens scope to the whole codebase.
 - **Output:** prioritized findings anchored to `file:line` — critical (data loss / reachable crash) first, then likely-wrong, then edge-case. Each names **the exact condition that triggers it** plus the fix and a confidence note. Real defects only; no theoretical nulls. Changes nothing by default; `--fix` applies only mechanical, unambiguous fixes — logic-changing or uncertain ones stay reported.
@@ -401,6 +401,6 @@ Store this session's outcome into recall's knowledge base.
 
 Initialize recall and install its session integration into your AI assistant.
 
-- **Process:** runs `recall map` + `recall recipes seed`, then delegates host wiring to `recall install-skill --target <assistant>` (claude always; opencode/codex when their config dir exists). recall owns its own hook and backs up `settings.json`.
+- **Process:** runs `recall map` + `recall recipes seed`, then delegates assistant wiring to `recall install-skill --target <assistant>` (claude always; opencode/codex when their config dir exists). recall owns its own hook and backs up `settings.json`.
 - **Output:** confirms each step: index, seed, and recall integration install.
 - **Reach for it when:** first time using recall with devskills, or after reinstalling recall.

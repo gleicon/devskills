@@ -166,13 +166,13 @@ One binary, five commands:
 | `devskills doctor` | check — or, with `--fix`, install — the external tools some skills need |
 | `devskills version` | print version and build info |
 
-`init` builds `AGENTS.md` from stacked, independently-managed blocks marked `<!-- BEGIN/END devskills:<id> -->`, so re-running is idempotent and swapping a language replaces only that block. It's harness-agnostic — Claude Code reads the `CLAUDE.md` import; OpenCode and Codex read `AGENTS.md` directly.
+`init` builds `AGENTS.md` from stacked, independently-managed blocks marked `<!-- BEGIN/END devskills:<id> -->`, so re-running is idempotent and swapping a language replaces only that block. It's assistant-agnostic — Claude Code reads the `CLAUDE.md` import; OpenCode and Codex read `AGENTS.md` directly.
 
 `config` writes `.project/config.md`, listing the `ds-*-mode` skills `/ds-project-resume` applies at session start. It offers the modes this binary ships, so you don't have to remember names, and manages one marker block, so anything else you put in the file survives — including a mode of your own, added by hand. It's a command and not a skill on purpose: `config.md` is where you tell the assistant how to behave, so nothing the assistant runs can rewrite it.
 
 ### Language profiles
 
-`init --lang` stacks a stack-specific profile — idioms, toolchain defaults, and review constraints — under the universal baseline. Pass several (`--lang go,typescript`) for a polyglot repo.
+`init --lang` layers a stack-specific profile — idioms, toolchain defaults, and review constraints — under the universal baseline. Pass several (`--lang go,typescript`) for a polyglot repo.
 
 | Profile | Target |
 |---------|--------|
@@ -199,7 +199,7 @@ One binary, five commands:
 
 `/ds-security-review`, `/ds-osv`, and `/ds-semgrep` are **author-time** tools: they run in your assistant and produce evidence you can capture, share, or attach to a PR. They help you build secure code and demonstrate due diligence, but they are **not tamper-proof** — a user can skip the skill or edit the output.
 
-For compliance regimes that require tamper-evident enforcement, you still need a server-side gate: pre-commit checks, PR checks, or release-pipeline scanners. The heavy model — machine-readable output from these skills fed into a CI gate — is a valid future direction; the default is lightweight aid for the developer.
+For compliance regimes that require tamper-evident enforcement, you still need a server-side gate: pre-commit checks, PR checks, or release-pipeline scanners. The heavyweight approach — machine-readable output from these skills fed into a CI gate — is a valid future direction; the default is lightweight aid for the developer.
 
 ## Docs
 

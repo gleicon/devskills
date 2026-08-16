@@ -27,8 +27,8 @@ To drop one mid-session, say so ("stop UI mode"). Everything else here — `/ds-
 The interaction discipline — at most one question per message, placed last, answerable in one read; handbacks that run top to bottom — ships at three strengths. Pick by how permanent you want it.
 
 ```
-/ds-interaction-mode             # session-scoped, any harness: on until the session ends
-devskills init --interaction     # always-on, any harness: the `interaction` block in AGENTS.md
+/ds-interaction-mode             # session-scoped, any assistant: on until the session ends
+devskills init --interaction     # always-on, any assistant: the `interaction` block in AGENTS.md
 ```
 
 **On Claude Code there's a third, stronger form: an output style.** AGENTS.md content is appended context, competing for attention with everything else in the file; an output style's text joins the system prompt itself, and Claude Code reminds the model to adhere to it throughout the session. Same rules, native slot:
@@ -199,10 +199,10 @@ To carry plan and state *across* sessions (so `/clear` is always safe), layer th
 
 When you have a backlog of independent changes to land as *separate* PRs — a queue of issues, or a big refactor split into reviewable chunks — the `.project/` files turn it into a loop that survives `/clear` and hands cleanly between sessions. The plan *is* the protocol.
 
-1. **Map once, plan the queue.** `/ds-project-map` writes `.project/map.md` (the repo facts every issue shares). Put the issue order in `.project/roadmap.md`, and let `state.md` carry the pointer: `# now` is the issue and step you're on, `# next` is the single action that moves it. That split is what makes the session reconstructible after a `/clear` — the queue is durable, the cursor is one line.
+1. **Map once, plan the queue.** `/ds-project-map` writes `.project/map.md` (the repo facts every issue shares). Put the issue order in `.project/roadmap.md`, and let `state.md` carry the cursor: `# now` is the issue and step you're on, `# next` is the single action that moves it. That split is what makes the session reconstructible after a `/clear` — the queue is durable, the cursor is one line.
 2. **One branch + one draft PR per issue.** Branch off fresh `main`, implement surgically from the issue's spec, run the tests, open a **draft** PR. Record the PR URL in `# now` — it identifies the work in flight.
 3. **Grill the draft, then mark ready.** Point `/ds-grill-me` at the open PR to stress-test the *approach* one decision at a time; apply what it surfaces, then `gh pr ready`. (This is [the draft-PR grill loop](#the-draft-pr-grill-loop) used as one step of the larger loop.)
-4. **Confirm-then-advance at the gates.** Treat *mark-ready* and *merged* as human checkpoints — never assume a merge. Once merged: `git fetch upstream && git checkout main && git merge --ff-only upstream/main`, delete the branch, tick the issue off, and move the Current pointer to the next one.
+4. **Confirm-then-advance at the gates.** Treat *mark-ready* and *merged* as human checkpoints — never assume a merge. Once merged: `git fetch upstream && git checkout main && git merge --ff-only upstream/main`, delete the branch, tick the issue off, and point `# now` at the next one.
 5. **Checkpoint before `/clear`.** Because `# now` always holds the issue, the step, and the PR, you can `/clear` between issues (or hand to a fresh agent via `/ds-project-resume`) and resume exactly where you left off — no transcript needed.
 
 Why it holds up: each issue is an isolated branch+PR (small, reviewable, revertible), the queue's state lives in a file instead of the conversation, and the ready/merged gates stay human. `.project/` is the shared memory; `git` + `gh` do the rest.
