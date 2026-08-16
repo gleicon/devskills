@@ -82,7 +82,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 - Never assume a library lacks a capability without reading its documentation and types. Reimplementing what a dependency already does is duplication, not caution.
 - New capability lands in this order: the standard library → a dependency the project already has → an established, well-maintained library for genuinely hard ground (crypto, parsing, dates) → hand-rolled code, only when it's small enough to own outright.
-- A dependency for one trivial function, or one the stdlib or platform already covers, is unjustified — drop it. Hand-rolling a hard, solved problem is the same failure in reverse.
+- A dependency for one trivial function, or one the standard library or platform already covers, is unjustified — drop it. Hand-rolling a hard, solved problem is the same failure in reverse.
 
 ---
 
