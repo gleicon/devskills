@@ -10,13 +10,14 @@ import (
 	"testing/fstest"
 )
 
-// fakeAssets is a minimal embedded tree: the five system profiles plus two
+// fakeAssets is a minimal embedded tree: the six system profiles plus two
 // languages, enough to drive init without the real content.
 func fakeAssets() fstest.MapFS {
 	return fstest.MapFS{
 		"agents-md/system/agents-base.md":     {Data: []byte("BASE PRINCIPLES\n")},
 		"agents-md/system/concise.md":         {Data: []byte("BE TERSE\n")},
 		"agents-md/system/interaction.md":     {Data: []byte("ONE QUESTION\n")},
+		"agents-md/system/plain-language.md":  {Data: []byte("PLAIN WORDS\n")},
 		"agents-md/system/phase-hints.md":     {Data: []byte("PHASES\n")},
 		"agents-md/system/spec-discipline.md": {Data: []byte("AMEND INLINE\n")},
 		"agents-md/language/go.md":            {Data: []byte("GO PROFILE\n")},
@@ -45,6 +46,7 @@ func TestChooseInit(t *testing.T) {
 		{name: "lang flag wins", o: initOpts{flagsChanged: true, langCSV: "go", tty: true}, wantSel: initSelection{langs: []string{"go"}}},
 		{name: "concise flag skips prompt", o: initOpts{flagsChanged: true, concise: true, tty: true}, wantSel: initSelection{concise: true}},
 		{name: "interaction flag skips prompt", o: initOpts{flagsChanged: true, interaction: true, tty: true}, wantSel: initSelection{interaction: true}},
+		{name: "plain-language flag skips prompt", o: initOpts{flagsChanged: true, plain: true, tty: true}, wantSel: initSelection{plain: true}},
 		{name: "spec-discipline flag skips prompt", o: initOpts{flagsChanged: true, discipline: true, tty: true}, wantSel: initSelection{discipline: true}},
 		{name: "unknown lang errors", o: initOpts{flagsChanged: true, langCSV: "cobol"}, wantErr: true},
 		{name: "tty no flags prompts", o: initOpts{tty: true}, wantPrompt: true},
@@ -63,7 +65,7 @@ func TestChooseInit(t *testing.T) {
 			if prompt != tt.wantPrompt {
 				t.Errorf("prompt = %v, want %v", prompt, tt.wantPrompt)
 			}
-			if !slices.Equal(sel.langs, tt.wantSel.langs) || sel.concise != tt.wantSel.concise || sel.interaction != tt.wantSel.interaction || sel.phases != tt.wantSel.phases || sel.discipline != tt.wantSel.discipline {
+			if !slices.Equal(sel.langs, tt.wantSel.langs) || sel.concise != tt.wantSel.concise || sel.interaction != tt.wantSel.interaction || sel.plain != tt.wantSel.plain || sel.phases != tt.wantSel.phases || sel.discipline != tt.wantSel.discipline {
 				t.Errorf("sel = %+v, want %+v", sel, tt.wantSel)
 			}
 		})
@@ -99,7 +101,7 @@ func TestAvailableLanguages(t *testing.T) {
 
 func TestRunInitWritesBlocks(t *testing.T) {
 	root := t.TempDir()
-	sel := initSelection{langs: []string{"go"}, concise: true, interaction: true, discipline: true}
+	sel := initSelection{langs: []string{"go"}, concise: true, interaction: true, plain: true, discipline: true}
 	if err := runInit(io.Discard, fakeAssets(), root, sel, false); err != nil {
 		t.Fatal(err)
 	}
@@ -108,6 +110,7 @@ func TestRunInitWritesBlocks(t *testing.T) {
 		"<!-- BEGIN devskills:base -->", "BASE PRINCIPLES",
 		"<!-- BEGIN devskills:concise -->", "BE TERSE",
 		"<!-- BEGIN devskills:interaction -->", "ONE QUESTION",
+		"<!-- BEGIN devskills:plain-language -->", "PLAIN WORDS",
 		"<!-- BEGIN devskills:spec-discipline -->", "AMEND INLINE",
 		"<!-- BEGIN devskills:language:go -->", "GO PROFILE",
 		"profile: go — managed by devskills",

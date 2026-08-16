@@ -27,6 +27,7 @@ type initSelection struct {
 	langs       []string
 	concise     bool
 	interaction bool
+	plain       bool
 	phases      bool
 	discipline  bool
 }
@@ -35,17 +36,18 @@ type initOpts struct {
 	langCSV      string
 	concise      bool
 	interaction  bool
+	plain        bool
 	phases       bool
 	discipline   bool
 	yes          bool
 	tty          bool
-	flagsChanged bool // any of --lang/--concise/--interaction/--phases/--spec-discipline explicitly set
+	flagsChanged bool // any of --lang/--concise/--interaction/--plain-language/--phases/--spec-discipline explicitly set
 }
 
 func newInitCmd(catalog fs.FS) *cobra.Command {
 	var (
-		langCSV                                                          string
-		concise, interaction, phases, discipline, yes, dryRun, uninstall bool
+		langCSV                                                                 string
+		concise, interaction, plain, phases, discipline, yes, dryRun, uninstall bool
 	)
 	cmd := &cobra.Command{
 		Use:   "init",
@@ -64,8 +66,8 @@ func newInitCmd(catalog fs.FS) *cobra.Command {
 				return err
 			}
 			o := initOpts{
-				langCSV: langCSV, concise: concise, interaction: interaction, phases: phases, discipline: discipline, yes: yes, tty: isTTY(),
-				flagsChanged: cmd.Flags().Changed("lang") || cmd.Flags().Changed("concise") || cmd.Flags().Changed("interaction") || cmd.Flags().Changed("phases") || cmd.Flags().Changed("spec-discipline"),
+				langCSV: langCSV, concise: concise, interaction: interaction, plain: plain, phases: phases, discipline: discipline, yes: yes, tty: isTTY(),
+				flagsChanged: cmd.Flags().Changed("lang") || cmd.Flags().Changed("concise") || cmd.Flags().Changed("interaction") || cmd.Flags().Changed("plain-language") || cmd.Flags().Changed("phases") || cmd.Flags().Changed("spec-discipline"),
 			}
 			sel, needPrompt, err := chooseInit(o, avail)
 			if err != nil {
@@ -84,6 +86,7 @@ func newInitCmd(catalog fs.FS) *cobra.Command {
 	f.StringVar(&langCSV, "lang", "", "comma-separated language profiles (e.g. go,typescript)")
 	f.BoolVar(&concise, "concise", false, "add the terse-response directive")
 	f.BoolVar(&interaction, "interaction", false, "add the question/handback interaction rules")
+	f.BoolVar(&plain, "plain-language", false, "add the plain-language writing rules")
 	f.BoolVar(&phases, "phases", false, "add phase-aware suggestions")
 	f.BoolVar(&discipline, "spec-discipline", false, "add the SPEC/GRILL amendment-discipline rules")
 	f.BoolVarP(&yes, "yes", "y", false, "accept defaults (base only) without prompting")
@@ -101,7 +104,7 @@ func chooseInit(o initOpts, avail []string) (initSelection, bool, error) {
 		if err != nil {
 			return initSelection{}, false, err
 		}
-		return initSelection{langs: langs, concise: o.concise, interaction: o.interaction, phases: o.phases, discipline: o.discipline}, false, nil
+		return initSelection{langs: langs, concise: o.concise, interaction: o.interaction, plain: o.plain, phases: o.phases, discipline: o.discipline}, false, nil
 	}
 	if o.tty && !o.yes {
 		return initSelection{}, true, nil
@@ -134,8 +137,8 @@ func promptInit(avail []string) (initSelection, error) {
 		langOpts[i] = huh.NewOption(l, l)
 	}
 	var (
-		langs                                    []string
-		concise, interaction, phases, discipline bool
+		langs                                           []string
+		concise, interaction, plain, phases, discipline bool
 	)
 	form := huh.NewForm(huh.NewGroup(
 		huh.NewMultiSelect[string]().
@@ -145,13 +148,14 @@ func promptInit(avail []string) (initSelection, error) {
 			Value(&langs),
 		huh.NewConfirm().Title("Add the terse-response directive (concise)?").Value(&concise),
 		huh.NewConfirm().Title("Add question/handback interaction rules (interaction)?").Value(&interaction),
+		huh.NewConfirm().Title("Add plain-language writing rules (plain-language)?").Value(&plain),
 		huh.NewConfirm().Title("Add phase-aware suggestions (phases)?").Value(&phases),
 		huh.NewConfirm().Title("Add SPEC/GRILL amendment-discipline rules (spec-discipline)?").Value(&discipline),
 	)).WithTheme(huh.ThemeFunc(formTheme))
 	if err := form.Run(); err != nil {
 		return initSelection{}, err
 	}
-	return initSelection{langs: langs, concise: concise, interaction: interaction, phases: phases, discipline: discipline}, nil
+	return initSelection{langs: langs, concise: concise, interaction: interaction, plain: plain, phases: phases, discipline: discipline}, nil
 }
 
 // runInit writes AGENTS.md's managed blocks (base + selected layers) and points
@@ -183,6 +187,11 @@ func runInit(out io.Writer, catalog fs.FS, root string, sel initSelection, dryRu
 	}
 	if sel.interaction {
 		if err := add("interaction", "system/interaction.md"); err != nil {
+			return err
+		}
+	}
+	if sel.plain {
+		if err := add("plain-language", "system/plain-language.md"); err != nil {
 			return err
 		}
 	}
