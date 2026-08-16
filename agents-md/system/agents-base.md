@@ -73,6 +73,14 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 - Delegate broad searches to a sub-agent where one is available, so the sweep stays out of your context.
 - Sufficiency beats thrift: when unsure, read more. A wrong answer costs far more than the tokens.
 
+## 7. Dependencies
+
+**Check before you build. Justify before you add.**
+
+- Never assume a library lacks a capability without reading its documentation and types. Reimplementing what a dependency already does is duplication, not caution.
+- New capability lands in this order: the standard library → a dependency the project already has → an established, well-maintained library for genuinely hard ground (crypto, parsing, dates) → hand-rolled code, only when it's small enough to own outright.
+- A dependency for one trivial function, or one the stdlib or platform already covers, is unjustified — drop it. Hand-rolling a hard, solved problem is the same failure in reverse.
+
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
