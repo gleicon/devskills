@@ -4,10 +4,13 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 	"testing"
 	"testing/fstest"
+
+	"github.com/spf13/pflag"
 )
 
 // fakeAssets is a minimal embedded tree: the six system profiles plus two
@@ -69,6 +72,43 @@ func TestChooseInit(t *testing.T) {
 				t.Errorf("sel = %+v, want %+v", sel, tt.wantSel)
 			}
 		})
+	}
+}
+
+// The README init row is the only init-flag enumeration outside the docs guard —
+// this test is what makes a missed flag a failure instead of stale docs.
+func TestReadmeInitRowNamesBlockFlags(t *testing.T) {
+	b, err := os.ReadFile(filepath.Join("..", "..", "README.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var row string
+	for line := range strings.Lines(string(b)) {
+		if strings.HasPrefix(line, "| `devskills init` |") {
+			row = line
+			break
+		}
+	}
+	if row == "" {
+		t.Fatal("README.md has no `devskills init` table row")
+	}
+
+	// Operational flags are deliberately not in the row; every other flag is a
+	// content selection the README must advertise.
+	operational := map[string]bool{"yes": true, "dry-run": true, "uninstall": true, "help": true}
+	cmd := newInitCmd(fakeAssets())
+	cmd.Flags().VisitAll(func(f *pflag.Flag) {
+		if operational[f.Name] {
+			return
+		}
+		if !strings.Contains(row, "`--"+f.Name+"`") {
+			t.Errorf("README init row is missing `--%s`", f.Name)
+		}
+	})
+	for _, m := range regexp.MustCompile("`--([a-z-]+)`").FindAllStringSubmatch(row, -1) {
+		if cmd.Flags().Lookup(m[1]) == nil {
+			t.Errorf("README init row names `--%s`, which init does not have", m[1])
+		}
 	}
 }
 
