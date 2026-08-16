@@ -15,6 +15,7 @@ Before implementing:
 - No abstractions for single-use code.
 - No "flexibility" or "configurability" that wasn't requested.
 - No error handling for impossible scenarios.
+- No backward-compatibility shims inside the codebase: when every caller is in reach, migrate them and delete the old path in the same change. Compatibility is owed only at published boundaries — a shipped library, API, CLI, wire or storage format — and breaking those is the user's call, never a side effect.
 - If you write 200 lines and it could be 50, rewrite it.
 - Refactor overly long functions without being asked — length alone is a smell worth fixing, even when nothing else is wrong.
 - **Comments target humans and explain WHY, not WHAT** — a non-obvious constraint, invariant, or workaround. Default to one line, only where the reason isn't clear from the code; never restate code or cite plan/ticket IDs. A comment past a few lines is rare and signals "this matters" — keep that signal meaningful.
