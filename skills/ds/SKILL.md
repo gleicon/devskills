@@ -34,6 +34,7 @@ Turn on the relevant **Modes** (below) for the build — they set the engineerin
 
 ### Clean — *"Strip the AI slop before anyone looks at it."*
 - `/ds-deslop` — remove narrating comments, defensive overkill, and type escape hatches; align the diff with the surrounding code. Run before any review.
+- `/ds-humanize` — remove the AI tells from prose: chatbot artifacts, filler, stacked hedging, signposting, diff-anchored framing.
 
 ### Review — *"Is it correct, safe, idiomatic, maintainable?"*
 - `/ds-code-quality-review` — maintainability + single-source-of-truth: is the diff making the codebase worse?

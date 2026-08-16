@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	skillCount = 49
+	skillCount = 50
 	rootPkg    = "github.com/gleicon/devskills"
 )
 

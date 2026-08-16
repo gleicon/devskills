@@ -186,6 +186,14 @@ Strip AI-generated slop from the branch and align it with the surrounding code. 
 - **Output:** the edits applied, plus a 1–3 sentence summary. Behavior preserved.
 - **Reach for it when:** right after generating a batch of code, before review. Cheaper and narrower than `/ds-code-quality-review`.
 
+### `/ds-humanize` — action
+
+Remove the AI tells from prose — the patterns that read as machine-written: diff-anchored framing (text describing its own edit history), negative parallelism, synonym cycling, inline-header bullets, Title Case headings, emoji, chatbot artifacts, sycophancy, filler, stacked hedging, signposting, rhetorical openers. Meaning-preserving: removes patterns, never injects style. The prose counterpart to `/ds-deslop` (code slop) — and a different objective from `/ds-clarity-review`: that skill optimizes for being understood, this one for not sounding machine-written; run both when you want both.
+
+- **Args:** treated as scope (files, directories, globs); defaults to the prose changed on the current branch.
+- **Output:** the edits applied, plus a 1–3 sentence summary. Fenced code, inline code, URLs, and quoted material stay byte-identical.
+- **Reach for it when:** AI-drafted prose is about to ship under a human's name — a README, release notes, a design doc — and it still sounds generated.
+
 ### `/ds-comment-review` — review
 
 Strict review of code comments under one lens — **does each comment earn its place, and is it as short as it can be?** Comments are for humans and explain **WHY, not WHAT** — one line by default, only where the reason isn't obvious, never restating code or citing plan/ticket IDs; a long comment is rare and signals importance. Unlike `/ds-doc-quality-review` (which reviews prose docs) and `/ds-deslop` (branch-diff, matches existing style), this **imposes** the discipline regardless of the codebase's existing habits, works on any scope, and can apply the fix. Comment-only and behavior-preserving — never changes code logic.

@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 When invoked, review the prose in scope against the **Federal Plain Language Guidelines**, applied with **Grice's maxims of manner and quantity** in mind. The guidelines are the rule set — bring no private checklist, and order findings by reader impact (what most misleads first), not by which guideline fired. Technical terms the reader already owns count as plain language.
 
-Boundaries: `/ds-deslop` removes code slop from the branch diff; `/ds-comment-review` judges whether comments earn their place; `/ds-doc-quality-review` audits documents as artifacts — accuracy against the code, links, coverage, bloat. This skill has one lens: **does a reader understand the words?** It optimizes for being understood, not for how the text sounds, and it never judges code.
+Boundaries: `/ds-deslop` removes code slop from the branch diff; `/ds-comment-review` judges whether comments earn their place; `/ds-doc-quality-review` audits documents as artifacts — accuracy against the code, links, coverage, bloat. This skill has one lens: **does a reader understand the words?** It optimizes for being understood, not for how the text sounds — reading-as-machine-written is `/ds-humanize`'s lens — and it never judges code.
 
 ## Arguments
 
