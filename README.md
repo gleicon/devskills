@@ -239,6 +239,7 @@ make build                    # build the ./devskills binary
 make install                  # install the current tree to $GOPATH/bin/devskills
 make test                     # unit tests (embed integrity, sync, scaffold, cli, …)
 make test-integration         # end-to-end acceptance — builds the binary, drives it in a sandbox
+make bench SKILL=<skill>      # build, then benchmark a skill change (ARGS="--format pr-md" etc.)
 make lint                     # lint gate (golangci-lint v2; config in .golangci.yml)
 make fmt                      # format
 make snapshot                 # goreleaser cross-build dry-run

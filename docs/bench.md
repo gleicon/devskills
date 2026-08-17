@@ -9,6 +9,8 @@ devskills bench ds-deslop --scenario narrated-greeting --runs 1
 devskills bench ds-deslop --harness claude,codex,opencode
 ```
 
+In the devskills repo itself, bench the working tree — never a stale installed binary — with `make bench SKILL=ds-deslop ARGS="--format pr-md"`, or equivalently `go run . bench ds-deslop --format pr-md`.
+
 ## How a run works
 
 For each scenario, bench materializes the fixture into a temp git repo (base tree committed on `main`, change tree committed on a `change` branch), installs the skill version under test project-locally, and invokes the harness headlessly with the scenario's task prompt. The model is pinned per harness in `evals/bench.yaml`; `--model` overrides. Stdout, stderr, and the post-run diff are captured and scored.
