@@ -1,0 +1,4 @@
+# Smoke: activating the mode must exit zero and produce non-empty output;
+# no expectation list applies (FR-10.c).
+task: "Run /ds-git-mode to activate git mode for this session."
+tier: smoke
