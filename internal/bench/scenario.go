@@ -48,6 +48,15 @@ type Expectation struct {
 	Anchors  []string `yaml:"anchors"`
 }
 
+// ExpectedHits is the per-run hit denominator: planted defects or required
+// elements; smoke has none.
+func (s *Scenario) ExpectedHits() int {
+	if s.Tier == TierStructural {
+		return len(s.Elements)
+	}
+	return len(s.Expectations)
+}
+
 // LoadScenarios loads every scenario for a skill under evalsDir, sorted by
 // name. It fails when the skill has no scenario directory.
 func LoadScenarios(evalsDir, skill string) ([]*Scenario, error) {

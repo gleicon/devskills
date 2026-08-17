@@ -118,7 +118,7 @@ func runBench(ctx context.Context, out io.Writer, root string, opts benchOptions
 		runner := bench.Runner{Harness: h, Model: model}
 		group := bench.HarnessReport{Harness: h.Name(), Model: model}
 		for _, s := range scenarios {
-			sr := bench.ScenarioReport{Name: s.Name, Expectations: len(s.Expectations)}
+			sr := bench.ScenarioReport{Name: s.Name, Tier: s.Tier, Expectations: s.ExpectedHits()}
 			for _, v := range versions {
 				for i := 1; i <= opts.Runs; i++ {
 					total++
@@ -182,7 +182,7 @@ func recordRun(stream io.Writer, s *bench.Scenario, res bench.Result, verbose bo
 		rr.Failed = true
 		rr.FailMsg = res.Err.Error()
 		fmt.Fprintf(stream, "run failed: %v\n", res.Err)
-	} else if s.Tier == bench.TierPlantedDefect {
+	} else {
 		c, err := bench.Check(s, res)
 		if err != nil {
 			return bench.RunReport{}, err
@@ -190,7 +190,18 @@ func recordRun(stream io.Writer, s *bench.Scenario, res bench.Result, verbose bo
 		rr.Checked = true
 		rr.Hits = c.HitCount()
 		rr.Extras = len(c.Extras)
-		fmt.Fprintf(stream, "hits: %d/%d, extra findings: %d\n", rr.Hits, len(s.Expectations), rr.Extras)
+		switch s.Tier {
+		case bench.TierStructural:
+			fmt.Fprintf(stream, "elements: %d/%d\n", rr.Hits, s.ExpectedHits())
+		case bench.TierSmoke:
+			if rr.Hits > 0 {
+				fmt.Fprintln(stream, "smoke: ok")
+			} else {
+				fmt.Fprintln(stream, "smoke: no output")
+			}
+		default:
+			fmt.Fprintf(stream, "hits: %d/%d, extra findings: %d\n", rr.Hits, s.ExpectedHits(), rr.Extras)
+		}
 	}
 	if verbose {
 		for _, sec := range []struct{ name, body string }{

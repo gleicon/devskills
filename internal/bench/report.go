@@ -29,7 +29,8 @@ type HarnessReport struct {
 // ScenarioReport is one scenario's old and new run sets on one harness.
 type ScenarioReport struct {
 	Name         string
-	Expectations int         // planted-defect expectation count; 0 for other tiers
+	Tier         string
+	Expectations int         // per-run hit denominator: planted defects or required elements; 0 for smoke
 	Old          []RunReport // empty in baseline mode
 	New          []RunReport
 }
@@ -38,7 +39,7 @@ type ScenarioReport struct {
 type RunReport struct {
 	Failed  bool
 	FailMsg string
-	Checked bool // planted-defect scoring ran
+	Checked bool // tier scoring ran
 	Hits    int
 	Extras  int
 	Stdout  string
@@ -72,16 +73,15 @@ func (s ScenarioReport) render(b *strings.Builder, baseline bool) {
 	if baseline {
 		fmt.Fprintf(b, "| run | new |\n|---|---|\n")
 		for i, run := range s.New {
-			fmt.Fprintf(b, "| %d | %s |\n", i+1, run.cell(s.Expectations))
+			fmt.Fprintf(b, "| %d | %s |\n", i+1, s.cell(run))
 		}
-		fmt.Fprintf(b, "| **aggregate** | %s |\n", aggregateCell(s.New, s.Expectations))
+		fmt.Fprintf(b, "| **aggregate** | %s |\n", s.aggregate(s.New))
 	} else {
 		fmt.Fprintf(b, "| run | old | new |\n|---|---|---|\n")
 		for i := range max(len(s.Old), len(s.New)) {
-			fmt.Fprintf(b, "| %d | %s | %s |\n", i+1, runCell(s.Old, i, s.Expectations), runCell(s.New, i, s.Expectations))
+			fmt.Fprintf(b, "| %d | %s | %s |\n", i+1, s.runCell(s.Old, i), s.runCell(s.New, i))
 		}
-		fmt.Fprintf(b, "| **aggregate** | %s | %s |\n",
-			aggregateCell(s.Old, s.Expectations), aggregateCell(s.New, s.Expectations))
+		fmt.Fprintf(b, "| **aggregate** | %s | %s |\n", s.aggregate(s.Old), s.aggregate(s.New))
 	}
 
 	fmt.Fprintf(b, "\n<details>\n<summary>%s transcripts</summary>\n", s.Name)
@@ -94,28 +94,37 @@ func (s ScenarioReport) render(b *strings.Builder, baseline bool) {
 	fmt.Fprintf(b, "\n</details>\n")
 }
 
-func runCell(runs []RunReport, i, expectations int) string {
+func (s ScenarioReport) runCell(runs []RunReport, i int) string {
 	if i >= len(runs) {
 		return "—"
 	}
-	return runs[i].cell(expectations)
+	return s.cell(runs[i])
 }
 
-func (r RunReport) cell(expectations int) string {
+func (s ScenarioReport) cell(r RunReport) string {
 	switch {
 	case r.Failed:
 		return "failed"
-	case r.Checked:
-		return fmt.Sprintf("%d/%d hits, %d extra", r.Hits, expectations, r.Extras)
-	default:
+	case !r.Checked:
 		return "ok"
+	}
+	switch s.Tier {
+	case TierStructural:
+		return fmt.Sprintf("%d/%d elements", r.Hits, s.Expectations)
+	case TierSmoke:
+		if r.Hits > 0 {
+			return "ok"
+		}
+		return "no output"
+	default:
+		return fmt.Sprintf("%d/%d hits, %d extra", r.Hits, s.Expectations, r.Extras)
 	}
 }
 
-// aggregateCell sums a run set: hit totals for checked runs, otherwise a
-// success count. Failed runs contribute zero hits but stay in the denominator
-// — a failure is never silently dropped (FR-9).
-func aggregateCell(runs []RunReport, expectations int) string {
+// aggregate sums a run set: hit totals for checked runs, otherwise a success
+// count. Failed runs contribute zero hits but stay in the denominator — a
+// failure is never silently dropped (FR-9).
+func (s ScenarioReport) aggregate(runs []RunReport) string {
 	if len(runs) == 0 {
 		return "—"
 	}
@@ -131,10 +140,19 @@ func aggregateCell(runs []RunReport, expectations int) string {
 			extras += r.Extras
 		}
 	}
-	if checked {
-		return fmt.Sprintf("%d/%d hits, %d extra", hits, expectations*len(runs), extras)
+	if !checked {
+		return fmt.Sprintf("%d/%d ok", okCount, len(runs))
 	}
-	return fmt.Sprintf("%d/%d ok", okCount, len(runs))
+	switch s.Tier {
+	case TierStructural:
+		return fmt.Sprintf("%d/%d elements", hits, s.Expectations*len(runs))
+	case TierSmoke:
+		// smoke Hits is 0 or 1 per run, so the sum counts the runs that
+		// exited zero with output
+		return fmt.Sprintf("%d/%d ok", hits, len(runs))
+	default:
+		return fmt.Sprintf("%d/%d hits, %d extra", hits, s.Expectations*len(runs), extras)
+	}
 }
 
 func (r RunReport) renderTranscript(b *strings.Builder, label string) {
