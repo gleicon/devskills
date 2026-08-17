@@ -23,6 +23,7 @@ const DefaultTimeout = 5 * time.Minute
 type SkillVersion struct {
 	Name    string
 	Label   string // LabelOld or LabelNew
+	SHA     string // git blob SHA of Content, for reproducible reports (NFR-3)
 	Content []byte
 }
 

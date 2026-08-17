@@ -182,6 +182,65 @@ echo ok`)
 	}
 }
 
+func TestRunBenchPrMdFormat(t *testing.T) {
+	root := benchRoot(t, "alpha")
+	fakeClaudeCLI(t, `echo "main.go: slop found"`)
+	var out strings.Builder
+	if err := runBench(context.Background(), &out, root, benchOptions{Skill: "ds-x", Runs: 1, Format: "pr-md"}); err != nil {
+		t.Fatal(err)
+	}
+	got := out.String()
+	for _, want := range []string{
+		"# Bench report: ds-x",
+		"| run | old | new |",
+		"Claude Code — model `pinned-model`",
+		"Reproduce: `devskills bench ds-x --runs 1 --model pinned-model --format pr-md`",
+		"<details>",
+		"1/1 hits",
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("report missing %q:\n%s", want, got)
+		}
+	}
+	if strings.Contains(got, "== ds-x/") || strings.Contains(got, "-- stdout --") {
+		t.Error("pr-md to stdout must not interleave streaming output")
+	}
+	if !strings.Contains(got, "(main branch), new `") {
+		t.Error("report missing version SHAs")
+	}
+}
+
+func TestRunBenchPrMdOut(t *testing.T) {
+	root := benchRoot(t, "alpha")
+	fakeClaudeCLI(t, `echo ok`)
+	outPath := filepath.Join(t.TempDir(), "report.md")
+	var out strings.Builder
+	if err := runBench(context.Background(), &out, root, benchOptions{Skill: "ds-x", Runs: 1, Format: "pr-md", Out: outPath}); err != nil {
+		t.Fatal(err)
+	}
+	b, err := os.ReadFile(outPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(b), "# Bench report: ds-x") {
+		t.Errorf("report file = %q", b)
+	}
+	// With --out, progress streams to the terminal and the file gets the report.
+	if !strings.Contains(out.String(), "== ds-x/alpha") || !strings.Contains(out.String(), "report written to") {
+		t.Errorf("stdout = %q, want progress lines and the written-to note", out.String())
+	}
+	if strings.Contains(out.String(), "# Bench report") {
+		t.Error("report must not also go to stdout when --out is set")
+	}
+}
+
+func TestRunBenchRejectsUnknownFormat(t *testing.T) {
+	err := runBench(context.Background(), &strings.Builder{}, t.TempDir(), benchOptions{Skill: "ds-x", Runs: 1, Format: "html"})
+	if err == nil || !strings.Contains(err.Error(), "--format") {
+		t.Errorf("error = %v, want format validation", err)
+	}
+}
+
 func TestRunBenchUnknownSkill(t *testing.T) {
 	root := benchRoot(t, "alpha")
 	err := runBench(context.Background(), &strings.Builder{}, root, benchOptions{Skill: "ds-nope", Runs: 1})

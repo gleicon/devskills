@@ -20,11 +20,16 @@ const (
 // and "new" from the working tree. When the skill is absent on the main branch
 // the slice holds only "new" — baseline mode (FR-3.c).
 func LoadVersions(root, skill string) ([]SkillVersion, error) {
-	content, err := os.ReadFile(filepath.Join(root, "skills", skill, "SKILL.md"))
+	path := filepath.Join(root, "skills", skill, "SKILL.md")
+	content, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("skill %q not found in working tree: %w", skill, err)
 	}
-	newV := SkillVersion{Name: skill, Label: LabelNew, Content: content}
+	newSHA, err := gitStdout(root, "hash-object", path)
+	if err != nil {
+		return nil, err
+	}
+	newV := SkillVersion{Name: skill, Label: LabelNew, SHA: trimSHA(newSHA), Content: content}
 
 	branch, err := mainBranch(root)
 	if err != nil {
@@ -38,7 +43,11 @@ func LoadVersions(root, skill string) ([]SkillVersion, error) {
 	if err != nil {
 		return nil, err
 	}
-	return []SkillVersion{{Name: skill, Label: LabelOld, Content: old}, newV}, nil
+	oldSHA, err := gitStdout(root, "rev-parse", spec)
+	if err != nil {
+		return nil, err
+	}
+	return []SkillVersion{{Name: skill, Label: LabelOld, SHA: trimSHA(oldSHA), Content: old}, newV}, nil
 }
 
 // mainBranch finds the repo's default branch.
@@ -50,6 +59,8 @@ func mainBranch(root string) (string, error) {
 	}
 	return "", fmt.Errorf("no main or master branch found in %s", root)
 }
+
+func trimSHA(raw []byte) string { return strings.TrimSpace(string(raw)) }
 
 // gitStdout runs git and returns stdout verbatim — unlike gitOutput it never
 // mixes stderr into the result, so file content from git show stays exact.
