@@ -12,6 +12,7 @@ When invoked, run `devskills bench` against the skills under development and act
 
 - **Skills** — explicit names bench exactly those, skipping auto-detection.
 - **Mode** — `improve` or `report`. Free text may resolve it when unambiguous ("…for the PR" → report). Otherwise ask at pre-flight; never guess — a wrongly guessed mode wastes a paid run.
+- **Harnesses** — bare harness names (`claude`, `opencode`, `codex`) or free text ("all harnesses") resolve to `--harness`; registry harnesses only.
 - **Bench flags** — `--runs`, `--harness`, `--scenario`, `--model` pass through verbatim. Don't add flags the user didn't give; the bench owns its defaults.
 
 ## Targets
@@ -25,7 +26,7 @@ Skill names come from the `skills/<name>/` path segment. Evals-only changes (sce
 
 ## Pre-flight
 
-Before the first bench invocation, echo the resolved targets with each one's scenario count and total run count, and ask for the mode if it is still unresolved. One confirmation for the whole batch, not one per skill. Zero bench runs happen before this gate.
+Before the first bench invocation, echo the resolved targets with each one's scenario count and total run count, plus the harness set the runs will use — the bench default when none was chosen, named explicitly so it never rides silently. Ask for the mode if it is still unresolved. One confirmation for the whole batch, not one per skill; the user can amend the harness set at this gate. Zero bench runs happen before this gate.
 
 ## Running the bench
 
