@@ -22,6 +22,7 @@ const DefaultTimeout = 5 * time.Minute
 // or the main-branch content ("old").
 type SkillVersion struct {
 	Name    string
+	Label   string // LabelOld or LabelNew
 	Content []byte
 }
 
