@@ -49,7 +49,7 @@ type Runner struct {
 // The returned error is infrastructural (sandbox, git); harness failures land
 // in Result.Err.
 func (r Runner) Run(ctx context.Context, s *Scenario, skill SkillVersion) (Result, error) {
-	argv, err := headlessArgs(r.Harness, s.Task, r.Model)
+	argv, err := headlessArgs(r.Harness, s.Task, r.Model, skill.Name)
 	if err != nil {
 		return Result{}, err
 	}
@@ -92,11 +92,16 @@ func (r Runner) Run(ctx context.Context, s *Scenario, skill SkillVersion) (Resul
 }
 
 // headlessArgs builds the non-interactive invocation for a harness.
-func headlessArgs(id harness.ID, task, model string) ([]string, error) {
+func headlessArgs(id harness.ID, task, model, skill string) ([]string, error) {
 	switch id {
 	case harness.Claude:
+		// Claude Code does not surface project-local skills to a headless run,
+		// so the task naming `/skill` mid-sentence loads nothing and the score
+		// would only reflect the bare task text. Point the model at the file
+		// bench installed — the same thing Codex does for itself by grepping.
+		prompt := fmt.Sprintf("Read .claude/skills/%s/SKILL.md and follow it as your instructions for this task: %s", skill, task)
 		// --dangerously-skip-permissions is confined to the throwaway sandbox.
-		return []string{"claude", "-p", task, "--model", model, "--dangerously-skip-permissions"}, nil
+		return []string{"claude", "-p", prompt, "--model", model, "--dangerously-skip-permissions"}, nil
 	case harness.Codex:
 		// exec is codex's non-interactive mode; workspace-write confines
 		// model-run commands to the sandbox repo.
