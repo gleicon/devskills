@@ -1,4 +1,4 @@
-# Grill Me — Recipes & Extras
+# Grill Me — recipes & extras
 
 `/ds-grill-me` is the most versatile skill in the set, so it gets its own page. The base skill is tiny — *interview me about this plan, one decision at a time, until we share the same understanding* — but what you point it at changes everything. This doc is a menu of those uses.
 

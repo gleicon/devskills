@@ -1,4 +1,4 @@
-# Skill Reference
+# Skill reference
 
 Every devskills skill is a single `SKILL.md` invoked as `/<name>` in Claude Code and OpenCode (and as `$<name>` in OpenAI Codex — a mention, not a slash). This is the reference: what each one does, its arguments, and when to reach for it. Browse the catalog interactively with **`/ds`**, the router — it names every skill by phase and does no work itself. For worked, multi-step workflows see [recipes.md](recipes.md).
 
@@ -148,7 +148,7 @@ Pragmatic testing mode: as you build normally, ensure the code that matters gets
 
 ### `/ds-code-quality-review` — review
 
-Extremely strict maintainability audit: abstraction quality, file sprawl (the 1k-line smell), spaghetti-condition growth — plus **single source of truth**: duplicate implementations, constant drift, parallel-agent conflicts (two agents introducing competing helpers), pattern violations, over-engineered abstractions with one implementation, and unjustified dependencies (the single-source-of-truth checks, once their own review). Ambitiously hunts "code judo" — restructurings that delete whole categories of complexity while preserving behavior.
+Extremely strict maintainability audit: abstraction quality, file sprawl (the 1k-line smell), spaghetti-condition growth — plus **single source of truth**: duplicate implementations, constant drift, parallel-agent conflicts (two agents introducing competing helpers), pattern violations, over-engineered abstractions with one implementation, and unjustified dependencies. Ambitiously hunts "code judo" — restructurings that delete whole categories of complexity while preserving behavior.
 
 - **Args:** treated as review **scope** (files or directories). With no scope, reviews the changed files on the current branch. `--full` widens scope to the whole codebase, not just the branch diff.
 - **Output:** prioritized findings anchored to `file:line`, with an approval verdict. Changes nothing by default; `--fix` applies the mechanical, behavior-preserving findings (dead wrappers, redundant helpers, duplicate literals) — structural/code-judo restructurings stay reported.
@@ -212,7 +212,7 @@ Prose-clarity review governed by the **Federal Plain Language Guidelines**, appl
 
 ---
 
-## Quality Gate
+## Quality gate
 
 ### `/ds-quality-gate`
 

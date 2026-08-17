@@ -1,4 +1,4 @@
-# Recipes & Workflows
+# Recipes & workflows
 
 Worked examples of the devskills skills doing real work — and, more usefully, working *together*. These are opinionated suggestions, not the only way. For the dry reference (args, flags, behavior) see [skills.md](skills.md).
 

@@ -1,4 +1,4 @@
-# Tiger Style Reference
+# Tiger Style reference
 
 Source: https://tigerstyle.dev/
 Full document: https://github.com/tigerbeetle/tigerbeetle/blob/main/docs/TIGER_STYLE.md
@@ -9,7 +9,7 @@ The central principle: **Do the hard thing today to make tomorrow easy.**
 
 ---
 
-## Priority Order
+## Priority order
 
 **1. Safety** — Programs must not merely execute correctly, they must employ defense-in-depth. A correct program that fails in an unclear way is still a dangerous program.
 
@@ -19,7 +19,7 @@ The central principle: **Do the hard thing today to make tomorrow easy.**
 
 ---
 
-## Safety Principles
+## Safety principles
 
 ### Assertions
 
@@ -33,7 +33,7 @@ Assertions are executable documentation of invariants. They are not error handli
 
 As Gerard J. Holzmann (NASA JPL) noted about safety rules: "initially they are perhaps a little uncomfortable, but after a while their use becomes second-nature and not using them becomes unimaginable."
 
-### Control Flow
+### Control flow
 
 - No recursion unless termination is formally proven. Use iterative equivalents.
 - No `goto`. No equivalent flow-jumping constructs.
@@ -46,7 +46,7 @@ As Gerard J. Holzmann (NASA JPL) noted about safety rules: "initially they are p
 - Every queue, buffer, and collection has a fixed maximum capacity.
 - Assert capacity before every append.
 
-### Error Handling
+### Error handling
 
 - Every error is handled explicitly.
 - No exceptions for control flow.
@@ -60,7 +60,7 @@ As Gerard J. Holzmann (NASA JPL) noted about safety rules: "initially they are p
 
 ---
 
-## Performance Principles
+## Performance principles
 
 Performance optimization done late is expensive. Performance considered during design is cheap.
 
@@ -84,7 +84,7 @@ Compute: <operations/sec> × <cycles_per_op> = <CPU budget>
 
 ---
 
-## Code Structure
+## Code structure
 
 **Functions**
 - Maximum 70 lines per function.
@@ -111,7 +111,7 @@ Compute: <operations/sec> × <cycles_per_op> = <CPU budget>
 
 ---
 
-## Zero Technical Debt
+## Zero technical debt
 
 TigerBeetle's position: fixing problems in production is exponentially more expensive than fixing them at design time. Deferred problems compound.
 
@@ -123,7 +123,7 @@ Edsger Dijkstra: "Simple and elegant systems tend to be easier and faster to des
 
 ---
 
-## Application to This Package
+## Application to this package
 
 The `/ds-tiger-style-mode` skill encodes these principles as session-level constraints for Claude Code, OpenCode, and Codex. The language profiles include Tiger Style integration notes specific to each language's idioms.
 
