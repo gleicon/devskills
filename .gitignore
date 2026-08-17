@@ -5,7 +5,8 @@
 # Agentic / LLM harness artifacts — assistant working files, not product.
 # (Product sources live in skills/ and agents-md/.)
 .project/
-.claude/
+.claude/*
+!.claude/skills/
 .codex/
 .opencode/
 .cursor/
