@@ -257,4 +257,12 @@ gofmt -w .
 
 Skills and profiles live in `skills/` and `agents-md/` and are embedded into the binary at build time — edit the source there, not an installed copy.
 
+### Benchmarking skill changes
+
+Skill prompt changes are benchmarked with `devskills bench`: old (main branch) vs new (working tree) against committed scenarios under `evals/`, scored deterministically — no LLM judging. [docs/bench.md](docs/bench.md) covers authoring scenarios and the check tiers.
+
+- **Benchmark runs are local only.** `devskills bench` drives your installed harness CLIs (Claude Code, Codex, OpenCode) with your own auth. The repo stores no LLM credentials, and CI never executes a benchmark.
+- **CI is zero-token.** The `bench-report` workflow only checks that a PR touching a covered skill carries a report (in the PR body or a committed file); the unit tests exercise bench against fake CLIs and canned transcripts, fully offline.
+- **New skills need a scenario.** A catalog test fails any skill added without one under `evals/` — run the bench and paste the report into the PR's evidence section.
+
 A release is a `VERSION` bump. Merging that bump to `main` runs the checks above and, if `v<VERSION>` isn't tagged yet, tags it and hands off to goreleaser (`.github/workflows/release.yml`, upstream only). Merges that leave `VERSION` alone release nothing. `make snapshot` runs `goreleaser build --snapshot --clean` for a local cross-build dry-run.
