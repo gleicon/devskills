@@ -95,6 +95,12 @@ func runBench(ctx context.Context, out io.Writer, root string, opts benchOptions
 				if res.Err != nil {
 					failures++
 					fmt.Fprintf(out, "run failed: %v\n", res.Err)
+				} else if s.Tier == bench.TierPlantedDefect {
+					c, err := bench.Check(s, res)
+					if err != nil {
+						return err
+					}
+					fmt.Fprintf(out, "hits: %d/%d, extra findings: %d\n", c.HitCount(), len(s.Expectations), len(c.Extras))
 				}
 				for _, sec := range []struct{ name, body string }{
 					{"stdout", res.Stdout}, {"stderr", res.Stderr}, {"diff", res.Diff},

@@ -119,6 +119,18 @@ func TestRunBenchBaselineMode(t *testing.T) {
 	}
 }
 
+func TestRunBenchScoresPlantedDefectRuns(t *testing.T) {
+	root := benchRoot(t, "alpha")
+	fakeClaudeCLI(t, `echo "main.go: slop found"`)
+	var out strings.Builder
+	if err := runBench(context.Background(), &out, root, benchOptions{Skill: "ds-x", Runs: 1}); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Count(out.String(), "hits: 1/1, extra findings: 0") != 2 {
+		t.Errorf("output = %q, want a score line per version run", out.String())
+	}
+}
+
 func TestRunBenchScenarioFilter(t *testing.T) {
 	root := benchRoot(t, "alpha", "beta")
 	fakeClaudeCLI(t, `echo ok`)
