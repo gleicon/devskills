@@ -12,15 +12,20 @@ import (
 	"github.com/gleicon/devskills/internal/harness"
 )
 
-// fakeClaude puts a shell script named claude on PATH, keeping the real PATH
-// so git stays reachable.
-func fakeClaude(t *testing.T, script string) {
+// fakeCLI puts a shell script with the given name on PATH, keeping the real
+// PATH so git stays reachable.
+func fakeCLI(t *testing.T, name, script string) {
 	t.Helper()
 	bin := t.TempDir()
-	if err := os.WriteFile(filepath.Join(bin, "claude"), []byte("#!/bin/sh\n"+script), 0o755); err != nil {
+	if err := os.WriteFile(filepath.Join(bin, name), []byte("#!/bin/sh\n"+script), 0o755); err != nil {
 		t.Fatal(err)
 	}
 	t.Setenv("PATH", bin+string(os.PathListSeparator)+os.Getenv("PATH"))
+}
+
+func fakeClaude(t *testing.T, script string) {
+	t.Helper()
+	fakeCLI(t, "claude", script)
 }
 
 func TestRunnerRun(t *testing.T) {
@@ -114,9 +119,57 @@ func TestRunnerMissingCLI(t *testing.T) {
 	}
 }
 
-func TestRunnerUnsupportedHarness(t *testing.T) {
-	r := Runner{Harness: harness.Codex, Model: "m"}
-	if _, err := r.Run(context.Background(), fixtureScenario(t), SkillVersion{Name: "s", Content: []byte("s")}); err == nil {
-		t.Fatal("want error for a harness bench does not support yet")
+func TestRunnerCodexInvocation(t *testing.T) {
+	argsFile := filepath.Join(t.TempDir(), "args")
+	t.Setenv("ARGS_OUT", argsFile)
+	fakeCLI(t, "codex", `printf '%s\n' "$@" > "$ARGS_OUT"
+cat .codex/skills/ds-x/agents/openai.yaml`)
+	r := Runner{Harness: harness.Codex, Model: "codex-model"}
+	res, err := r.Run(context.Background(), fixtureScenario(t), SkillVersion{Name: "ds-x", Content: []byte("S")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Err != nil {
+		t.Fatalf("Result.Err = %v", res.Err)
+	}
+	args, err := os.ReadFile(argsFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"exec", "--model", "codex-model", "--sandbox", "workspace-write", "Review the diff"} {
+		if !strings.Contains(string(args), want) {
+			t.Errorf("codex args = %q, missing %q", args, want)
+		}
+	}
+	// The sync engine's Codex sidecar must be emitted in the sandbox install.
+	if !strings.Contains(res.Stdout, "allow_implicit_invocation: false") {
+		t.Errorf("stdout = %q, want the codex sidecar policy", res.Stdout)
+	}
+}
+
+func TestRunnerOpenCodeInvocation(t *testing.T) {
+	argsFile := filepath.Join(t.TempDir(), "args")
+	t.Setenv("ARGS_OUT", argsFile)
+	fakeCLI(t, "opencode", `printf '%s\n' "$@" > "$ARGS_OUT"
+cat .opencode/skills/ds-x/SKILL.md`)
+	r := Runner{Harness: harness.OpenCode, Model: "anthropic/some-model"}
+	res, err := r.Run(context.Background(), fixtureScenario(t), SkillVersion{Name: "ds-x", Content: []byte("OCSKILL")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Err != nil {
+		t.Fatalf("Result.Err = %v", res.Err)
+	}
+	args, err := os.ReadFile(argsFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"run", "Review the diff", "--model", "anthropic/some-model"} {
+		if !strings.Contains(string(args), want) {
+			t.Errorf("opencode args = %q, missing %q", args, want)
+		}
+	}
+	if !strings.Contains(res.Stdout, "OCSKILL") {
+		t.Errorf("stdout = %q, want the installed skill under .opencode/skills", res.Stdout)
 	}
 }

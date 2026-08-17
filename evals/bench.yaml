@@ -1,3 +1,5 @@
 # Per-harness model pins for benchmark runs (FR-6). `--model` overrides.
 models:
   claude: claude-sonnet-5
+  codex: gpt-5.1-codex
+  opencode: anthropic/claude-sonnet-5

@@ -97,8 +97,14 @@ func headlessArgs(id harness.ID, task, model string) ([]string, error) {
 	case harness.Claude:
 		// --dangerously-skip-permissions is confined to the throwaway sandbox.
 		return []string{"claude", "-p", task, "--model", model, "--dangerously-skip-permissions"}, nil
+	case harness.Codex:
+		// exec is codex's non-interactive mode; workspace-write confines
+		// model-run commands to the sandbox repo.
+		return []string{"codex", "exec", "--model", model, "--sandbox", "workspace-write", task}, nil
+	case harness.OpenCode:
+		return []string{"opencode", "run", task, "--model", model}, nil
 	}
-	return nil, fmt.Errorf("harness %q is not supported by bench yet", id)
+	return nil, fmt.Errorf("harness %q is not supported by bench", id)
 }
 
 // installSkill writes the skill version under the harness's project-local

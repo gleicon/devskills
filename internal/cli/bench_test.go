@@ -42,7 +42,7 @@ func benchRoot(t *testing.T, scenarios ...string) string {
 	t.Helper()
 	root := t.TempDir()
 	writeFile(t, root, "skills/ds-x/SKILL.md", "OLDSKILL\n")
-	writeFile(t, root, "evals/bench.yaml", "models:\n  claude: pinned-model\n")
+	writeFile(t, root, "evals/bench.yaml", "models:\n  claude: pinned-model\n  codex: codex-pin\n  opencode: oc-pin\n")
 	for _, s := range scenarios {
 		dir := "evals/ds-x/" + s + "/"
 		writeFile(t, root, dir+"expectations.yaml", `task: "Do the thing"
@@ -62,13 +62,18 @@ expectations:
 	return root
 }
 
-func fakeClaudeCLI(t *testing.T, script string) {
+func fakeHarnessCLI(t *testing.T, name, script string) {
 	t.Helper()
 	bin := t.TempDir()
-	if err := os.WriteFile(filepath.Join(bin, "claude"), []byte("#!/bin/sh\n"+script), 0o755); err != nil {
+	if err := os.WriteFile(filepath.Join(bin, name), []byte("#!/bin/sh\n"+script), 0o755); err != nil {
 		t.Fatal(err)
 	}
 	t.Setenv("PATH", bin+string(os.PathListSeparator)+os.Getenv("PATH"))
+}
+
+func fakeClaudeCLI(t *testing.T, script string) {
+	t.Helper()
+	fakeHarnessCLI(t, "claude", script)
 }
 
 func TestRunBenchOldVsNew(t *testing.T) {
@@ -182,6 +187,55 @@ echo ok`)
 	}
 }
 
+func TestRunBenchHarnessFanOut(t *testing.T) {
+	root := benchRoot(t, "alpha")
+	fakeClaudeCLI(t, `echo ok`)
+	fakeHarnessCLI(t, "codex", `echo ok`)
+	var out strings.Builder
+	opts := benchOptions{Skill: "ds-x", Runs: 1, Harness: "claude,codex", Format: "pr-md"}
+	if err := runBench(context.Background(), &out, root, opts); err != nil {
+		t.Fatal(err)
+	}
+	got := out.String()
+	for _, want := range []string{
+		"## Claude Code — model `pinned-model`",
+		"## OpenAI Codex — model `codex-pin`",
+		"--harness claude,codex --runs 1",
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("report missing %q:\n%s", want, got)
+		}
+	}
+	// Two harnesses: --model can't carry both pins, so repro omits it.
+	if strings.Contains(got, "--runs 1 --model") {
+		t.Error("multi-harness repro must not pick one harness's model")
+	}
+}
+
+func TestRunBenchMissingHarnessCLIRecorded(t *testing.T) {
+	root := benchRoot(t, "alpha")
+	if _, err := exec.LookPath("opencode"); err == nil {
+		t.Skip("opencode installed on this machine; the missing-CLI path can't be exercised")
+	}
+	fakeClaudeCLI(t, `echo ok`)
+	// opencode is not on PATH: its runs must fail loudly, not vanish.
+	var out strings.Builder
+	opts := benchOptions{Skill: "ds-x", Runs: 1, Harness: "claude,opencode"}
+	if err := runBench(context.Background(), &out, root, opts); err != nil {
+		t.Fatalf("claude runs succeeded, command must exit zero: %v", err)
+	}
+	if !strings.Contains(out.String(), "run failed:") {
+		t.Errorf("output = %q, want the missing-CLI failure recorded", out.String())
+	}
+}
+
+func TestRunBenchUnknownHarness(t *testing.T) {
+	err := runBench(context.Background(), &strings.Builder{}, t.TempDir(), benchOptions{Skill: "ds-x", Runs: 1, Harness: "gemini"})
+	if err == nil || !strings.Contains(err.Error(), "gemini") {
+		t.Errorf("error = %v, want unknown-harness", err)
+	}
+}
+
 func TestRunBenchPrMdFormat(t *testing.T) {
 	root := benchRoot(t, "alpha")
 	fakeClaudeCLI(t, `echo "main.go: slop found"`)
@@ -194,7 +248,7 @@ func TestRunBenchPrMdFormat(t *testing.T) {
 		"# Bench report: ds-x",
 		"| run | old | new |",
 		"Claude Code — model `pinned-model`",
-		"Reproduce: `devskills bench ds-x --runs 1 --model pinned-model --format pr-md`",
+		"Reproduce: `devskills bench ds-x --harness claude --runs 1 --model pinned-model --format pr-md`",
 		"<details>",
 		"1/1 hits",
 	} {

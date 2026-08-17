@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -18,8 +19,9 @@ import (
 type benchOptions struct {
 	Skill    string
 	Scenario string // empty runs all of the skill's scenarios
-	Model    string // empty uses the pinned model
+	Model    string // empty uses each harness's pinned model
 	Runs     int
+	Harness  string // comma-separated harness IDs; empty means claude only
 	Format   string // "" streams raw runs; "pr-md" emits the markdown report
 	Out      string // pr-md destination file; empty writes to stdout
 }
@@ -43,6 +45,7 @@ func newBenchCmd() *cobra.Command {
 	f.StringVar(&opts.Scenario, "scenario", "", "run a single scenario by name")
 	f.StringVar(&opts.Model, "model", "", "override the pinned model from evals/bench.yaml")
 	f.IntVar(&opts.Runs, "runs", 3, "runs per skill version per scenario")
+	f.StringVar(&opts.Harness, "harness", "claude", "comma-separated harnesses to bench: claude,codex,opencode")
 	f.StringVar(&opts.Format, "format", "", `output format: "pr-md" for the PR-ready markdown report`)
 	f.StringVar(&opts.Out, "out", "", "with --format pr-md, write the report to this file")
 	return cmd
@@ -61,6 +64,10 @@ func runBench(ctx context.Context, out io.Writer, root string, opts benchOptions
 	if opts.Format != "" && opts.Format != "pr-md" {
 		return fmt.Errorf(`--format must be "pr-md", got %q`, opts.Format)
 	}
+	harnesses, err := parseHarnesses(opts.Harness)
+	if err != nil {
+		return err
+	}
 	versions, err := bench.LoadVersions(root, opts.Skill)
 	if err != nil {
 		return err
@@ -70,9 +77,15 @@ func runBench(ctx context.Context, out io.Writer, root string, opts benchOptions
 	if err != nil {
 		return err
 	}
-	model := opts.Model
-	if model == "" {
-		if model, err = cfg.Model(harness.Claude); err != nil {
+	// Resolve every harness's model up front so a missing pin fails before
+	// any run spends tokens.
+	models := map[harness.ID]string{}
+	for _, h := range harnesses {
+		if opts.Model != "" {
+			models[h] = opts.Model
+			continue
+		}
+		if models[h], err = cfg.Model(h); err != nil {
 			return err
 		}
 	}
@@ -98,44 +111,49 @@ func runBench(ctx context.Context, out io.Writer, root string, opts benchOptions
 		fmt.Fprintf(stream, "baseline mode: %s is absent on the main branch, benching the new version only\n", opts.Skill)
 	}
 
-	runner := bench.Runner{Harness: harness.Claude, Model: model}
-	group := bench.HarnessReport{Harness: harness.Claude.Name(), Model: model}
+	var groups []bench.HarnessReport
 	total, failures := 0, 0
-	for _, s := range scenarios {
-		sr := bench.ScenarioReport{Name: s.Name, Expectations: len(s.Expectations)}
-		for _, v := range versions {
-			for i := 1; i <= opts.Runs; i++ {
-				total++
-				fmt.Fprintf(stream, "== %s/%s %s run %d/%d (%s, model %s)\n",
-					opts.Skill, s.Name, v.Label, i, opts.Runs, harness.Claude.Name(), model)
-				res, err := runner.Run(ctx, s, v)
-				if err != nil {
-					return err
-				}
-				rr, err := recordRun(stream, s, res, opts.Format == "")
-				if err != nil {
-					return err
-				}
-				if rr.Failed {
-					failures++
-				}
-				if v.Label == bench.LabelOld {
-					sr.Old = append(sr.Old, rr)
-				} else {
-					sr.New = append(sr.New, rr)
+	for _, h := range harnesses {
+		model := models[h]
+		runner := bench.Runner{Harness: h, Model: model}
+		group := bench.HarnessReport{Harness: h.Name(), Model: model}
+		for _, s := range scenarios {
+			sr := bench.ScenarioReport{Name: s.Name, Expectations: len(s.Expectations)}
+			for _, v := range versions {
+				for i := 1; i <= opts.Runs; i++ {
+					total++
+					fmt.Fprintf(stream, "== %s/%s %s run %d/%d (%s, model %s)\n",
+						opts.Skill, s.Name, v.Label, i, opts.Runs, h.Name(), model)
+					res, err := runner.Run(ctx, s, v)
+					if err != nil {
+						return err
+					}
+					rr, err := recordRun(stream, s, res, opts.Format == "")
+					if err != nil {
+						return err
+					}
+					if rr.Failed {
+						failures++
+					}
+					if v.Label == bench.LabelOld {
+						sr.Old = append(sr.Old, rr)
+					} else {
+						sr.New = append(sr.New, rr)
+					}
 				}
 			}
+			group.Scenarios = append(group.Scenarios, sr)
 		}
-		group.Scenarios = append(group.Scenarios, sr)
+		groups = append(groups, group)
 	}
 
 	if opts.Format == "pr-md" {
 		report := bench.Report{
 			Skill:    opts.Skill,
-			Command:  reproCommand(opts, model),
+			Command:  reproCommand(opts, harnesses, models),
 			Baseline: baseline,
 			NewSHA:   versions[len(versions)-1].SHA,
-			Groups:   []bench.HarnessReport{group},
+			Groups:   groups,
 		}
 		if !baseline {
 			report.OldSHA = versions[0].SHA
@@ -185,14 +203,42 @@ func recordRun(stream io.Writer, s *bench.Scenario, res bench.Result, verbose bo
 }
 
 // reproCommand is the exact command line that re-runs this bench identically
-// (NFR-3): the resolved model is always explicit, so a later pin change
-// cannot alter a reproduction.
-func reproCommand(opts benchOptions, model string) string {
+// (NFR-3). With one harness the resolved model is made explicit so a later
+// pin change cannot alter a reproduction; with several, --model can't carry
+// per-harness values — the report's per-group model IDs pin them instead.
+func reproCommand(opts benchOptions, harnesses []harness.ID, models map[harness.ID]string) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "devskills bench %s", opts.Skill)
 	if opts.Scenario != "" {
 		fmt.Fprintf(&b, " --scenario %s", opts.Scenario)
 	}
-	fmt.Fprintf(&b, " --runs %d --model %s --format pr-md", opts.Runs, model)
-	return b.String()
+	ids := make([]string, len(harnesses))
+	for i, h := range harnesses {
+		ids[i] = string(h)
+	}
+	fmt.Fprintf(&b, " --harness %s --runs %d", strings.Join(ids, ","), opts.Runs)
+	if opts.Model != "" {
+		fmt.Fprintf(&b, " --model %s", opts.Model)
+	} else if len(harnesses) == 1 {
+		fmt.Fprintf(&b, " --model %s", models[harnesses[0]])
+	}
+	return b.String() + " --format pr-md"
+}
+
+// parseHarnesses turns the --harness flag into validated, deduplicated IDs.
+func parseHarnesses(list string) ([]harness.ID, error) {
+	if list == "" {
+		list = string(harness.Claude)
+	}
+	var ids []harness.ID
+	for part := range strings.SplitSeq(list, ",") {
+		id := harness.ID(strings.TrimSpace(part))
+		if !id.Valid() {
+			return nil, fmt.Errorf("unknown harness %q in --harness", part)
+		}
+		if !slices.Contains(ids, id) {
+			ids = append(ids, id)
+		}
+	}
+	return ids, nil
 }
