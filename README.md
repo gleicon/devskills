@@ -156,7 +156,7 @@ Preferences (the modes resume auto-applies) live in `.project/config.md`, writte
 
 ## The CLI
 
-One binary, five commands:
+One binary, six commands:
 
 | Command | Does |
 |---------|------|
@@ -164,6 +164,7 @@ One binary, five commands:
 | `devskills init` | scaffold a project's `AGENTS.md` + a `CLAUDE.md` import (`--lang`, `--concise`, `--interaction`, `--plain-language`, `--phases`, `--spec-discipline`) |
 | `devskills config` | pick the modes a session starts with (`--modes`, `--dry-run`) |
 | `devskills doctor` | check — or, with `--fix`, install — the external tools some skills need |
+| `devskills bench` | benchmark a skill change old-vs-new against its `evals/` scenarios (`--runs`, `--harness`, `--format pr-md`) — see [docs/bench.md](docs/bench.md) |
 | `devskills version` | print version and build info |
 
 `init` builds `AGENTS.md` from stacked, independently-managed blocks marked `<!-- BEGIN/END devskills:<id> -->`, so re-running is idempotent and swapping a language replaces only that block. It's assistant-agnostic — Claude Code reads the `CLAUDE.md` import; OpenCode and Codex read `AGENTS.md` directly.
@@ -211,6 +212,7 @@ devskills ships no fixed pipeline. Each skill does one job and hands control bac
 - **[docs/migration.md](docs/migration.md)** — porting a pre-rebuild `.project/` onto the four-file model
 - **[docs/grill-me.md](docs/grill-me.md)** · **[docs/tiger-style.md](docs/tiger-style.md)** — the grill playbook and the engineering bar
 - **[docs/ast-grep.md](docs/ast-grep.md)** — the optional structural pass for `/ds-security-review`
+- **[docs/bench.md](docs/bench.md)** — benchmarking skill changes: scenario authoring, check tiers, PR evidence
 
 ## References
 
