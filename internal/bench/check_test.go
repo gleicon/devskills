@@ -1,6 +1,7 @@
 package bench
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -170,13 +171,84 @@ func TestCheckApplyEmptyDiffMissesAll(t *testing.T) {
 	}
 }
 
-func TestCheckUnsupportedTier(t *testing.T) {
+func structuralScenario(t *testing.T) *Scenario {
+	t.Helper()
+	dir := writeScenario(t, "s", `task: t
+tier: structural
+elements: ["# now", "# hazards"]
+`, "base", "change")
+	s, err := LoadScenario(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return s
+}
+
+func TestCheckStructural(t *testing.T) {
+	s := structuralScenario(t)
+	addsBoth := "diff --git a/state.md b/state.md\n--- /dev/null\n+++ b/state.md\n@@ -0,0 +1,2 @@\n+# now\n+# hazards\n"
+	tests := []struct {
+		name string
+		res  Result
+		want []bool
+	}{
+		{"both in stdout", Result{Stdout: "# now\nstuff\n# hazards\n"}, []bool{true, true}},
+		{"both in diff added lines", Result{Diff: addsBoth}, []bool{true, true}},
+		{"split across stdout and diff", Result{Stdout: "# now\n", Diff: "diff --git a/s.md b/s.md\n+++ b/s.md\n+# hazards\n"}, []bool{true, true}},
+		{"removed line does not hit", Result{Diff: "diff --git a/s.md b/s.md\n--- a/s.md\n-# now\n"}, []bool{false, false}},
+		{"file header does not hit", Result{Diff: "diff --git a/# now b/# now\n+++ b/# now\n"}, []bool{false, false}},
+		{"empty run", Result{}, []bool{false, false}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c, err := Check(s, tt.res)
+			if err != nil {
+				t.Fatal(err)
+			}
+			for i := range tt.want {
+				if c.Hits[i] != tt.want[i] {
+					t.Errorf("Hits[%d] = %v, want %v", i, c.Hits[i], tt.want[i])
+				}
+			}
+			if len(c.Extras) != 0 {
+				t.Errorf("Extras = %q, want none", c.Extras)
+			}
+		})
+	}
+}
+
+func TestCheckSmoke(t *testing.T) {
 	dir := writeScenario(t, "s", "task: t\ntier: smoke\n", "base", "change")
 	s, err := LoadScenario(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Check(s, Result{}); err == nil || !strings.Contains(err.Error(), "smoke") {
-		t.Errorf("error = %v, want unsupported-tier", err)
+	tests := []struct {
+		name string
+		res  Result
+		want bool
+	}{
+		{"zero exit with output passes", Result{Stdout: "Git mode active.\n"}, true},
+		{"failed invocation fails", Result{Stdout: "partial", Err: errors.New("timeout")}, false},
+		{"empty output fails", Result{}, false},
+		{"blank output fails", Result{Stdout: " \n\t\n"}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c, err := Check(s, tt.res)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(c.Hits) != 1 || c.Hits[0] != tt.want {
+				t.Errorf("Hits = %v, want [%v]", c.Hits, tt.want)
+			}
+		})
+	}
+}
+
+func TestCheckUnknownTier(t *testing.T) {
+	s := &Scenario{Name: "s", Tier: "vibes"}
+	if _, err := Check(s, Result{}); err == nil || !strings.Contains(err.Error(), "vibes") {
+		t.Errorf("error = %v, want unknown-tier", err)
 	}
 }

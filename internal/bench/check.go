@@ -10,8 +10,8 @@ import (
 
 // CheckResult scores one run against a scenario's expectations.
 type CheckResult struct {
-	// Hits is parallel to Scenario.Expectations: whether each planted defect
-	// was found.
+	// Hits is parallel to Scenario.Expectations (planted-defect) or
+	// Scenario.Elements (structural); smoke has a single pass/fail entry.
 	Hits []bool
 	// Extras are findings matching no expectation — counted and listed but
 	// never scored (FR-11). Report style: output lines mentioning a fixture
@@ -31,19 +31,57 @@ func (c CheckResult) HitCount() int {
 	return n
 }
 
-// Check scores a run deterministically per the scenario's tier (FR-10). Only
-// planted-defect is supported so far; structural and smoke land separately.
+// Check scores a run deterministically per the scenario's tier (FR-10).
 func Check(s *Scenario, res Result) (CheckResult, error) {
-	if s.Tier != TierPlantedDefect {
-		return CheckResult{}, fmt.Errorf("scenario %s: checking for tier %q is not implemented yet", s.Name, s.Tier)
+	switch s.Tier {
+	case TierPlantedDefect:
+		switch s.Style {
+		case StyleReport:
+			return checkReport(s, res.Stdout)
+		case StyleApply:
+			return checkApply(s, res.Diff), nil
+		}
+		return CheckResult{}, fmt.Errorf("scenario %s: unknown style %q", s.Name, s.Style)
+	case TierStructural:
+		return checkStructural(s, res), nil
+	case TierSmoke:
+		return checkSmoke(res), nil
 	}
-	switch s.Style {
-	case StyleReport:
-		return checkReport(s, res.Stdout)
-	case StyleApply:
-		return checkApply(s, res.Diff), nil
+	return CheckResult{}, fmt.Errorf("scenario %s: unknown tier %q", s.Name, s.Tier)
+}
+
+// checkStructural hits an element when it appears in the run's stdout or on a
+// line the post-run diff added (FR-10.b: produced artifact or output).
+// Elements match exactly: required section headings are literal strings.
+func checkStructural(s *Scenario, res Result) CheckResult {
+	added := strings.Join(diffAddedLines(res.Diff), "\n")
+	c := CheckResult{Hits: make([]bool, len(s.Elements))}
+	for i, e := range s.Elements {
+		c.Hits[i] = strings.Contains(res.Stdout, e) || strings.Contains(added, e)
 	}
-	return CheckResult{}, fmt.Errorf("scenario %s: unknown style %q", s.Name, s.Style)
+	return c
+}
+
+// checkSmoke passes when the invocation exited zero and produced non-blank
+// output (FR-10.c).
+func checkSmoke(res Result) CheckResult {
+	return CheckResult{Hits: []bool{res.Err == nil && strings.TrimSpace(res.Stdout) != ""}}
+}
+
+// diffAddedLines returns the content of "+" lines in a unified git diff,
+// prefix stripped, file headers excluded.
+func diffAddedLines(diff string) []string {
+	var lines []string
+	for line := range strings.Lines(diff) {
+		line = strings.TrimRight(line, "\n")
+		if strings.HasPrefix(line, "+++") {
+			continue
+		}
+		if added, ok := strings.CutPrefix(line, "+"); ok {
+			lines = append(lines, added)
+		}
+	}
+	return lines
 }
 
 // checkReport hits an expectation when the output mentions its file and at
