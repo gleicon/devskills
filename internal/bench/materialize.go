@@ -47,6 +47,11 @@ func Materialize(s *Scenario, dir string) error {
 }
 
 func git(dir string, args ...string) error {
+	_, err := gitOutput(dir, args...)
+	return err
+}
+
+func gitOutput(dir string, args ...string) (string, error) {
 	cmd := exec.Command("git", args...)
 	cmd.Dir = dir
 	cmd.Env = append(os.Environ(),
@@ -57,10 +62,11 @@ func git(dir string, args ...string) error {
 		"GIT_COMMITTER_NAME=devskills-bench",
 		"GIT_COMMITTER_EMAIL=bench@devskills.local",
 	)
-	if out, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("git %s: %w: %s", strings.Join(args, " "), err, strings.TrimSpace(string(out)))
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("git %s: %w: %s", strings.Join(args, " "), err, strings.TrimSpace(string(out)))
 	}
-	return nil
+	return string(out), nil
 }
 
 // copyTree copies src into dst, overwriting existing files so change/ can

@@ -23,6 +23,7 @@ func NewRootCmd(catalog fs.FS) *cobra.Command {
 	root.AddCommand(newInitCmd(catalog))
 	root.AddCommand(newConfigCmd(catalog))
 	root.AddCommand(newDoctorCmd())
+	root.AddCommand(newBenchCmd())
 	return root
 }
 
