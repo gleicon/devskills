@@ -161,6 +161,30 @@ func TestCheckApplyRewrittenLineHits(t *testing.T) {
 	}
 }
 
+func TestCheckApplyDashDashContentLineHits(t *testing.T) {
+	// A removed line whose content starts with "--" renders as "---…" in the
+	// diff and must not be mistaken for a file header.
+	dir := writeScenario(t, "s", `task: t
+tier: planted-defect
+style: apply
+expectations:
+  - file: docs.md
+    anchors: ["--retry"]
+`, "base", "change")
+	s, err := LoadScenario(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	diff := "diff --git a/docs.md b/docs.md\n--- a/docs.md\n+++ b/docs.md\n@@ -1,2 +1,1 @@\n---retry runs the task again\n"
+	c, err := Check(s, Result{Diff: diff})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !c.Hits[0] {
+		t.Error("removed --retry line must hit, not be skipped as a header")
+	}
+}
+
 func TestCheckApplyEmptyDiffMissesAll(t *testing.T) {
 	c, err := Check(applyScenario(t), Result{})
 	if err != nil {
@@ -197,6 +221,7 @@ func TestCheckStructural(t *testing.T) {
 		{"split across stdout and diff", Result{Stdout: "# now\n", Diff: "diff --git a/s.md b/s.md\n+++ b/s.md\n+# hazards\n"}, []bool{true, true}},
 		{"removed line does not hit", Result{Diff: "diff --git a/s.md b/s.md\n--- a/s.md\n-# now\n"}, []bool{false, false}},
 		{"file header does not hit", Result{Diff: "diff --git a/# now b/# now\n+++ b/# now\n"}, []bool{false, false}},
+		{"added ++ line not mistaken for header", Result{Diff: "diff --git a/s.md b/s.md\n+++ b/s.md\n+++ # now\n"}, []bool{true, false}},
 		{"empty run", Result{}, []bool{false, false}},
 	}
 	for _, tt := range tests {

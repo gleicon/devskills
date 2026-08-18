@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing/fstest"
 	"time"
 
@@ -63,6 +64,14 @@ func (r Runner) Run(ctx context.Context, s *Scenario, skill SkillVersion) (Resul
 	if err := Materialize(s, sandbox); err != nil {
 		return Result{}, err
 	}
+	// The diff base is the materialized tip, pinned by SHA: a run that
+	// commits (git-mode skills) moves HEAD, and diffing against HEAD would
+	// hide the run's own changes.
+	baseSHA, err := gitOutput(sandbox, "rev-parse", "HEAD")
+	if err != nil {
+		return Result{}, err
+	}
+	baseSHA = strings.TrimSpace(baseSHA)
 	if err := excludeHarnessDirs(sandbox); err != nil {
 		return Result{}, err
 	}
@@ -97,11 +106,13 @@ func (r Runner) Run(ctx context.Context, s *Scenario, skill SkillVersion) (Resul
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr
 	runErr := cmd.Run()
-	if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+	// Only a failed run is a timeout: a clean exit microseconds before the
+	// deadline must not be rewritten into a failure.
+	if runErr != nil && errors.Is(ctx.Err(), context.DeadlineExceeded) {
 		runErr = fmt.Errorf("timed out after %s", timeout)
 	}
 
-	diff, err := postRunDiff(sandbox)
+	diff, err := postRunDiff(sandbox, baseSHA)
 	if err != nil {
 		return Result{}, err
 	}
@@ -166,12 +177,13 @@ func excludeHarnessDirs(sandbox string) error {
 	return os.WriteFile(filepath.Join(info, "exclude"), []byte(".claude/\n.codex/\n.opencode/\n"), 0o644)
 }
 
-// postRunDiff stages everything and diffs against HEAD, so files the harness
-// added are captured alongside edits. The sandbox is disposable; mutating its
-// index is fine.
-func postRunDiff(sandbox string) (string, error) {
+// postRunDiff stages everything and diffs against the materialized tip, so
+// files the harness added are captured alongside edits — even when the run
+// committed and moved HEAD. The sandbox is disposable; mutating its index is
+// fine.
+func postRunDiff(sandbox, baseSHA string) (string, error) {
 	if err := git(sandbox, "add", "-A"); err != nil {
 		return "", err
 	}
-	return gitOutput(sandbox, "diff", "--cached")
+	return gitOutput(sandbox, "diff", "--cached", baseSHA)
 }

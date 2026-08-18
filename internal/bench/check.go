@@ -69,12 +69,14 @@ func checkSmoke(res Result) CheckResult {
 }
 
 // diffAddedLines returns the content of "+" lines in a unified git diff,
-// prefix stripped, file headers excluded.
+// prefix stripped, file headers excluded. Headers are matched by their full
+// forms — a bare "+++" prefix would also swallow an added line whose content
+// starts with "++".
 func diffAddedLines(diff string) []string {
 	var lines []string
 	for line := range strings.Lines(diff) {
 		line = strings.TrimRight(line, "\n")
-		if strings.HasPrefix(line, "+++") {
+		if strings.HasPrefix(line, "+++ b/") || strings.HasPrefix(line, "+++ /dev/null") {
 			continue
 		}
 		if added, ok := strings.CutPrefix(line, "+"); ok {
@@ -162,7 +164,9 @@ func diffSections(diff string) map[string][]string {
 			}
 			continue
 		}
-		if current == "" || strings.HasPrefix(line, "---") {
+		// Full header forms only: a bare "---" prefix would also swallow a
+		// removed line whose content starts with "--".
+		if current == "" || strings.HasPrefix(line, "--- a/") || strings.HasPrefix(line, "--- /dev/null") {
 			continue
 		}
 		if removed, ok := strings.CutPrefix(line, "-"); ok {

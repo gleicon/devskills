@@ -80,6 +80,26 @@ echo "one warning" >&2
 	}
 }
 
+func TestRunnerDiffSurvivesHarnessCommit(t *testing.T) {
+	// A run that commits its work (git-mode skills) moves HEAD; the post-run
+	// diff is pinned to the materialized tip, so the change must still show.
+	fakeClaude(t, `printf 'package main // committed\n' > main.go
+export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null
+git add -A
+git -c user.name=h -c user.email=h@h commit -q -m done`)
+	r := Runner{Harness: harness.Claude, Model: "m"}
+	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Err != nil {
+		t.Fatalf("Result.Err = %v", res.Err)
+	}
+	if !strings.Contains(res.Diff, "committed") || !strings.Contains(res.Diff, "main.go") {
+		t.Errorf("diff = %q, want the committed change captured", res.Diff)
+	}
+}
+
 func TestRunnerRecordsFailure(t *testing.T) {
 	fakeClaude(t, `echo "boom" >&2; exit 3`)
 	r := Runner{Harness: harness.Claude, Model: "m"}
