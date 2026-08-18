@@ -340,6 +340,32 @@ func TestRunBenchTimeoutFlagBoundsRuns(t *testing.T) {
 	}
 }
 
+func TestRunBenchReproCarriesTimeout(t *testing.T) {
+	root := benchRoot(t, "alpha")
+	fakeClaudeCLI(t, `echo ok`)
+	var out strings.Builder
+	if err := runBench(context.Background(), &out, io.Discard, root, benchOptions{Skill: "ds-x", Runs: 1, Format: "pr-md", Timeout: 2 * time.Minute}); err != nil {
+		t.Fatal(err)
+	}
+	// NFR-3: a non-default timeout shapes which runs fail, so the repro
+	// command must carry it.
+	if !strings.Contains(out.String(), "--timeout 2m0s") {
+		t.Errorf("report = %q, want the non-default --timeout in the repro command", out.String())
+	}
+}
+
+func TestRunBenchDedupesHarnesses(t *testing.T) {
+	root := benchRoot(t, "alpha")
+	fakeClaudeCLI(t, `echo ok`)
+	var out strings.Builder
+	if err := runBench(context.Background(), &out, io.Discard, root, benchOptions{Skill: "ds-x", Runs: 1, Harness: "claude,claude"}); err != nil {
+		t.Fatal(err)
+	}
+	if n := strings.Count(out.String(), "== ds-x/alpha"); n != 2 {
+		t.Errorf("run headers = %d, want 2 — a duplicated --harness entry must not double the runs", n)
+	}
+}
+
 func TestRunBenchInterruptedContextAborts(t *testing.T) {
 	root := benchRoot(t, "alpha")
 	fakeClaudeCLI(t, `echo ok`)
