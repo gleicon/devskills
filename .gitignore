@@ -5,13 +5,17 @@
 # Agentic / LLM harness artifacts — assistant working files, not product.
 # (Product sources live in skills/ and agents-md/.)
 .project/
-# The repo-local dev skill is product; anything else under .claude/ —
-# including a catalog installed with `devskills install --local` — is not.
+# The repo-local dev skill is product; anything else under .claude/ and
+# .codex/ — including a catalog installed with `devskills install --local` —
+# is not. OpenCode reads .claude/skills/ itself, so it needs no copy.
 .claude/*
 !.claude/skills/
 .claude/skills/*
 !.claude/skills/ds-dev-skill-bench/
-.codex/
+.codex/*
+!.codex/skills/
+.codex/skills/*
+!.codex/skills/ds-dev-skill-bench/
 .opencode/
 .cursor/
 .continue/
