@@ -81,10 +81,10 @@ elements:
 
 ### `smoke` — the invocation must work at all
 
-For mode skills and anything without checkable output: the run passes when the assistant exits zero and prints non-blank output. No expectation list:
+The weakest tier, for skills with genuinely no checkable output: the run passes when the assistant exits zero and prints non-blank output — even a refusal counts. Reach for it last; a skill that mandates any literal in its output (a confirmation line, a heading) supports the structural tier instead:
 
 ```yaml
-task: "Run /ds-git-mode to activate git mode for this session."
+task: "Run /ds-example to do something with no checkable output."
 tier: smoke
 ```
 
