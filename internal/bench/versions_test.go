@@ -7,18 +7,23 @@ import (
 	"testing"
 )
 
-// skillRepo builds a git repo with skills/ds-x/SKILL.md committed on the given
-// default branch, then diverges the working tree copy.
+// skillRepo builds a git repo with skills/ds-x/ (SKILL.md plus a companion)
+// committed on the given default branch, then diverges the working tree copies.
 func skillRepo(t *testing.T, branch string) string {
 	t.Helper()
 	root := t.TempDir()
-	path := filepath.Join(root, "skills", "ds-x", "SKILL.md")
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+	dir := filepath.Join(root, "skills", "ds-x")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(path, []byte("OLD\n"), 0o644); err != nil {
-		t.Fatal(err)
+	write := func(name, content string) {
+		t.Helper()
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
 	}
+	write("SKILL.md", "OLD\n")
+	write("guide.md", "OLDGUIDE\n")
 	for _, args := range [][]string{
 		{"init", "-q", "-b", branch},
 		{"add", "-A"},
@@ -28,9 +33,8 @@ func skillRepo(t *testing.T, branch string) string {
 			t.Fatal(err)
 		}
 	}
-	if err := os.WriteFile(path, []byte("NEW\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
+	write("SKILL.md", "NEW\n")
+	write("guide.md", "NEWGUIDE\n")
 	return root
 }
 
@@ -44,11 +48,11 @@ func TestLoadVersions(t *testing.T) {
 			if len(vs) != 2 {
 				t.Fatalf("got %d versions, want old and new", len(vs))
 			}
-			if vs[0].Label != LabelOld || string(vs[0].Content) != "OLD\n" {
-				t.Errorf("old = %q %q", vs[0].Label, vs[0].Content)
+			if vs[0].Label != LabelOld || string(vs[0].Files["SKILL.md"]) != "OLD\n" || string(vs[0].Files["guide.md"]) != "OLDGUIDE\n" {
+				t.Errorf("old = %q %q", vs[0].Label, vs[0].Files)
 			}
-			if vs[1].Label != LabelNew || string(vs[1].Content) != "NEW\n" {
-				t.Errorf("new = %q %q", vs[1].Label, vs[1].Content)
+			if vs[1].Label != LabelNew || string(vs[1].Files["SKILL.md"]) != "NEW\n" || string(vs[1].Files["guide.md"]) != "NEWGUIDE\n" {
+				t.Errorf("new = %q %q", vs[1].Label, vs[1].Files)
 			}
 		})
 	}
@@ -68,7 +72,7 @@ func TestLoadVersionsBaseline(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(vs) != 1 || vs[0].Label != LabelNew || string(vs[0].Content) != "FRESH\n" {
+	if len(vs) != 1 || vs[0].Label != LabelNew || string(vs[0].Files["SKILL.md"]) != "FRESH\n" {
 		t.Errorf("versions = %+v, want baseline new only", vs)
 	}
 }

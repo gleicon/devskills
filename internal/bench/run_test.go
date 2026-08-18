@@ -28,16 +28,22 @@ func fakeClaude(t *testing.T, script string) {
 	fakeCLI(t, "claude", script)
 }
 
+// benchSkill is a minimal one-file skill version for runner tests.
+func benchSkill(content string) SkillVersion {
+	return SkillVersion{Name: "ds-x", Files: map[string][]byte{"SKILL.md": []byte(content)}}
+}
+
 func TestRunnerRun(t *testing.T) {
 	argsFile := filepath.Join(t.TempDir(), "args")
 	t.Setenv("ARGS_OUT", argsFile)
 	fakeClaude(t, `printf '%s\n' "$@" > "$ARGS_OUT"
-cat .claude/skills/ds-x/SKILL.md
+cat .claude/skills/ds-x/SKILL.md .claude/skills/ds-x/ref.md
 printf 'package main // cleaned\n' > main.go
 echo "one warning" >&2
 `)
 
-	skill := SkillVersion{Name: "ds-x", Content: []byte("SKILLBODY\n")}
+	skill := benchSkill("SKILLBODY\n")
+	skill.Files["ref.md"] = []byte("COMPANION\n")
 	r := Runner{Harness: harness.Claude, Model: "pin-model"}
 	res, err := r.Run(context.Background(), fixtureScenario(t), skill)
 	if err != nil {
@@ -49,6 +55,9 @@ echo "one warning" >&2
 
 	if !strings.Contains(res.Stdout, "SKILLBODY") {
 		t.Errorf("stdout = %q, want the project-locally installed skill content", res.Stdout)
+	}
+	if !strings.Contains(res.Stdout, "COMPANION") {
+		t.Errorf("stdout = %q, want the skill's companion file installed beside SKILL.md", res.Stdout)
 	}
 	if !strings.Contains(res.Stderr, "one warning") {
 		t.Errorf("stderr = %q", res.Stderr)
@@ -74,7 +83,7 @@ echo "one warning" >&2
 func TestRunnerRecordsFailure(t *testing.T) {
 	fakeClaude(t, `echo "boom" >&2; exit 3`)
 	r := Runner{Harness: harness.Claude, Model: "m"}
-	res, err := r.Run(context.Background(), fixtureScenario(t), SkillVersion{Name: "ds-x", Content: []byte("s")})
+	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -89,7 +98,7 @@ func TestRunnerRecordsFailure(t *testing.T) {
 func TestRunnerRecordsTimeout(t *testing.T) {
 	fakeClaude(t, `sleep 5`)
 	r := Runner{Harness: harness.Claude, Model: "m", Timeout: 100 * time.Millisecond}
-	res, err := r.Run(context.Background(), fixtureScenario(t), SkillVersion{Name: "ds-x", Content: []byte("s")})
+	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -110,7 +119,7 @@ func TestRunnerMissingCLI(t *testing.T) {
 	}
 	t.Setenv("PATH", bin)
 	r := Runner{Harness: harness.Claude, Model: "m"}
-	res, err := r.Run(context.Background(), fixtureScenario(t), SkillVersion{Name: "ds-x", Content: []byte("s")})
+	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -125,7 +134,7 @@ func TestRunnerCodexInvocation(t *testing.T) {
 	fakeCLI(t, "codex", `printf '%s\n' "$@" > "$ARGS_OUT"
 cat .codex/skills/ds-x/agents/openai.yaml`)
 	r := Runner{Harness: harness.Codex, Model: "codex-model"}
-	res, err := r.Run(context.Background(), fixtureScenario(t), SkillVersion{Name: "ds-x", Content: []byte("S")})
+	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("S"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -154,7 +163,7 @@ func TestRunnerOpenCodeInvocation(t *testing.T) {
 [ -d "$OPENCODE_CONFIG_DIR" ] && [ -z "$(ls -A "$OPENCODE_CONFIG_DIR")" ] && [ "$OPENCODE_DISABLE_CLAUDE_CODE" = 1 ] && echo ISOLATED
 cat .opencode/skills/ds-x/SKILL.md`)
 	r := Runner{Harness: harness.OpenCode, Model: "anthropic/some-model"}
-	res, err := r.Run(context.Background(), fixtureScenario(t), SkillVersion{Name: "ds-x", Content: []byte("OCSKILL")})
+	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("OCSKILL"))
 	if err != nil {
 		t.Fatal(err)
 	}

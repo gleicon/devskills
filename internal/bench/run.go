@@ -21,10 +21,12 @@ const DefaultTimeout = 5 * time.Minute
 // SkillVersion is one version of a skill under bench: the working tree ("new")
 // or the main-branch content ("old").
 type SkillVersion struct {
-	Name    string
-	Label   string // LabelOld or LabelNew
-	SHA     string // git blob SHA of Content, for reproducible reports (NFR-3)
-	Content []byte
+	Name  string
+	Label string // LabelOld or LabelNew
+	SHA   string // git blob SHA of the version's SKILL.md, for reproducible reports (NFR-3)
+	// Files is the skill's whole directory — SKILL.md plus any companions —
+	// keyed by slash-separated path relative to skills/<Name>/.
+	Files map[string][]byte
 }
 
 // Result captures one harness invocation. Err records a failed or timed-out
@@ -132,16 +134,18 @@ func headlessArgs(id harness.ID, task, model, skill string) ([]string, error) {
 	return nil, fmt.Errorf("harness %q is not supported by bench", id)
 }
 
-// installSkill writes the skill version under the harness's project-local
-// skills path in the sandbox, reusing the sync engine with a one-skill
-// in-memory catalog so install semantics (layout, Codex sidecar) stay single-sourced.
+// installSkill writes the skill version — its full directory, companions
+// included — under the harness's project-local skills path in the sandbox,
+// reusing the sync engine with a one-skill in-memory catalog so install
+// semantics (layout, Codex sidecar) stay single-sourced.
 func installSkill(sandbox string, id harness.ID, skill SkillVersion) error {
 	dir, err := harness.Resolver{ProjectRoot: sandbox}.SkillsDir(id, harness.Local)
 	if err != nil {
 		return err
 	}
-	catalog := fstest.MapFS{
-		"skills/" + skill.Name + "/SKILL.md": &fstest.MapFile{Data: skill.Content},
+	catalog := fstest.MapFS{}
+	for rel, data := range skill.Files {
+		catalog["skills/"+skill.Name+"/"+rel] = &fstest.MapFile{Data: data}
 	}
 	eng := devsync.New(catalog)
 	plan, err := eng.Plan(devsync.Target{Name: id.Name(), SkillsDir: dir, Codex: id == harness.Codex})
