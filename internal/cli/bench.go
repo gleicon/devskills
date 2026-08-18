@@ -39,7 +39,7 @@ func newBenchCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return runBench(cmd.Context(), cmd.OutOrStdout(), r.ProjectRoot, opts)
+			return runBench(cmd.Context(), cmd.OutOrStdout(), cmd.ErrOrStderr(), r.ProjectRoot, opts)
 		},
 	}
 	f := cmd.Flags()
@@ -58,7 +58,7 @@ func newBenchCmd() *cobra.Command {
 // report instead. With the skill absent on main it runs baseline mode: new
 // version only. Failed runs are reported, never skipped (FR-9); the command
 // exits non-zero only when every run failed.
-func runBench(ctx context.Context, out io.Writer, root string, opts benchOptions) error {
+func runBench(ctx context.Context, out, errOut io.Writer, root string, opts benchOptions) error {
 	if opts.Runs < 1 {
 		return fmt.Errorf("--runs must be at least 1, got %d", opts.Runs)
 	}
@@ -102,11 +102,12 @@ func runBench(ctx context.Context, out io.Writer, root string, opts benchOptions
 		return err
 	}
 
-	// Streaming goes to out in raw mode; in pr-md mode out carries the report
-	// (or progress lines when the report goes to --out).
+	// Raw mode's product is the run stream itself, so it goes to out. In
+	// pr-md mode the product is the report; every streamed line — run
+	// headers, scores, failures — is diagnostics and goes to errOut.
 	stream := out
-	if opts.Format == "pr-md" && opts.Out == "" {
-		stream = io.Discard
+	if opts.Format == "pr-md" {
+		stream = errOut
 	}
 	if baseline {
 		lipgloss.Fprintf(stream, "baseline mode: %s is absent on the main branch, benching the new version only\n", opts.Skill)

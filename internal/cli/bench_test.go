@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -82,7 +83,7 @@ func TestRunBenchOldVsNew(t *testing.T) {
 	// content reached its sandbox.
 	fakeClaudeCLI(t, `cat .claude/skills/ds-x/SKILL.md`)
 	var out strings.Builder
-	if err := runBench(context.Background(), &out, root, benchOptions{Skill: "ds-x", Runs: 2}); err != nil {
+	if err := runBench(context.Background(), &out, io.Discard, root, benchOptions{Skill: "ds-x", Runs: 2}); err != nil {
 		t.Fatal(err)
 	}
 	got := out.String()
@@ -112,7 +113,7 @@ func TestRunBenchBaselineMode(t *testing.T) {
 	writeFile(t, root, "evals/ds-fresh/s1/change/main.go", "package main // v2\n")
 	fakeClaudeCLI(t, `echo ok`)
 	var out strings.Builder
-	if err := runBench(context.Background(), &out, root, benchOptions{Skill: "ds-fresh", Runs: 1}); err != nil {
+	if err := runBench(context.Background(), &out, io.Discard, root, benchOptions{Skill: "ds-fresh", Runs: 1}); err != nil {
 		t.Fatal(err)
 	}
 	got := out.String()
@@ -128,7 +129,7 @@ func TestRunBenchScoresPlantedDefectRuns(t *testing.T) {
 	root := benchRoot(t, "alpha")
 	fakeClaudeCLI(t, `echo "main.go: slop found"`)
 	var out strings.Builder
-	if err := runBench(context.Background(), &out, root, benchOptions{Skill: "ds-x", Runs: 1}); err != nil {
+	if err := runBench(context.Background(), &out, io.Discard, root, benchOptions{Skill: "ds-x", Runs: 1}); err != nil {
 		t.Fatal(err)
 	}
 	if strings.Count(out.String(), "hits: 1/1, extra findings: 0") != 2 {
@@ -140,7 +141,7 @@ func TestRunBenchScenarioFilter(t *testing.T) {
 	root := benchRoot(t, "alpha", "beta")
 	fakeClaudeCLI(t, `echo ok`)
 	var out strings.Builder
-	if err := runBench(context.Background(), &out, root, benchOptions{Skill: "ds-x", Scenario: "beta", Runs: 1}); err != nil {
+	if err := runBench(context.Background(), &out, io.Discard, root, benchOptions{Skill: "ds-x", Scenario: "beta", Runs: 1}); err != nil {
 		t.Fatal(err)
 	}
 	if strings.Contains(out.String(), "ds-x/alpha") || !strings.Contains(out.String(), "ds-x/beta") {
@@ -152,7 +153,7 @@ func TestRunBenchModelOverride(t *testing.T) {
 	root := benchRoot(t, "alpha")
 	fakeClaudeCLI(t, `echo ok`)
 	var out strings.Builder
-	if err := runBench(context.Background(), &out, root, benchOptions{Skill: "ds-x", Model: "override-model", Runs: 1}); err != nil {
+	if err := runBench(context.Background(), &out, io.Discard, root, benchOptions{Skill: "ds-x", Model: "override-model", Runs: 1}); err != nil {
 		t.Fatal(err)
 	}
 	if !strings.Contains(out.String(), "model override-model") {
@@ -164,7 +165,7 @@ func TestRunBenchAllRunsFailed(t *testing.T) {
 	root := benchRoot(t, "alpha")
 	fakeClaudeCLI(t, `exit 1`)
 	var out strings.Builder
-	err := runBench(context.Background(), &out, root, benchOptions{Skill: "ds-x", Runs: 1})
+	err := runBench(context.Background(), &out, io.Discard, root, benchOptions{Skill: "ds-x", Runs: 1})
 	if err == nil || !strings.Contains(err.Error(), "all 2 runs failed") {
 		t.Errorf("error = %v, want all-failed over both versions", err)
 	}
@@ -179,7 +180,7 @@ func TestRunBenchPartialFailureExitsZero(t *testing.T) {
 	fakeClaudeCLI(t, `grep -q OLDSKILL .claude/skills/ds-x/SKILL.md && exit 1
 echo ok`)
 	var out strings.Builder
-	if err := runBench(context.Background(), &out, root, benchOptions{Skill: "ds-x", Runs: 1}); err != nil {
+	if err := runBench(context.Background(), &out, io.Discard, root, benchOptions{Skill: "ds-x", Runs: 1}); err != nil {
 		t.Fatalf("partial failure must not fail the command: %v", err)
 	}
 	if !strings.Contains(out.String(), "run failed:") {
@@ -193,7 +194,7 @@ func TestRunBenchHarnessFanOut(t *testing.T) {
 	fakeHarnessCLI(t, "codex", `echo ok`)
 	var out strings.Builder
 	opts := benchOptions{Skill: "ds-x", Runs: 1, Harness: "claude,codex", Format: "pr-md"}
-	if err := runBench(context.Background(), &out, root, opts); err != nil {
+	if err := runBench(context.Background(), &out, io.Discard, root, opts); err != nil {
 		t.Fatal(err)
 	}
 	got := out.String()
@@ -221,7 +222,7 @@ func TestRunBenchMissingHarnessCLIRecorded(t *testing.T) {
 	// opencode is not on PATH: its runs must fail loudly, not vanish.
 	var out strings.Builder
 	opts := benchOptions{Skill: "ds-x", Runs: 1, Harness: "claude,opencode"}
-	if err := runBench(context.Background(), &out, root, opts); err != nil {
+	if err := runBench(context.Background(), &out, io.Discard, root, opts); err != nil {
 		t.Fatalf("claude runs succeeded, command must exit zero: %v", err)
 	}
 	if !strings.Contains(out.String(), "run failed:") {
@@ -230,7 +231,7 @@ func TestRunBenchMissingHarnessCLIRecorded(t *testing.T) {
 }
 
 func TestRunBenchUnknownHarness(t *testing.T) {
-	err := runBench(context.Background(), &strings.Builder{}, t.TempDir(), benchOptions{Skill: "ds-x", Runs: 1, Harness: "gemini"})
+	err := runBench(context.Background(), &strings.Builder{}, io.Discard, t.TempDir(), benchOptions{Skill: "ds-x", Runs: 1, Harness: "gemini"})
 	if err == nil || !strings.Contains(err.Error(), "gemini") {
 		t.Errorf("error = %v, want unknown-harness", err)
 	}
@@ -239,8 +240,8 @@ func TestRunBenchUnknownHarness(t *testing.T) {
 func TestRunBenchPrMdFormat(t *testing.T) {
 	root := benchRoot(t, "alpha")
 	fakeClaudeCLI(t, `echo "main.go: slop found"`)
-	var out strings.Builder
-	if err := runBench(context.Background(), &out, root, benchOptions{Skill: "ds-x", Runs: 1, Format: "pr-md"}); err != nil {
+	var out, errOut strings.Builder
+	if err := runBench(context.Background(), &out, &errOut, root, benchOptions{Skill: "ds-x", Runs: 1, Format: "pr-md"}); err != nil {
 		t.Fatal(err)
 	}
 	got := out.String()
@@ -259,6 +260,10 @@ func TestRunBenchPrMdFormat(t *testing.T) {
 	if strings.Contains(got, "== ds-x/") || strings.Contains(got, "-- stdout --") {
 		t.Error("pr-md to stdout must not interleave streaming output")
 	}
+	// pr-md progress is diagnostics: run headers and scores stream to stderr.
+	if !strings.Contains(errOut.String(), "== ds-x/alpha") || !strings.Contains(errOut.String(), "hits: 1/1") {
+		t.Errorf("stderr = %q, want run headers and score lines streamed", errOut.String())
+	}
 	if !strings.Contains(got, "(main branch), new `") {
 		t.Error("report missing version SHAs")
 	}
@@ -268,8 +273,8 @@ func TestRunBenchPrMdOut(t *testing.T) {
 	root := benchRoot(t, "alpha")
 	fakeClaudeCLI(t, `echo ok`)
 	outPath := filepath.Join(t.TempDir(), "report.md")
-	var out strings.Builder
-	if err := runBench(context.Background(), &out, root, benchOptions{Skill: "ds-x", Runs: 1, Format: "pr-md", Out: outPath}); err != nil {
+	var out, errOut strings.Builder
+	if err := runBench(context.Background(), &out, &errOut, root, benchOptions{Skill: "ds-x", Runs: 1, Format: "pr-md", Out: outPath}); err != nil {
 		t.Fatal(err)
 	}
 	b, err := os.ReadFile(outPath)
@@ -279,9 +284,13 @@ func TestRunBenchPrMdOut(t *testing.T) {
 	if !strings.Contains(string(b), "# Bench report: ds-x") {
 		t.Errorf("report file = %q", b)
 	}
-	// With --out, progress streams to the terminal and the file gets the report.
-	if !strings.Contains(out.String(), "== ds-x/alpha") || !strings.Contains(out.String(), "report written to") {
-		t.Errorf("stdout = %q, want progress lines and the written-to note", out.String())
+	// With --out, the file gets the report, stdout the written-to note, and
+	// progress streams to stderr like every pr-md run.
+	if !strings.Contains(out.String(), "report written to") || strings.Contains(out.String(), "== ds-x/alpha") {
+		t.Errorf("stdout = %q, want only the written-to note", out.String())
+	}
+	if !strings.Contains(errOut.String(), "== ds-x/alpha") {
+		t.Errorf("stderr = %q, want progress lines", errOut.String())
 	}
 	if strings.Contains(out.String(), "# Bench report") {
 		t.Error("report must not also go to stdout when --out is set")
@@ -289,7 +298,7 @@ func TestRunBenchPrMdOut(t *testing.T) {
 }
 
 func TestRunBenchRejectsUnknownFormat(t *testing.T) {
-	err := runBench(context.Background(), &strings.Builder{}, t.TempDir(), benchOptions{Skill: "ds-x", Runs: 1, Format: "html"})
+	err := runBench(context.Background(), &strings.Builder{}, io.Discard, t.TempDir(), benchOptions{Skill: "ds-x", Runs: 1, Format: "html"})
 	if err == nil || !strings.Contains(err.Error(), "--format") {
 		t.Errorf("error = %v, want format validation", err)
 	}
@@ -297,14 +306,14 @@ func TestRunBenchRejectsUnknownFormat(t *testing.T) {
 
 func TestRunBenchUnknownSkill(t *testing.T) {
 	root := benchRoot(t, "alpha")
-	err := runBench(context.Background(), &strings.Builder{}, root, benchOptions{Skill: "ds-nope", Runs: 1})
+	err := runBench(context.Background(), &strings.Builder{}, io.Discard, root, benchOptions{Skill: "ds-nope", Runs: 1})
 	if err == nil || !strings.Contains(err.Error(), "ds-nope") {
 		t.Errorf("error = %v, want it to name the missing skill", err)
 	}
 }
 
 func TestRunBenchRejectsBadRuns(t *testing.T) {
-	err := runBench(context.Background(), &strings.Builder{}, t.TempDir(), benchOptions{Skill: "ds-x", Runs: 0})
+	err := runBench(context.Background(), &strings.Builder{}, io.Discard, t.TempDir(), benchOptions{Skill: "ds-x", Runs: 0})
 	if err == nil || !strings.Contains(err.Error(), "--runs") {
 		t.Errorf("error = %v, want runs validation", err)
 	}
