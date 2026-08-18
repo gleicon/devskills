@@ -46,7 +46,7 @@ func newBenchCmd() *cobra.Command {
 	f.StringVar(&opts.Scenario, "scenario", "", "run a single scenario by name")
 	f.StringVar(&opts.Model, "model", "", "override the pinned model from evals/bench.yaml")
 	f.IntVar(&opts.Runs, "runs", 3, "runs per skill version per scenario")
-	f.StringVar(&opts.Harness, "harness", "claude", "comma-separated harnesses to bench: claude,codex,opencode")
+	f.StringVar(&opts.Harness, "harness", "claude", "comma-separated assistants to bench (claude,codex,opencode)")
 	f.StringVar(&opts.Format, "format", "", `output format: "pr-md" for the PR-ready markdown report`)
 	f.StringVar(&opts.Out, "out", "", "with --format pr-md, write the report to this file")
 	return cmd

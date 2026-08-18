@@ -13,12 +13,12 @@ In the devskills repo itself, bench the working tree — never a stale installed
 
 ## How a run works
 
-For each scenario, bench materializes the fixture into a temp git repo (base tree committed on `main`, change tree committed on a `change` branch), installs the skill version under test project-locally, and invokes the harness headlessly with the scenario's task prompt. The model is pinned per harness in `evals/bench.yaml`; `--model` overrides. Stdout, stderr, and the post-run diff are captured and scored.
+For each scenario, bench materializes the fixture into a temp git repo (base tree committed on `main`, change tree committed on a `change` branch), installs the skill version under test project-locally, and invokes the assistant headlessly with the scenario's task prompt. The model is pinned per assistant in `evals/bench.yaml`; `--model` overrides. Stdout, stderr, and the post-run diff are captured and scored.
 
 - Old version comes from `git show <main>:skills/<skill>/SKILL.md`; new from the working tree. A skill absent on main runs **baseline mode**: new version only.
 - `--runs` (default 3) repeats each version per scenario; skills are nondeterministic, one run proves little.
 - A missing CLI or timed-out run is reported loudly, never skipped. The command exits non-zero only when every run failed.
-- Reports never compare scores across harnesses — per-harness tables only. Interpretation belongs to the PR author and reviewer; the report carries no verdict.
+- Reports never compare scores across assistants — per-assistant tables only. Interpretation belongs to the PR author and reviewer; the report carries no verdict.
 - Claude and OpenCode runs are isolated from the operator's global config (Claude's `--safe-mode`; an empty `OPENCODE_CONFIG_DIR` for OpenCode). Codex offers no equivalent off-switch, so its runs inherit `~/.codex/config.toml` and the global `AGENTS.md` — read Codex numbers with that in mind.
 
 ## Scenario anatomy
@@ -81,7 +81,7 @@ elements:
 
 ### `smoke` — the invocation must work at all
 
-For mode skills and anything without checkable output: the run passes when the harness exits zero and prints non-blank output. No expectation list:
+For mode skills and anything without checkable output: the run passes when the assistant exits zero and prints non-blank output. No expectation list:
 
 ```yaml
 task: "Run /ds-git-mode to activate git mode for this session."
