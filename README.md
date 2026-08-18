@@ -234,16 +234,17 @@ MIT — see [LICENSE](LICENSE).
 
 ## Development
 
-It's a plain Go module (needs **Go 1.26+**). A `Makefile` wraps the common tasks; the raw commands are identical:
+It's a plain Go module (needs **Go 1.26+**). A `Makefile` wraps the common tasks — bare `make` prints the annotated target list; the raw commands are identical:
 
 ```bash
+make verify                   # the release gate, locally: fmt, tidy, lint, unit + acceptance tests
 make build                    # build the ./devskills binary
 make install                  # install the current tree to $GOPATH/bin/devskills
 make test                     # unit tests (embed integrity, sync, scaffold, cli, …)
 make test-integration         # end-to-end acceptance — builds the binary, drives it in a sandbox
 make bench SKILL=<skill>      # build, then benchmark a skill change (ARGS="--format pr-md" etc.)
-make lint                     # lint gate (golangci-lint v2; config in .golangci.yml)
-make fmt                      # format
+make lint                     # golangci-lint, pinned to the version the release gate runs
+make fmt                      # format (gofmt, matching the gate)
 make snapshot                 # goreleaser cross-build dry-run
 make clean                    # remove ./devskills and ./dist
 ```
@@ -254,9 +255,12 @@ Raw equivalents:
 go build -ldflags "-s -w -X github.com/gleicon/devskills/internal/cli.version=$(cat VERSION)" -o ./devskills .
 go test -race ./...
 go test -tags integration ./internal/acceptance/
+go mod tidy
 golangci-lint run
 gofmt -w .
 ```
+
+The release gate (`.github/workflows/release.yml`) runs only on pushes to `main`, so run `make verify` before trusting a green PR.
 
 Skills and profiles live in `skills/` and `agents-md/` and are embedded into the binary at build time — edit the source there, not an installed copy.
 
