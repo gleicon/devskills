@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -239,8 +240,10 @@ func runInitUninstall(out io.Writer, root string, dryRun bool) error {
 // .devskills/language; the directory follows if it is then empty.
 func removeLegacyProfile(out io.Writer, root string, dryRun bool) error {
 	file := filepath.Join(root, ".devskills", "language")
-	if _, err := os.Stat(file); err != nil {
-		return nil // absent — nothing to sweep
+	if _, err := os.Stat(file); errors.Is(err, fs.ErrNotExist) {
+		return nil
+	} else if err != nil {
+		return err
 	}
 	if dryRun {
 		lipgloss.Fprintln(out, "  [dry] would remove legacy .devskills/language")

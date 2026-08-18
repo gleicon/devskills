@@ -56,7 +56,8 @@ func newBenchCmd() *cobra.Command {
 }
 
 // runBench benches the old (main-branch) and new (working-tree) versions of a
-// skill against its scenarios on Claude Code, K runs each. The default output
+// skill against its scenarios on each selected harness (default Claude Code),
+// K runs each. The default output
 // streams each run raw; --format pr-md collects everything into a markdown
 // report instead. With the skill absent on main it runs baseline mode: new
 // version only. Failed runs are reported, never skipped (FR-9); the command
@@ -66,7 +67,7 @@ func runBench(ctx context.Context, out, errOut io.Writer, root string, opts benc
 		return fmt.Errorf("--runs must be at least 1, got %d", opts.Runs)
 	}
 	if opts.Timeout < 0 {
-		return fmt.Errorf("--timeout must be positive, got %s", opts.Timeout)
+		return fmt.Errorf("--timeout must not be negative, got %s", opts.Timeout)
 	}
 	if opts.Format != "" && opts.Format != "pr-md" {
 		return fmt.Errorf(`--format must be "pr-md", got %q`, opts.Format)

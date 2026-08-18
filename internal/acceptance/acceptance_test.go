@@ -20,7 +20,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -237,7 +237,7 @@ func fingerprint(t *testing.T, root string) string {
 	if err != nil {
 		t.Fatalf("fingerprint %s: %v", root, err)
 	}
-	sort.Strings(lines)
+	slices.Sort(lines)
 	sum := sha256.Sum256([]byte(strings.Join(lines, "\n")))
 	return hex.EncodeToString(sum[:])
 }

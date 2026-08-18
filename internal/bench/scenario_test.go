@@ -17,9 +17,6 @@ func writeScenario(t *testing.T, name, yaml string, subdirs ...string) string {
 			t.Fatal(err)
 		}
 	}
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		t.Fatal(err)
-	}
 	if yaml != "" {
 		if err := os.WriteFile(filepath.Join(dir, "expectations.yaml"), []byte(yaml), 0o644); err != nil {
 			t.Fatal(err)
