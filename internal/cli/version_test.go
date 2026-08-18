@@ -40,6 +40,7 @@ func TestReleaseNums(t *testing.T) {
 		{"0.6.0", [3]int{0, 6, 0}, true},
 		{"dev", [3]int{}, false},
 		{"v0.6.1-0.20260817120000-abcdef123456", [3]int{}, false},
+		{"v1.2.-3", [3]int{}, false},
 		{"1.2", [3]int{}, false},
 		{"1.2.3.4", [3]int{}, false},
 		{"", [3]int{}, false},

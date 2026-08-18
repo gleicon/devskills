@@ -3,6 +3,10 @@ SHELL := bash
 
 .PHONY: help build install test test-integration bench verify fmt tidy lint tools snapshot clean
 
+# verify's prerequisites must run in order (fmt before lint/test), which only
+# serial make guarantees — and no target here benefits from -j anyway.
+.NOTPARALLEL:
+
 .DEFAULT_GOAL := help
 
 # Version from the VERSION file (used by local/snapshot builds).

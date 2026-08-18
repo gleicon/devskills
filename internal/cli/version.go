@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"cmp"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -9,6 +8,7 @@ import (
 	"net/http"
 	"runtime"
 	"runtime/debug"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -24,7 +24,8 @@ import (
 var version = "dev"
 
 // latestReleaseURL is the GitHub API endpoint `version --check` queries —
-// the CLI's only network call.
+// the only network call devskills itself makes (subprocesses like `doctor
+// --fix` installers do their own).
 const latestReleaseURL = "https://api.github.com/repos/gleicon/devskills/releases/latest"
 
 // resolveVersion picks the version string: an ldflags-injected tag wins;
@@ -78,20 +79,11 @@ func releaseNums(s string) ([3]int, bool) {
 	for i, p := range parts {
 		v, err := strconv.Atoi(p)
 		if err != nil || v < 0 {
-			return n, false
+			return [3]int{}, false
 		}
 		n[i] = v
 	}
 	return n, true
-}
-
-func compareNums(a, b [3]int) int {
-	for i := range a {
-		if c := cmp.Compare(a[i], b[i]); c != 0 {
-			return c
-		}
-	}
-	return 0
 }
 
 // fetchLatestTag asks the GitHub releases API for the newest release tag.
@@ -130,7 +122,7 @@ func releaseStatus(current, latest string) string {
 	}
 	currentV := "v" + strings.TrimPrefix(current, "v")
 	lat, _ := releaseNums(latest)
-	switch compareNums(cur, lat) {
+	switch slices.Compare(cur[:], lat[:]) {
 	case 0:
 		return fmt.Sprintf("up to date: %s is the latest release", latestV)
 	case -1:
