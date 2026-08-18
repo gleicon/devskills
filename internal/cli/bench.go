@@ -9,6 +9,7 @@ import (
 	"slices"
 	"strings"
 
+	"charm.land/lipgloss/v2"
 	"github.com/spf13/cobra"
 
 	"github.com/gleicon/devskills/internal/bench"
@@ -108,7 +109,7 @@ func runBench(ctx context.Context, out io.Writer, root string, opts benchOptions
 		stream = io.Discard
 	}
 	if baseline {
-		fmt.Fprintf(stream, "baseline mode: %s is absent on the main branch, benching the new version only\n", opts.Skill)
+		lipgloss.Fprintf(stream, "baseline mode: %s is absent on the main branch, benching the new version only\n", opts.Skill)
 	}
 
 	var groups []bench.HarnessReport
@@ -122,7 +123,7 @@ func runBench(ctx context.Context, out io.Writer, root string, opts benchOptions
 			for _, v := range versions {
 				for i := 1; i <= opts.Runs; i++ {
 					total++
-					fmt.Fprintf(stream, "== %s/%s %s run %d/%d (%s, model %s)\n",
+					lipgloss.Fprintf(stream, "== %s/%s %s run %d/%d (%s, model %s)\n",
 						opts.Skill, s.Name, v.Label, i, opts.Runs, h.Name(), model)
 					res, err := runner.Run(ctx, s, v)
 					if err != nil {
@@ -163,9 +164,9 @@ func runBench(ctx context.Context, out io.Writer, root string, opts benchOptions
 			if err := os.WriteFile(opts.Out, []byte(md), 0o644); err != nil {
 				return err
 			}
-			fmt.Fprintf(out, "report written to %s\n", opts.Out)
+			lipgloss.Fprintf(out, "report written to %s\n", opts.Out)
 		} else {
-			fmt.Fprint(out, md)
+			lipgloss.Fprint(out, md)
 		}
 	}
 	if failures == total {
@@ -181,7 +182,7 @@ func recordRun(stream io.Writer, s *bench.Scenario, res bench.Result, verbose bo
 	if res.Err != nil {
 		rr.Failed = true
 		rr.FailMsg = res.Err.Error()
-		fmt.Fprintf(stream, "run failed: %v\n", res.Err)
+		lipgloss.Fprintf(stream, "run failed: %v\n", res.Err)
 	} else {
 		c, err := bench.Check(s, res)
 		if err != nil {
@@ -192,22 +193,22 @@ func recordRun(stream io.Writer, s *bench.Scenario, res bench.Result, verbose bo
 		rr.Extras = len(c.Extras)
 		switch s.Tier {
 		case bench.TierStructural:
-			fmt.Fprintf(stream, "elements: %d/%d\n", rr.Hits, s.ExpectedHits())
+			lipgloss.Fprintf(stream, "elements: %d/%d\n", rr.Hits, s.ExpectedHits())
 		case bench.TierSmoke:
 			if rr.Hits > 0 {
-				fmt.Fprintln(stream, "smoke: ok")
+				lipgloss.Fprintln(stream, "smoke: ok")
 			} else {
-				fmt.Fprintln(stream, "smoke: no output")
+				lipgloss.Fprintln(stream, "smoke: no output")
 			}
 		default:
-			fmt.Fprintf(stream, "hits: %d/%d, extra findings: %d\n", rr.Hits, s.ExpectedHits(), rr.Extras)
+			lipgloss.Fprintf(stream, "hits: %d/%d, extra findings: %d\n", rr.Hits, s.ExpectedHits(), rr.Extras)
 		}
 	}
 	if verbose {
 		for _, sec := range []struct{ name, body string }{
 			{"stdout", res.Stdout}, {"stderr", res.Stderr}, {"diff", res.Diff},
 		} {
-			fmt.Fprintf(stream, "-- %s --\n%s\n", sec.name, sec.body)
+			lipgloss.Fprintf(stream, "-- %s --\n%s\n", sec.name, sec.body)
 		}
 	}
 	return rr, nil

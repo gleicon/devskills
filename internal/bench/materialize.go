@@ -2,7 +2,6 @@ package bench
 
 import (
 	"fmt"
-	"io"
 	"io/fs"
 	"os"
 	"os/exec"
@@ -84,19 +83,10 @@ func copyTree(src, dst string) error {
 		if d.IsDir() {
 			return os.MkdirAll(target, 0o755)
 		}
-		in, err := os.Open(path)
+		b, err := os.ReadFile(path)
 		if err != nil {
 			return err
 		}
-		defer in.Close()
-		out, err := os.Create(target)
-		if err != nil {
-			return err
-		}
-		if _, err := io.Copy(out, in); err != nil {
-			out.Close()
-			return err
-		}
-		return out.Close()
+		return os.WriteFile(target, b, 0o644)
 	})
 }
