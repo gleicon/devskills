@@ -1,4 +1,4 @@
-# Skill Reference
+# Skill reference
 
 Every devskills skill is a single `SKILL.md` invoked as `/<name>` in Claude Code and OpenCode (and as `$<name>` in OpenAI Codex — a mention, not a slash). This is the reference: what each one does, its arguments, and when to reach for it. Browse the catalog interactively with **`/ds`**, the router — it names every skill by phase and does no work itself. For worked, multi-step workflows see [recipes.md](recipes.md).
 
@@ -6,10 +6,10 @@ Every devskills skill is a single `SKILL.md` invoked as `/<name>` in Claude Code
 
 A skill's **suffix tells you its kind**:
 
-- **`-mode`** — persistent, toggleable session behavior; changes *how* the agent works until you turn it off. *tiger-style, ui, data, senior, git, step, tdd, test.*
-- **`-review`** — a findings-list audit. Report-only by default (several take `--fix`); findings are independent and fixable in any order. *bug, security, data, code-quality, doc-quality, test-quality, ui-quality, comment, notebook, osv, and the six language reviews.*
+- **`-mode`** — persistent, toggleable session behavior; changes *how* the agent works until you turn it off. *tiger-style, ui, data, git, step, tdd, test, interaction.*
+- **`-review`** — a findings-list audit. Report-only by default (several take `--fix`); findings are independent and fixable in any order. *bug, security, data, code-quality, doc-quality, test-quality, ui-quality, comment, clarity, notebook, osv, semgrep, and the six language reviews.*
 - **`-plan`** — graded, sequenced moves that each carry a trade-off or dependency, so the output is a *plan*, not a verdict. *perf-plan, architecture-plan.*
-- **no suffix** — a one-shot action that produces a result and returns. *spec, roadmap, explore, blueprint, grill-me, debug, deslop, verify-this, zoom-out, handoff, tldt, the recall trio, and the project-\* family.*
+- **no suffix** — a one-shot action that produces a result and returns. *spec, roadmap, explore, blueprint, grill-me, retro, debug, deslop, humanize, verify-this, zoom-out, onboarding, handoff, tldt, quality-gate, the recall trio, and the project-\* family.*
 - **language profiles** — configured per project via `devskills init --lang`, not invoked as slash commands (see the [README](../README.md#language-profiles)).
 
 Everything except `-mode` runs once and finishes; a `-mode` stays on. The per-skill headings below tag each one with its kind. Each skill is self-contained; a few use an external tool when it's present — `/ds-osv`, `/ds-tldt`, and `/ds-security-review`'s structural pass — which `devskills doctor` can install.
@@ -69,7 +69,7 @@ Post-release retrospective over a release range: compare what `SPEC.md`/`GRILL.m
 
 ## Project memory (`.project/`)
 
-A minimal, file-backed project memory — three skills over three files under `.project/`, so any session is safe to `/clear` or end. These are *scribes, not pilots*: they record what you decide, never steer architecture. Walkthrough: [project-workflow.md](project-workflow.md). Worked use cases: [recipes.md](recipes.md).
+A minimal, file-backed project memory — three skills over the four-file `.project/` directory, so any session is safe to `/clear` or end. These are *scribes, not pilots*: they record what you decide, never steer architecture. Walkthrough: [project-workflow.md](project-workflow.md). Worked use cases: [recipes.md](recipes.md).
 
 Every file has exactly one writer. `state.md` is the model's, `map.md` is regenerated wholesale, and `config.md` is yours — written by `devskills config`, editable by no skill, which is what lets it hold standing instructions the assistant can't quietly drop.
 
@@ -103,7 +103,7 @@ UI mode, framework-agnostic (React/Svelte/Vue/Solid/vanilla, any runtime). Two h
 
 ### `/ds-data-mode` — mode
 
-Data-engineering discipline, tool-agnostic (Spark/Airflow/dbt/Flink/plain scripts, batch **and** streaming). Counters the naive ETL shape LLMs default to (read-all → transform → overwrite, assume data arrives once and in order, crash on a bad record, no replay) by encoding constraints up front: **idempotent** transforms (upsert on a key) with no wall-clock/random/order dependence, real-world data handling (event-time windowing with explicit watermarks, dedup on a business key safe under at-least-once, quarantine malformed rows, explicit schema-drift contracts), reprocessing & recovery (replayable/backfillable with no double-counting, time-partitioned, checkpointed, no destructive overwrite without a recovery path), boundary data-quality assertions that **fail the run**, and E/T/L separation with testable pure transforms. Matches the project's existing stack rather than imposing a framework.
+Data-engineering discipline, tool-agnostic (Spark/Airflow/dbt/Flink/plain scripts, batch **and** streaming). Counters the naive ETL shape LLMs default to — read-all → transform → overwrite, assume data arrives once and in order, crash on a bad record, no replay — by encoding constraints up front. Transforms are **idempotent** (upsert on a key), with no wall-clock, random, or order dependence. Real-world data is handled head-on: event-time windowing with explicit watermarks, dedup on a business key safe under at-least-once delivery, malformed rows quarantined, schema drift under an explicit contract. Reprocessing and recovery are designed in: replayable and backfillable with no double-counting, time-partitioned, checkpointed, no destructive overwrite without a recovery path. Data-quality assertions at the boundaries **fail the run**. E/T/L stay separated, with testable pure transforms. Matches the project's existing stack rather than imposing a framework.
 
 - **Reach for it when:** building or extending a data pipeline or transform. Stacks with `/ds-tiger-style-mode` + `/ds-test-mode`. The after-the-fact audit counterpart is `/ds-data-review` (the store) and `/ds-data-review --pipelines` (the pipeline code itself) — mode shapes the build, review audits it.
 
@@ -118,6 +118,12 @@ Senior-engineer commit discipline — commits written **for humans, not LLMs**. 
 User-driven, step-gated execution — deliberately **inverts** the default autonomy, pausing *more*, not less. When active: do the smallest meaningful, reviewable step, **propose before acting and wait** (a free veto before any change), then after the step stop and report concisely (did / changed / next) and yield. Never silently chains steps; granularity is tunable live ("bigger/smaller steps"). The handback rule is the sharp part: **always return control in prose, never via the multiple-choice picker** — options are prose suggestions the user can accept, amend, *or combine*, never a forced single-select. The picker is allowed only for trivial either/or disambiguation ("did you mean file A or B?"), never for "what next." Invoke with a plan — `/ds-step-mode current plan`, a path, or pasted text — to drive an existing plan one step at a time, keeping it honest and offering `/ds-project-checkpoint` at milestones.
 
 - **Reach for it when:** you want to drive the work yourself, keeping control at every decision point. Composes with `/ds-git-mode` (a "step" ≈ a commit unit), `/ds-tiger-style-mode`, `/ds-test-mode`. Unlike `/ds-tdd-mode` (steps for design reasons) or `/ds-grill-me` (interrogates a plan, doesn't execute), this gates *execution* under your control.
+
+### `/ds-interaction-mode` — mode
+
+One-pass questions and handbacks — counters the interaction defects that push work back to the user: several questions per message, double-barreled asks ("and"/"or" joining two topics), yes/no questions unfolded into "yes, no, or…", mid-question pivots that discard the answer being typed, and action lists that invalidate themselves halfway down. When active: **at most one question per message, placed last**; one topic per question; the answer's form obvious from the ask; conditions stated *before* the instructions they govern (an action message must run top to bottom); a decision handback carries options-as-prose, the context to pick fast, and a recommendation. Plus a pre-send check (drop the announcer, the "anything else?" closer, the sidebar) and two break-glass rules: one short clarifying question beats guessing, and a hedge carrying real uncertainty stays.
+
+- **Reach for it when:** any session where the handbacks matter — pairs naturally with `/ds-step-mode`, which produces one handback per step. The always-on preventive half is the `interaction` block (`devskills init --interaction`); this mode is the session-scoped form for projects without the block.
 
 ---
 
@@ -142,7 +148,7 @@ Pragmatic testing mode: as you build normally, ensure the code that matters gets
 
 ### `/ds-code-quality-review` — review
 
-Extremely strict maintainability audit: abstraction quality, file sprawl (the 1k-line smell), spaghetti-condition growth — plus **single source of truth**: duplicate implementations, constant drift, parallel-agent conflicts (two agents introducing competing helpers), pattern violations, over-engineered abstractions with one implementation, and unjustified dependencies (the single-source-of-truth checks, once their own review). Ambitiously hunts "code judo" — restructurings that delete whole categories of complexity while preserving behavior.
+Extremely strict maintainability audit: abstraction quality, file sprawl (the 1k-line smell), spaghetti-condition growth — plus **single source of truth**: duplicate implementations, constant drift, parallel-agent conflicts (two agents introducing competing helpers), pattern violations, over-engineered abstractions with one implementation, and unjustified dependencies. Ambitiously hunts "code judo" — restructurings that delete whole categories of complexity while preserving behavior.
 
 - **Args:** treated as review **scope** (files or directories). With no scope, reviews the changed files on the current branch. `--full` widens scope to the whole codebase, not just the branch diff.
 - **Output:** prioritized findings anchored to `file:line`, with an approval verdict. Changes nothing by default; `--fix` applies the mechanical, behavior-preserving findings (dead wrappers, redundant helpers, duplicate literals) — structural/code-judo restructurings stay reported.
@@ -180,17 +186,33 @@ Strip AI-generated slop from the branch and align it with the surrounding code. 
 - **Output:** the edits applied, plus a 1–3 sentence summary. Behavior preserved.
 - **Reach for it when:** right after generating a batch of code, before review. Cheaper and narrower than `/ds-code-quality-review`.
 
+### `/ds-humanize` — action
+
+Remove the AI tells from prose — the patterns that read as machine-written: diff-anchored framing (text describing its own edit history), negative parallelism, synonym cycling, inline-header bullets, Title Case headings, emoji, chatbot artifacts, sycophancy, filler, stacked hedging, signposting, rhetorical openers. Meaning-preserving: removes patterns, never injects style. The prose counterpart to `/ds-deslop` (code slop) — and a different objective from `/ds-clarity-review`: that skill optimizes for being understood, this one for not sounding machine-written; run both when you want both.
+
+- **Args:** treated as scope (files, directories, globs); defaults to the prose changed on the current branch.
+- **Output:** the edits applied, plus a 1–3 sentence summary. Fenced code, inline code, URLs, and quoted material stay byte-identical.
+- **Reach for it when:** AI-drafted prose is about to ship under a human's name — a README, release notes, a design doc — and it still sounds generated.
+
 ### `/ds-comment-review` — review
 
 Strict review of code comments under one lens — **does each comment earn its place, and is it as short as it can be?** Comments are for humans and explain **WHY, not WHAT** — one line by default, only where the reason isn't obvious, never restating code or citing plan/ticket IDs; a long comment is rare and signals importance. Unlike `/ds-doc-quality-review` (which reviews prose docs) and `/ds-deslop` (branch-diff, matches existing style), this **imposes** the discipline regardless of the codebase's existing habits, works on any scope, and can apply the fix. Comment-only and behavior-preserving — never changes code logic.
 
-- **Args:** treated as scope (files, directories, globs, or the whole codebase); defaults to comments in the code changed on the current branch. `--fix` applies the edits in place instead of only reporting.
+- **Args:** treated as scope (files, directories, globs, or the whole codebase); defaults to comments in the code changed on the current branch. `--full` widens scope to the whole codebase. `--fix` applies the edits in place instead of only reporting.
 - **Output:** by default a prioritized findings list anchored to `file:line`, grouped delete / tighten / drifted (correctness) / kept-as-important, each with the fix. With `--fix`, the edits applied plus a 1–3 sentence summary.
 - **Reach for it when:** a codebase has accumulated comment bloat, or you want a fresh branch's comments brought to standard. Flags restate-the-code, obvious/ceremonial, planning cruft, and buried WHY; keeps and respects the rare legitimately-long comment.
 
+### `/ds-clarity-review` — review
+
+Prose-clarity review governed by the **Federal Plain Language Guidelines**, applied with Grice's maxims of manner and quantity — the standards are the rule set, not a house checklist. Works on any text: docs, README, comment prose, commit text, UI and error strings. Includes a mechanical drift pass: `grep` enumerates suspected one-concept-two-names variants; the model only judges which are drift. Unlike `/ds-doc-quality-review` (the document as artifact: accuracy, links, coverage, bloat), `/ds-comment-review` (whether a comment earns its place), and `/ds-deslop` (code slop on the branch diff), this judges one thing: whether a reader understands the words.
+
+- **Args:** treated as scope (files, directories, globs); defaults to prose changed on the current branch. `--full` widens scope to all prose in the repo.
+- **Output:** findings ordered by reader impact, each anchored to `file:line` with a quoted **before** and a rewritten **after**; where a rewrite would lose nuance, an **exception** naming what would be lost. Changes nothing by default; `--fix` applies the rewrites (exceptions stay).
+- **Reach for it when:** prose is about to ship — docs, release notes, UI copy — or a doc reads fine to its author and confuses everyone else.
+
 ---
 
-## Quality Gate
+## Quality gate
 
 ### `/ds-quality-gate`
 
@@ -214,7 +236,7 @@ The review skills are a **layered gate, not competing alternatives** — cheapes
 
 ### `/ds-bug-review` — review
 
-Language-agnostic **correctness** audit — the bug-hunting pass. Asks one thing: *will this misbehave at runtime?* Hunts logic errors, null/absent-value derefs, swallowed errors and half-done failure paths, resource leaks, races (TOCTOU, lock ordering), boundary/overflow mistakes, and contract misuse. Distinct from `/ds-code-quality-review` (which is maintainability, not bugs) — the same split the harness draws between cleanup and correctness.
+Language-agnostic **correctness** audit — the bug-hunting pass. Asks one thing: *will this misbehave at runtime?* Hunts logic errors, null/absent-value derefs, swallowed errors and half-done failure paths, resource leaks, races (TOCTOU, lock ordering), boundary/overflow mistakes, and contract misuse. Distinct from `/ds-code-quality-review` (which is maintainability, not bugs) — the same split the assistant draws between cleanup and correctness.
 
 - **Args:** treated as scope (files, directories, globs); defaults to code changed on the current branch. `--full` widens scope to the whole codebase.
 - **Output:** prioritized findings anchored to `file:line` — critical (data loss / reachable crash) first, then likely-wrong, then edge-case. Each names **the exact condition that triggers it** plus the fix and a confidence note. Real defects only; no theoretical nulls. Changes nothing by default; `--fix` applies only mechanical, unambiguous fixes — logic-changing or uncertain ones stay reported.
@@ -379,6 +401,6 @@ Store this session's outcome into recall's knowledge base.
 
 Initialize recall and install its session integration into your AI assistant.
 
-- **Process:** runs `recall map` + `recall recipes seed`, then delegates host wiring to `recall install-skill --target <assistant>` (claude always; opencode/codex when their config dir exists). recall owns its own hook and backs up `settings.json`.
+- **Process:** runs `recall map` + `recall recipes seed`, then delegates assistant wiring to `recall install-skill --target <assistant>` (claude always; opencode/codex when their config dir exists). recall owns its own hook and backs up `settings.json`.
 - **Output:** confirms each step: index, seed, and recall integration install.
 - **Reach for it when:** first time using recall with devskills, or after reinstalling recall.

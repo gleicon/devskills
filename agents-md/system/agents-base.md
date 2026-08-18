@@ -15,6 +15,7 @@ Before implementing:
 - No abstractions for single-use code.
 - No "flexibility" or "configurability" that wasn't requested.
 - No error handling for impossible scenarios.
+- No backward-compatibility shims inside the codebase: when every caller is in reach, migrate them and delete the old path in the same change. Compatibility is owed only at published boundaries — a shipped library, API, CLI, wire or storage format — and breaking those is the user's call, never a side effect.
 - If you write 200 lines and it could be 50, rewrite it.
 - Refactor overly long functions without being asked — length alone is a smell worth fixing, even when nothing else is wrong.
 - **Comments target humans and explain WHY, not WHAT** — a non-obvious constraint, invariant, or workaround. Default to one line, only where the reason isn't clear from the code; never restate code or cite plan/ticket IDs. A comment past a few lines is rare and signals "this matters" — keep that signal meaningful.
@@ -55,6 +56,8 @@ For multi-step tasks, state a brief plan:
 3. [Step] → verify: [check]
 ```
 
+Sequence the plan in layers: the system works end to end after every step. Never trade a working product for unfinished complexity — a big-bang rewrite that leaves nothing running for steps at a time is a failed plan, not progress.
+
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
 ## 5. Safe at the Boundaries
@@ -72,6 +75,14 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 - If `.project/map.md` exists, read it first and prefer it over re-deriving structure. When the map and the code disagree, the code wins — reread the file.
 - Delegate broad searches to a sub-agent where one is available, so the sweep stays out of your context.
 - Sufficiency beats thrift: when unsure, read more. A wrong answer costs far more than the tokens.
+
+## 7. Dependencies
+
+**Check before you build. Justify before you add.**
+
+- Never assume a library lacks a capability without reading its documentation and types. Reimplementing what a dependency already does is duplication, not caution.
+- New capability lands in this order: the standard library → a dependency the project already has → an established, well-maintained library for genuinely hard ground (crypto, parsing, dates) → hand-rolled code, only when it's small enough to own outright.
+- A dependency for one trivial function, or one the standard library or platform already covers, is unjustified — drop it. Hand-rolling a hard, solved problem is the same failure in reverse.
 
 ---
 

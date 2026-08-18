@@ -1,4 +1,4 @@
-# Project Memory Workflow (`.project/`)
+# Project memory workflow (`.project/`)
 
 A minimal, file-backed workflow for keeping project memory across sessions — plain markdown, no hidden state, no background agents, no question-driven hand-holding.
 

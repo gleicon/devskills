@@ -34,6 +34,7 @@ Turn on the relevant **Modes** (below) for the build — they set the engineerin
 
 ### Clean — *"Strip the AI slop before anyone looks at it."*
 - `/ds-deslop` — remove narrating comments, defensive overkill, and type escape hatches; align the diff with the surrounding code. Run before any review.
+- `/ds-humanize` — remove the AI tells from prose: chatbot artifacts, filler, stacked hedging, signposting, diff-anchored framing.
 
 ### Review — *"Is it correct, safe, idiomatic, maintainable?"*
 - `/ds-code-quality-review` — maintainability + single-source-of-truth: is the diff making the codebase worse?
@@ -44,6 +45,7 @@ Turn on the relevant **Modes** (below) for the build — they set the engineerin
 - `/ds-doc-quality-review` — docs accuracy against the code, broken links, staleness.
 - `/ds-ui-quality-review` — is the interface soundly engineered, crafted, and accessible?
 - `/ds-comment-review` — do the comments earn their place?
+- `/ds-clarity-review` — is the prose understandable? Plain-language review of any text.
 - `/ds-notebook-review` — notebook state, output hygiene, reproducibility.
 - `/ds-quality-gate` — run the review pipeline as a gate over the whole branch/feature.
 - `/ds-osv` — scan dependencies for known vulnerabilities (OSV).
@@ -67,6 +69,7 @@ Turn one on and it governs the rest of the session; several can be active at onc
 - `/ds-tiger-style-mode` — safety + explicitness engineering bar.
 - `/ds-git-mode` — commit each working unit as it lands, terse messages, never pushes.
 - `/ds-step-mode` — smallest reviewable step, then hand back.
+- `/ds-interaction-mode` — one question per message, answerable in one read; handbacks run top to bottom.
 - `/ds-test-mode` — keep the core tested by risk as you build.
 - `/ds-tdd-mode` — drive implementation test-first, one vertical slice at a time.
 - `/ds-ui-mode` — component/state discipline + design craft for UI work.

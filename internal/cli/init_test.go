@@ -4,18 +4,23 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 	"testing"
 	"testing/fstest"
+
+	"github.com/spf13/pflag"
 )
 
-// fakeAssets is a minimal embedded tree: the four system profiles plus two
+// fakeAssets is a minimal embedded tree: the six system profiles plus two
 // languages, enough to drive init without the real content.
 func fakeAssets() fstest.MapFS {
 	return fstest.MapFS{
 		"agents-md/system/agents-base.md":     {Data: []byte("BASE PRINCIPLES\n")},
 		"agents-md/system/concise.md":         {Data: []byte("BE TERSE\n")},
+		"agents-md/system/interaction.md":     {Data: []byte("ONE QUESTION\n")},
+		"agents-md/system/plain-language.md":  {Data: []byte("PLAIN WORDS\n")},
 		"agents-md/system/phase-hints.md":     {Data: []byte("PHASES\n")},
 		"agents-md/system/spec-discipline.md": {Data: []byte("AMEND INLINE\n")},
 		"agents-md/language/go.md":            {Data: []byte("GO PROFILE\n")},
@@ -43,6 +48,8 @@ func TestChooseInit(t *testing.T) {
 	}{
 		{name: "lang flag wins", o: initOpts{flagsChanged: true, langCSV: "go", tty: true}, wantSel: initSelection{langs: []string{"go"}}},
 		{name: "concise flag skips prompt", o: initOpts{flagsChanged: true, concise: true, tty: true}, wantSel: initSelection{concise: true}},
+		{name: "interaction flag skips prompt", o: initOpts{flagsChanged: true, interaction: true, tty: true}, wantSel: initSelection{interaction: true}},
+		{name: "plain-language flag skips prompt", o: initOpts{flagsChanged: true, plain: true, tty: true}, wantSel: initSelection{plain: true}},
 		{name: "spec-discipline flag skips prompt", o: initOpts{flagsChanged: true, discipline: true, tty: true}, wantSel: initSelection{discipline: true}},
 		{name: "unknown lang errors", o: initOpts{flagsChanged: true, langCSV: "cobol"}, wantErr: true},
 		{name: "tty no flags prompts", o: initOpts{tty: true}, wantPrompt: true},
@@ -61,10 +68,47 @@ func TestChooseInit(t *testing.T) {
 			if prompt != tt.wantPrompt {
 				t.Errorf("prompt = %v, want %v", prompt, tt.wantPrompt)
 			}
-			if !slices.Equal(sel.langs, tt.wantSel.langs) || sel.concise != tt.wantSel.concise || sel.phases != tt.wantSel.phases || sel.discipline != tt.wantSel.discipline {
+			if !slices.Equal(sel.langs, tt.wantSel.langs) || sel.concise != tt.wantSel.concise || sel.interaction != tt.wantSel.interaction || sel.plain != tt.wantSel.plain || sel.phases != tt.wantSel.phases || sel.discipline != tt.wantSel.discipline {
 				t.Errorf("sel = %+v, want %+v", sel, tt.wantSel)
 			}
 		})
+	}
+}
+
+// The README init row is the only init-flag enumeration outside the docs guard —
+// this test is what makes a missed flag a failure instead of stale docs.
+func TestReadmeInitRowNamesBlockFlags(t *testing.T) {
+	b, err := os.ReadFile(filepath.Join("..", "..", "README.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var row string
+	for line := range strings.Lines(string(b)) {
+		if strings.HasPrefix(line, "| `devskills init` |") {
+			row = line
+			break
+		}
+	}
+	if row == "" {
+		t.Fatal("README.md has no `devskills init` table row")
+	}
+
+	// Operational flags are deliberately not in the row; every other flag is a
+	// content selection the README must advertise.
+	operational := map[string]bool{"yes": true, "dry-run": true, "uninstall": true, "help": true}
+	cmd := newInitCmd(fakeAssets())
+	cmd.Flags().VisitAll(func(f *pflag.Flag) {
+		if operational[f.Name] {
+			return
+		}
+		if !strings.Contains(row, "`--"+f.Name+"`") {
+			t.Errorf("README init row is missing `--%s`", f.Name)
+		}
+	})
+	for _, m := range regexp.MustCompile("`--([a-z-]+)`").FindAllStringSubmatch(row, -1) {
+		if cmd.Flags().Lookup(m[1]) == nil {
+			t.Errorf("README init row names `--%s`, which init does not have", m[1])
+		}
 	}
 }
 
@@ -97,7 +141,7 @@ func TestAvailableLanguages(t *testing.T) {
 
 func TestRunInitWritesBlocks(t *testing.T) {
 	root := t.TempDir()
-	sel := initSelection{langs: []string{"go"}, concise: true, discipline: true}
+	sel := initSelection{langs: []string{"go"}, concise: true, interaction: true, plain: true, discipline: true}
 	if err := runInit(io.Discard, fakeAssets(), root, sel, false); err != nil {
 		t.Fatal(err)
 	}
@@ -105,6 +149,8 @@ func TestRunInitWritesBlocks(t *testing.T) {
 	for _, want := range []string{
 		"<!-- BEGIN devskills:base -->", "BASE PRINCIPLES",
 		"<!-- BEGIN devskills:concise -->", "BE TERSE",
+		"<!-- BEGIN devskills:interaction -->", "ONE QUESTION",
+		"<!-- BEGIN devskills:plain-language -->", "PLAIN WORDS",
 		"<!-- BEGIN devskills:spec-discipline -->", "AMEND INLINE",
 		"<!-- BEGIN devskills:language:go -->", "GO PROFILE",
 		"profile: go — managed by devskills",

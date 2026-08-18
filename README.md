@@ -90,6 +90,7 @@ The **phase spine** follows the arc of a change. The groups below it — modes, 
 | | `/ds-perf-plan` | a graded, ranked optimization plan with a cost model |
 | **Build** | `/ds-debug` | root-cause a failure: reproduce, isolate, fix, prove |
 | **Clean** | `/ds-deslop` | strip AI slop from the diff before any review |
+| | `/ds-humanize` | remove AI tells from prose — filler, hedging, signposting, chatbot artifacts |
 | **Review** | `/ds-code-quality-review` | maintainability + single source of truth |
 | | `/ds-bug-review` | correctness — real bugs, not style |
 | | `/ds-security-review` | exploitable weaknesses; each finding names the attack |
@@ -99,6 +100,7 @@ The **phase spine** follows the arc of a change. The groups below it — modes, 
 | | `/ds-doc-quality-review` | docs accuracy against the code, dead links, staleness |
 | | `/ds-ui-quality-review` | UI soundness, craft, and accessibility |
 | | `/ds-comment-review` | do the comments earn their place? |
+| | `/ds-clarity-review` | is the prose understandable? plain-language review of any text |
 | | `/ds-notebook-review` | notebook state, output hygiene, reproducibility |
 | | `/ds-quality-gate` | run the review pipeline as a gate over the whole branch |
 | | `/ds-osv` | scan dependencies for known CVEs (OSV) |
@@ -106,7 +108,7 @@ The **phase spine** follows the arc of a change. The groups below it — modes, 
 | **Ship** | `/ds-handoff` | compact the session into a handoff doc |
 | | `/ds-retro` | post-release: compare decided vs shipped, distill rules |
 
-Every review reports by default and changes nothing; pass `--fix` to apply the mechanical, unambiguous findings, or `--full` to widen scope from the branch diff to the whole codebase.
+Every review reports by default and changes nothing; most take `--fix` to apply the mechanical, unambiguous findings, and `--full` to widen scope from the branch diff to the whole codebase (the tool-backed `/ds-osv` and `/ds-semgrep` scope by path instead).
 
 ### Modes — standing postures, compose anytime
 
@@ -117,6 +119,7 @@ Turn one on and it governs the rest of the session; several can be active at onc
 | `/ds-tiger-style-mode` | the safety + explicitness engineering bar |
 | `/ds-git-mode` | commit each working unit as it lands; terse messages; never pushes |
 | `/ds-step-mode` | smallest reviewable step, then hand back |
+| `/ds-interaction-mode` | one question per message, answerable in one read; handbacks run top to bottom |
 | `/ds-test-mode` | keep the core tested by risk as you build |
 | `/ds-tdd-mode` | drive implementation test-first, one vertical slice at a time |
 | `/ds-ui-mode` | component/state discipline + design craft for UI work |
@@ -153,23 +156,23 @@ Preferences (the modes resume auto-applies) live in `.project/config.md`, writte
 
 ## The CLI
 
-One binary, four commands:
+One binary, five commands:
 
 | Command | Does |
 |---------|------|
 | `devskills install` | sync the skills into Claude Code / OpenCode / Codex (`--local`, `--harness`, `--dry-run`, `--uninstall`) |
-| `devskills init` | scaffold a project's `AGENTS.md` + a `CLAUDE.md` import (`--lang`, `--concise`, `--phases`) |
+| `devskills init` | scaffold a project's `AGENTS.md` + a `CLAUDE.md` import (`--lang`, `--concise`, `--interaction`, `--plain-language`, `--phases`, `--spec-discipline`) |
 | `devskills config` | pick the modes a session starts with (`--modes`, `--dry-run`) |
 | `devskills doctor` | check — or, with `--fix`, install — the external tools some skills need |
 | `devskills version` | print version and build info |
 
-`init` builds `AGENTS.md` from stacked, independently-managed blocks marked `<!-- BEGIN/END devskills:<id> -->`, so re-running is idempotent and swapping a language replaces only that block. It's harness-agnostic — Claude Code reads the `CLAUDE.md` import; OpenCode and Codex read `AGENTS.md` directly.
+`init` builds `AGENTS.md` from stacked, independently-managed blocks marked `<!-- BEGIN/END devskills:<id> -->`, so re-running is idempotent and swapping a language replaces only that block. It's assistant-agnostic — Claude Code reads the `CLAUDE.md` import; OpenCode and Codex read `AGENTS.md` directly.
 
 `config` writes `.project/config.md`, listing the `ds-*-mode` skills `/ds-project-resume` applies at session start. It offers the modes this binary ships, so you don't have to remember names, and manages one marker block, so anything else you put in the file survives — including a mode of your own, added by hand. It's a command and not a skill on purpose: `config.md` is where you tell the assistant how to behave, so nothing the assistant runs can rewrite it.
 
 ### Language profiles
 
-`init --lang` stacks a stack-specific profile — idioms, toolchain defaults, and review constraints — under the universal baseline. Pass several (`--lang go,typescript`) for a polyglot repo.
+`init --lang` layers a stack-specific profile — idioms, toolchain defaults, and review constraints — under the universal baseline. Pass several (`--lang go,typescript`) for a polyglot repo.
 
 | Profile | Target |
 |---------|--------|
@@ -196,7 +199,7 @@ One binary, four commands:
 
 `/ds-security-review`, `/ds-osv`, and `/ds-semgrep` are **author-time** tools: they run in your assistant and produce evidence you can capture, share, or attach to a PR. They help you build secure code and demonstrate due diligence, but they are **not tamper-proof** — a user can skip the skill or edit the output.
 
-For compliance regimes that require tamper-evident enforcement, you still need a server-side gate: pre-commit checks, PR checks, or release-pipeline scanners. The heavy model — machine-readable output from these skills fed into a CI gate — is a valid future direction; the default is lightweight aid for the developer.
+For compliance regimes that require tamper-evident enforcement, you still need a server-side gate: pre-commit checks, PR checks, or release-pipeline scanners. The heavyweight approach — machine-readable output from these skills fed into a CI gate — is a valid future direction; the default is lightweight aid for the developer.
 
 ## Docs
 

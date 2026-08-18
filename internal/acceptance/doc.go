@@ -14,7 +14,7 @@
 //
 // Verified by the integration tests in this package (TestInstall/Init/Doctor/Version):
 //
-//	AC-4   install --all: 47 skills per harness; a ds-* legacy command is purged
+//	AC-4   install --all: 50 skills per harness; a ds-* legacy command is purged
 //	       with no backup; a non-ds legacy command is left untouched (the ledger
 //	       only sweeps names provably ours); a retired skill dir (ds-typeset) is
 //	       pruned.
@@ -31,7 +31,7 @@
 //
 // Verified elsewhere (unit tests, static checks, or skill-prompt review):
 //
-//	AC-1   skills/ holds 47 skills and none of the removed/renamed names — the
+//	AC-1   skills/ holds 50 skills and none of the removed/renamed names — the
 //	       count by catalog.TestSkillCountsStayInSync, the names static.
 //	AC-2   every SKILL.md: name==dir, a description, disable-model-invocation:true
 //	       — the internal/catalog validator (go test ./...).
