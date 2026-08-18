@@ -53,7 +53,7 @@ make bench SKILL=<skill> ARGS="--format pr-md --out <scratch>/<skill>.md [passth
 
 Default: write the report to a scratch path, display it, and print the path with a reminder to include it in the PR body. Create nothing in the repo tree. On explicit request, write `evals/reports/<skill>.md` instead for the user to commit.
 
-Then adopt this standing rule for the rest of the session: **if a PR is opened, its body includes a `## Benchmarking` section** — embedding the full report (scratch variant) or referencing the committed file (committed variant). This satisfies CI's `# Bench report:` presence check.
+Then adopt this standing rule for the rest of the session: **if a PR is opened, its body includes a `## Benchmark evidence` section** — embedding the full report (scratch variant) or referencing the committed file (committed variant). This satisfies CI's `# Bench report:` presence check.
 
 ## Rules
 
