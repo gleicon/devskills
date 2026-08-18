@@ -6,6 +6,9 @@ name: bench-report
 
 on:
   pull_request:
+    # edited included: the intended flow pastes the report into the PR body
+    # after opening, and a body edit must re-run the presence check.
+    types: [opened, edited, reopened, synchronize]
     paths: ["skills/**"]
 
 permissions:
