@@ -35,6 +35,7 @@ jobs:
 
       # Pinned: a golangci-lint release must never turn the gate red on an
       # untouched tree. .golangci.yml is v2, which needs action v8+.
+      # Must match GOLANGCI_LINT_VERSION in the Makefile — bump both together.
       - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
         with:
           version: v2.11.4

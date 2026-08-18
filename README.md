@@ -143,6 +143,8 @@ Durable context across `/clear` and session ends. The workflow runs fine without
 
 Preferences (the modes resume auto-applies) live in `.project/config.md`, written by `devskills config` — no skill can edit it.
 
+If you work this loop often, [devskills-tui](https://github.com/gfronza/devskills-tui) by [@gfronza](https://github.com/gfronza) is a companion worth installing: a read-only terminal viewer that follows `.project/` live — `state.md` as a `now`/`next` banner, `roadmap.md` as milestones with progress — so a pane stays current while your agents work. It never writes anything.
+
 ### Utilities
 
 | Skill | What it does |
@@ -165,7 +167,7 @@ One binary, six commands:
 | `devskills config` | pick the modes a session starts with (`--modes`, `--dry-run`) |
 | `devskills doctor` | check — or, with `--fix`, install — the external tools some skills need |
 | `devskills bench` | benchmark a skill change old-vs-new against its `evals/` scenarios (`--runs`, `--harness`, `--format pr-md`) — see [docs/bench.md](docs/bench.md) |
-| `devskills version` | print version and build info |
+| `devskills version` | print version and build info (`--check` asks GitHub for a newer release — the only network call devskills itself makes) |
 
 `init` builds `AGENTS.md` from stacked, independently-managed blocks marked `<!-- BEGIN/END devskills:<id> -->`, so re-running is idempotent and swapping a language replaces only that block. It's assistant-agnostic — Claude Code reads the `CLAUDE.md` import; OpenCode and Codex read `AGENTS.md` directly.
 
@@ -232,16 +234,17 @@ MIT — see [LICENSE](LICENSE).
 
 ## Development
 
-It's a plain Go module (needs **Go 1.26+**). A `Makefile` wraps the common tasks; the raw commands are identical:
+It's a plain Go module (needs **Go 1.26+**). A `Makefile` wraps the common tasks — bare `make` prints the annotated target list; the raw commands are identical:
 
 ```bash
+make verify                   # the release gate, locally: fmt, tidy, lint, unit + acceptance tests
 make build                    # build the ./devskills binary
 make install                  # install the current tree to $GOPATH/bin/devskills
 make test                     # unit tests (embed integrity, sync, scaffold, cli, …)
 make test-integration         # end-to-end acceptance — builds the binary, drives it in a sandbox
 make bench SKILL=<skill>      # build, then benchmark a skill change (ARGS="--format pr-md" etc.)
-make lint                     # lint gate (golangci-lint v2; config in .golangci.yml)
-make fmt                      # format
+make lint                     # golangci-lint, pinned to the version the release gate runs
+make fmt                      # format (gofmt, matching the gate)
 make snapshot                 # goreleaser cross-build dry-run
 make clean                    # remove ./devskills and ./dist
 ```
@@ -252,9 +255,12 @@ Raw equivalents:
 go build -ldflags "-s -w -X github.com/gleicon/devskills/internal/cli.version=$(cat VERSION)" -o ./devskills .
 go test -race ./...
 go test -tags integration ./internal/acceptance/
+go mod tidy
 golangci-lint run
 gofmt -w .
 ```
+
+The release gate (`.github/workflows/release.yml`) runs only on pushes to `main`, so run `make verify` before trusting a green PR.
 
 Skills and profiles live in `skills/` and `agents-md/` and are embedded into the binary at build time — edit the source there, not an installed copy.
 
