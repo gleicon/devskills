@@ -167,7 +167,7 @@ One binary, six commands:
 | `devskills config` | pick the modes a session starts with (`--modes`, `--dry-run`) |
 | `devskills doctor` | check — or, with `--fix`, install — the external tools some skills need |
 | `devskills bench` | benchmark a skill change old-vs-new against its `evals/` scenarios (`--runs`, `--harness`, `--format pr-md`) — see [docs/bench.md](docs/bench.md) |
-| `devskills version` | print version and build info |
+| `devskills version` | print version and build info (`--check` asks GitHub for a newer release — the CLI's only network call) |
 
 `init` builds `AGENTS.md` from stacked, independently-managed blocks marked `<!-- BEGIN/END devskills:<id> -->`, so re-running is idempotent and swapping a language replaces only that block. It's assistant-agnostic — Claude Code reads the `CLAUDE.md` import; OpenCode and Codex read `AGENTS.md` directly.
 
