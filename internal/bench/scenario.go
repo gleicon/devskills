@@ -3,11 +3,12 @@
 package bench
 
 import (
+	"cmp"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/goccy/go-yaml"
@@ -80,7 +81,7 @@ func LoadScenarios(evalsDir, skill string) ([]*Scenario, error) {
 	if len(scenarios) == 0 {
 		return nil, fmt.Errorf("no scenarios for skill %q in %s", skill, skillDir)
 	}
-	sort.Slice(scenarios, func(i, j int) bool { return scenarios[i].Name < scenarios[j].Name })
+	slices.SortFunc(scenarios, func(a, b *Scenario) int { return cmp.Compare(a.Name, b.Name) })
 	return scenarios, nil
 }
 
