@@ -19,6 +19,7 @@ For each scenario, bench materializes the fixture into a temp git repo (base tre
 - `--runs` (default 3) repeats each version per scenario; skills are nondeterministic, one run proves little.
 - A missing CLI or timed-out run is reported loudly, never skipped. The command exits non-zero only when every run failed.
 - Reports never compare scores across harnesses — per-harness tables only. Interpretation belongs to the PR author and reviewer; the report carries no verdict.
+- Claude and OpenCode runs are isolated from the operator's global config (Claude's `--safe-mode`; an empty `OPENCODE_CONFIG_DIR` for OpenCode). Codex offers no equivalent off-switch, so its runs inherit `~/.codex/config.toml` and the global `AGENTS.md` — read Codex numbers with that in mind.
 
 ## Scenario anatomy
 
