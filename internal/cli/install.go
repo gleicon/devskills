@@ -219,7 +219,7 @@ func buildTarget(r harness.Resolver, id harness.ID, scope harness.Scope) (dsync.
 func renderPlan(out io.Writer, p dsync.Plan, scope harness.Scope, dryRun, uninstall bool) {
 	header := lipgloss.NewStyle().Bold(true)
 	dim := lipgloss.NewStyle().Faint(true)
-	lipgloss.Fprintln(out, header.Render(fmt.Sprintf("%s (%s) → %s", p.Target.Name, scopeName(scope), p.Target.SkillsDir)))
+	lipgloss.Fprintln(out, header.Render(fmt.Sprintf("%s (%s) → %s", p.Target.Name, scope, p.Target.SkillsDir)))
 	if uninstall {
 		lipgloss.Fprintf(out, "  %d items to remove\n", len(p.Removes))
 	} else {
@@ -236,13 +236,6 @@ func renderPlan(out io.Writer, p dsync.Plan, scope harness.Scope, dryRun, uninst
 		lipgloss.Fprintln(out, dim.Render(msg))
 	}
 	lipgloss.Fprintln(out)
-}
-
-func scopeName(s harness.Scope) string {
-	if s == harness.Local {
-		return "local"
-	}
-	return "global"
 }
 
 func joinIDs(ids []harness.ID) string {

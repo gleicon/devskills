@@ -177,7 +177,12 @@ func excludeHarnessDirs(sandbox string) error {
 	if err := os.MkdirAll(info, 0o755); err != nil {
 		return err
 	}
-	return os.WriteFile(filepath.Join(info, "exclude"), []byte(".claude/\n.codex/\n.opencode/\n"), 0o644)
+	var lines strings.Builder
+	for _, id := range harness.All() {
+		lines.WriteString(harness.LocalDir(id))
+		lines.WriteString("/\n")
+	}
+	return os.WriteFile(filepath.Join(info, "exclude"), []byte(lines.String()), 0o644)
 }
 
 // postRunDiff stages everything and diffs against the materialized tip, so

@@ -26,7 +26,7 @@ func TestSkillsDirDefaults(t *testing.T) {
 		{Codex, Local, "/repo/.codex/skills"},
 	}
 	for _, tt := range tests {
-		t.Run(string(tt.id)+"-"+scopeName(tt.scope), func(t *testing.T) {
+		t.Run(string(tt.id)+"-"+tt.scope.String(), func(t *testing.T) {
 			got, err := r.SkillsDir(tt.id, tt.scope)
 			if err != nil {
 				t.Fatalf("SkillsDir: %v", err)
@@ -171,11 +171,4 @@ func TestDetected(t *testing.T) {
 			t.Error("want not detected")
 		}
 	})
-}
-
-func scopeName(s Scope) string {
-	if s == Local {
-		return "local"
-	}
-	return "global"
 }

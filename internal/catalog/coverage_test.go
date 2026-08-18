@@ -59,22 +59,18 @@ var grandfathered = map[string]bool{
 // TestNewSkillsHaveScenarios fails, naming the skill, when a skill outside
 // the grandfather list has no scenario under evals/ (FR-15, AC-11).
 func TestNewSkillsHaveScenarios(t *testing.T) {
-	skills, err := os.ReadDir("../../skills")
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, sk := range skills {
-		if !sk.IsDir() || grandfathered[sk.Name()] {
+	for _, name := range repoSkills(t) {
+		if grandfathered[name] {
 			continue
 		}
-		if !hasScenario(sk.Name()) {
-			t.Errorf("skill %s has no scenario under evals/%s/ — add one; never extend the grandfather list", sk.Name(), sk.Name())
+		if !hasScenario(name) {
+			t.Errorf("skill %s has no scenario under evals/%s/ — add one; never extend the grandfather list", name, name)
 		}
 	}
 }
 
 func hasScenario(skill string) bool {
-	entries, err := os.ReadDir(filepath.Join("../../evals", skill))
+	entries, err := os.ReadDir(filepath.Join(repoRoot, "evals", skill))
 	if err != nil {
 		return false
 	}
