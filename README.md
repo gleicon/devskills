@@ -262,7 +262,7 @@ Skills and profiles live in `skills/` and `agents-md/` and are embedded into the
 
 Skill prompt changes are benchmarked with `devskills bench`: old (main branch) vs new (working tree) against committed scenarios under `evals/`, scored deterministically — no LLM judging. [docs/bench.md](docs/bench.md) covers authoring scenarios and the check tiers. The repo ships `/ds-dev-skill-bench` to drive the bench and act on its reports — committed under `.claude/skills/` (which OpenCode also reads) and `.codex/skills/`, so it works in all three assistants.
 
-- **Benchmark runs are local only.** `devskills bench` drives your installed assistant CLIs (Claude Code, Codex, OpenCode) with your own auth. The repo stores no LLM credentials, and CI never executes a benchmark.
+- **Benchmark runs are local only.** `devskills bench` drives your installed assistant CLIs (Claude Code, Codex, OpenCode) with your own auth. The repo stores no LLM credentials, and CI never executes a benchmark. Runs execute the branch's committed tasks and fixtures with approvals off (only Codex is OS-sandboxed) — review `evals/` changes like code before benching an untrusted branch.
 - **CI is zero-token.** The `bench-report` workflow only checks that a PR touching a covered skill carries a report (in the PR body or a committed file); the unit tests exercise bench against fake CLIs and canned transcripts, fully offline.
 - **New skills need a scenario.** A catalog test fails any skill added without one under `evals/` — run the bench and paste the report into the PR's evidence section.
 

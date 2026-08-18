@@ -5,9 +5,12 @@
 ```bash
 devskills bench ds-deslop                      # stream raw runs, Claude Code only
 devskills bench ds-deslop --format pr-md       # PR-ready markdown report
+devskills bench ds-deslop --format pr-md --out report.md
 devskills bench ds-deslop --scenario narrated-greeting --runs 1
 devskills bench ds-deslop --harness claude,codex,opencode
 ```
+
+In pr-md mode the report is the product: it goes to stdout (or the `--out` file), and every progress line — run headers, scores, failures — streams to stderr.
 
 In the devskills repo itself, bench the working tree — never a stale installed binary — with `make bench SKILL=ds-deslop ARGS="--format pr-md"`, or equivalently `go run . bench ds-deslop --format pr-md`.
 
@@ -20,6 +23,7 @@ For each scenario, bench materializes the fixture into a temp git repo (base tre
 - A missing CLI or timed-out run is reported loudly, never skipped. The command exits non-zero only when every run failed.
 - Reports never compare scores across assistants — per-assistant tables only. Interpretation belongs to the PR author and reviewer; the report carries no verdict.
 - Claude and OpenCode runs are isolated from the operator's global config (Claude's `--safe-mode`; an empty `OPENCODE_CONFIG_DIR` for OpenCode). Codex offers no equivalent off-switch, so its runs inherit `~/.codex/config.toml` and the global `AGENTS.md` — read Codex numbers with that in mind.
+- Runs are approvals-off: the sandbox is a throwaway *working directory*, not an OS boundary — only Codex (`--sandbox workspace-write`) is genuinely confined. A bench run executes the branch's committed tasks and fixtures with your local CLIs, so review `evals/` changes like code before benching an untrusted branch.
 
 ## Scenario anatomy
 

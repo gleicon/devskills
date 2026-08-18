@@ -130,7 +130,9 @@ func headlessArgs(id harness.ID, task, model, skill string) ([]string, error) {
 		prompt := fmt.Sprintf("Read .claude/skills/%s/SKILL.md and follow it as your instructions for this task: %s", skill, task)
 		// --safe-mode drops the operator's global CLAUDE.md, hooks, output styles
 		// and agents, which move scores independent of the skill; auth is untouched.
-		// --dangerously-skip-permissions is confined to the throwaway sandbox.
+		// --dangerously-skip-permissions runs approvals-off: only the cwd is the
+		// throwaway sandbox — the process is unconfined, so scenario tasks are
+		// trusted input (see the trust model in docs/bench.md).
 		return []string{"claude", "-p", prompt, "--model", model, "--safe-mode", "--dangerously-skip-permissions"}, nil
 	case harness.Codex:
 		// exec is codex's non-interactive mode; workspace-write confines
@@ -138,8 +140,9 @@ func headlessArgs(id harness.ID, task, model, skill string) ([]string, error) {
 		return []string{"codex", "exec", "--model", model, "--sandbox", "workspace-write", task}, nil
 	case harness.OpenCode:
 		// --pure drops the operator's external plugins; --auto approves the
-		// permission prompts a headless run can't answer, confined to the
-		// throwaway sandbox like Claude's --dangerously-skip-permissions.
+		// permission prompts a headless run can't answer — approvals-off like
+		// Claude, unconfined beyond the sandbox cwd, so scenario tasks are
+		// trusted input.
 		return []string{"opencode", "run", task, "--model", model, "--pure", "--auto"}, nil
 	}
 	return nil, fmt.Errorf("harness %q is not supported by bench", id)
