@@ -143,6 +143,8 @@ Durable context across `/clear` and session ends. The workflow runs fine without
 
 Preferences (the modes resume auto-applies) live in `.project/config.md`, written by `devskills config` — no skill can edit it.
 
+If you work this loop often, [devskills-tui](https://github.com/gfronza/devskills-tui) by [@gfronza](https://github.com/gfronza) is a companion worth installing: a read-only terminal viewer that follows `.project/` live — `state.md` as a `now`/`next` banner, `roadmap.md` as milestones with progress — so a pane stays current while your agents work. It never writes anything.
+
 ### Utilities
 
 | Skill | What it does |
