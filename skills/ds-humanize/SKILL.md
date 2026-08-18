@@ -1,6 +1,6 @@
 ---
 name: ds-humanize
-description: "Remove the AI tells from prose — the patterns that read as machine-written. Not `/ds-deslop` (code slop) or `/ds-comment-review` (whether a comment earns its place), and not `/ds-clarity-review` (whether a reader understands): this judges only whether the text sounds machine-written."
+description: "Remove the AI tells from prose — the patterns that read as machine-written. Not `/ds-deslop` (code slop) or `/ds-comment-review` (whether a comment earns its place), and not `/ds-clarity-review` (whether a reader understands) or `/ds-doc-quality-review` (the document as artifact — bloat, redundancy, structure): this judges only whether the text sounds machine-written."
 disable-model-invocation: true
 ---
 
@@ -33,6 +33,7 @@ Treat any argument as scope (files, directories, globs). With no scope, work on 
 - Remove tells; don't add voice. Injected idiom or vivid phrasing is out of scope — and would fight the clarity pass.
 - Fenced code, inline code, URLs, and quoted material stay byte-identical.
 - Don't enforce plainness or restructure for comprehension — that's `/ds-clarity-review`'s lens.
+- Document structure stays. Never merge, split, or delete sections — a redundant section is `/ds-doc-quality-review`'s bloat finding, not a tell.
 
 ## Output
 
