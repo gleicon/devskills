@@ -47,7 +47,7 @@ func TestChooseInit(t *testing.T) {
 		wantErr    bool
 	}{
 		{name: "lang flag wins", o: initOpts{flagsChanged: true, langCSV: "go", tty: true}, wantSel: initSelection{langs: []string{"go"}}},
-		{name: "layer flag skips prompt", o: initOpts{flagsChanged: true, concise: true, tty: true}, wantSel: initSelection{concise: true}},
+		{name: "concise flag skips prompt", o: initOpts{flagsChanged: true, concise: true, tty: true}, wantSel: initSelection{concise: true}},
 		{name: "unknown lang errors", o: initOpts{flagsChanged: true, langCSV: "cobol"}, wantErr: true},
 		{name: "tty no flags prompts", o: initOpts{tty: true}, wantPrompt: true},
 		{name: "yes takes base-only default", o: initOpts{tty: true, yes: true}, wantSel: initSelection{}},

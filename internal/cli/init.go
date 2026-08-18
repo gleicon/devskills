@@ -240,9 +240,11 @@ func runInitUninstall(out io.Writer, root string, dryRun bool) error {
 // .devskills/language; the directory follows if it is then empty.
 func removeLegacyProfile(out io.Writer, root string, dryRun bool) error {
 	file := filepath.Join(root, ".devskills", "language")
-	if _, err := os.Stat(file); errors.Is(err, fs.ErrNotExist) {
+	_, err := os.Stat(file)
+	if errors.Is(err, fs.ErrNotExist) {
 		return nil
-	} else if err != nil {
+	}
+	if err != nil {
 		return err
 	}
 	if dryRun {
