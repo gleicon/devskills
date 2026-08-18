@@ -64,7 +64,7 @@ echo "one warning" >&2
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"-p", "Review the diff", "--model", "pin-model", "--dangerously-skip-permissions"} {
+	for _, want := range []string{"-p", "Review the diff", "--model", "pin-model", "--safe-mode", "--dangerously-skip-permissions"} {
 		if !strings.Contains(string(args), want) {
 			t.Errorf("claude args = %q, missing %q", args, want)
 		}

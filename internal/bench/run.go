@@ -100,8 +100,10 @@ func headlessArgs(id harness.ID, task, model, skill string) ([]string, error) {
 		// would only reflect the bare task text. Point the model at the file
 		// bench installed — the same thing Codex does for itself by grepping.
 		prompt := fmt.Sprintf("Read .claude/skills/%s/SKILL.md and follow it as your instructions for this task: %s", skill, task)
+		// --safe-mode drops the operator's global CLAUDE.md, hooks, output styles
+		// and agents, which move scores independent of the skill; auth is untouched.
 		// --dangerously-skip-permissions is confined to the throwaway sandbox.
-		return []string{"claude", "-p", prompt, "--model", model, "--dangerously-skip-permissions"}, nil
+		return []string{"claude", "-p", prompt, "--model", model, "--safe-mode", "--dangerously-skip-permissions"}, nil
 	case harness.Codex:
 		// exec is codex's non-interactive mode; workspace-write confines
 		// model-run commands to the sandbox repo.
