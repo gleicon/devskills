@@ -93,6 +93,7 @@ tier: smoke
 Keywords absorb phrasing variance — the same defect described three ways should still hit.
 
 - **Any-of semantics**: one match suffices. List the distinct *names* for the defect, not sentence fragments: `[nil map, uninitialized map, assignment to entry]`.
+- **Keyword sets stay disjoint across expectations.** Hits match the whole output, so a keyword shared between two expectations cross-hits — one model sentence would score two planted defects. The loader rejects collisions, including one expectation's keyword containing another's (case-insensitive). Plant distinct defect *types*; two same-type defects in different files are indistinguishable under whole-output matching.
 - **Short and specific.** A keyword like `bug` or `issue` matches everything and proves nothing; `dead guard` or `narrating comment` matches only the planted defect.
 - **Undercounts are fixable**: when a legitimate finding misses because the model phrased it unexpectedly, widen the list — that's authoring, not gaming.
 - Apply-style **anchors** are exact substrings of planted lines. Anchor on the distinctive part of the line (a comment, a condition), never on line numbers — fixtures shift.

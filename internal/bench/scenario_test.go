@@ -98,6 +98,8 @@ func TestLoadScenarioRejectsMalformed(t *testing.T) {
 		{"expectation without file", "task: t\ntier: planted-defect\nstyle: report\nexpectations:\n  - {keywords: [k]}\n", []string{"base", "change"}, "file is required"},
 		{"report without keywords", "task: t\ntier: planted-defect\nstyle: report\nexpectations:\n  - {file: f}\n", []string{"base", "change"}, "requires keywords"},
 		{"apply without anchors", "task: t\ntier: planted-defect\nstyle: apply\nexpectations:\n  - {file: f, keywords: [k]}\n", []string{"base", "change"}, "requires anchors"},
+		{"report keyword shared across expectations", "task: t\ntier: planted-defect\nstyle: report\nexpectations:\n  - {file: f, keywords: [Dead Code]}\n  - {file: g, keywords: [dead code]}\n", []string{"base", "change"}, "collides"},
+		{"report keyword substring collision", "task: t\ntier: planted-defect\nstyle: report\nexpectations:\n  - {file: f, keywords: [narrating comment]}\n  - {file: g, keywords: [comment]}\n", []string{"base", "change"}, "collides"},
 		{"structural without elements", "task: t\ntier: structural\n", []string{"base", "change"}, "requires elements"},
 		{"structural with expectations", "task: t\ntier: structural\nelements: [E]\nexpectations:\n  - {file: f, keywords: [k]}\n", []string{"base", "change"}, "elements only"},
 		{"smoke with elements", "task: t\ntier: smoke\nelements: [E]\n", []string{"base", "change"}, "no style, expectations, or elements"},
@@ -115,6 +117,21 @@ func TestLoadScenarioRejectsMalformed(t *testing.T) {
 				t.Errorf("error = %q, want it to name the scenario", err)
 			}
 		})
+	}
+}
+
+func TestLoadScenarioKeywordOverlapWithinExpectation(t *testing.T) {
+	// Keywords are any-of, so overlap inside one expectation is harmless;
+	// only cross-expectation collisions are rejected.
+	y := `task: t
+tier: planted-defect
+style: report
+expectations:
+  - {file: f, keywords: [nil map, map]}
+  - {file: g, keywords: [dead guard]}
+`
+	if _, err := LoadScenario(writeScenario(t, "s", y, "base", "change")); err != nil {
+		t.Fatal(err)
 	}
 }
 

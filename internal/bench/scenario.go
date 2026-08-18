@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/goccy/go-yaml"
 )
@@ -154,6 +155,30 @@ func (s *Scenario) validatePlantedDefect() []error {
 		case StyleApply:
 			if len(e.Anchors) == 0 {
 				errs = append(errs, fmt.Errorf("expectations[%d]: apply style requires anchors", i))
+			}
+		}
+	}
+	if s.Style == StyleReport {
+		errs = append(errs, s.keywordCollisions()...)
+	}
+	return errs
+}
+
+// keywordCollisions rejects keywords shared across expectations. Report hits
+// match the whole output with a case-insensitive Contains, so one expectation's
+// keyword appearing inside another's cross-hits: a single model sentence would
+// score two planted defects.
+func (s *Scenario) keywordCollisions() []error {
+	var errs []error
+	for i, a := range s.Expectations {
+		for _, ka := range a.Keywords {
+			for j, b := range s.Expectations[i+1:] {
+				for _, kb := range b.Keywords {
+					la, lb := strings.ToLower(ka), strings.ToLower(kb)
+					if strings.Contains(la, lb) || strings.Contains(lb, la) {
+						errs = append(errs, fmt.Errorf("expectations[%d] keyword %q collides with expectations[%d] keyword %q: keyword sets must stay disjoint across expectations", i, ka, i+1+j, kb))
+					}
+				}
 			}
 		}
 	}
