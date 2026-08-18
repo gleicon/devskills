@@ -77,6 +77,21 @@ func (r Runner) Run(ctx context.Context, s *Scenario, skill SkillVersion) (Resul
 
 	cmd := exec.CommandContext(ctx, argv[0], argv[1:]...)
 	cmd.Dir = sandbox
+	if r.Harness == harness.OpenCode {
+		// opencode has no --safe-mode; an empty OPENCODE_CONFIG_DIR drops the
+		// operator's global config, rules, agents, and commands, and
+		// OPENCODE_DISABLE_CLAUDE_CODE stops the compat fallback from reading
+		// ~/.claude/CLAUDE.md. Auth lives in the data dir, so it is untouched.
+		configDir, err := os.MkdirTemp("", "devskills-bench-opencode-*")
+		if err != nil {
+			return Result{}, err
+		}
+		defer os.RemoveAll(configDir)
+		cmd.Env = append(os.Environ(),
+			"OPENCODE_CONFIG_DIR="+configDir,
+			"OPENCODE_DISABLE_CLAUDE_CODE=1",
+		)
+	}
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr
 	runErr := cmd.Run()
@@ -109,7 +124,10 @@ func headlessArgs(id harness.ID, task, model, skill string) ([]string, error) {
 		// model-run commands to the sandbox repo.
 		return []string{"codex", "exec", "--model", model, "--sandbox", "workspace-write", task}, nil
 	case harness.OpenCode:
-		return []string{"opencode", "run", task, "--model", model}, nil
+		// --pure drops the operator's external plugins; --auto approves the
+		// permission prompts a headless run can't answer, confined to the
+		// throwaway sandbox like Claude's --dangerously-skip-permissions.
+		return []string{"opencode", "run", task, "--model", model, "--pure", "--auto"}, nil
 	}
 	return nil, fmt.Errorf("harness %q is not supported by bench", id)
 }

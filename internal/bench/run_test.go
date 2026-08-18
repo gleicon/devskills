@@ -151,6 +151,7 @@ func TestRunnerOpenCodeInvocation(t *testing.T) {
 	argsFile := filepath.Join(t.TempDir(), "args")
 	t.Setenv("ARGS_OUT", argsFile)
 	fakeCLI(t, "opencode", `printf '%s\n' "$@" > "$ARGS_OUT"
+[ -d "$OPENCODE_CONFIG_DIR" ] && [ -z "$(ls -A "$OPENCODE_CONFIG_DIR")" ] && [ "$OPENCODE_DISABLE_CLAUDE_CODE" = 1 ] && echo ISOLATED
 cat .opencode/skills/ds-x/SKILL.md`)
 	r := Runner{Harness: harness.OpenCode, Model: "anthropic/some-model"}
 	res, err := r.Run(context.Background(), fixtureScenario(t), SkillVersion{Name: "ds-x", Content: []byte("OCSKILL")})
@@ -164,10 +165,15 @@ cat .opencode/skills/ds-x/SKILL.md`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"run", "Review the diff", "--model", "anthropic/some-model"} {
+	for _, want := range []string{"run", "Review the diff", "--model", "anthropic/some-model", "--pure", "--auto"} {
 		if !strings.Contains(string(args), want) {
 			t.Errorf("opencode args = %q, missing %q", args, want)
 		}
+	}
+	// The run must see an empty OPENCODE_CONFIG_DIR and the compat fallback
+	// disabled, so the operator's global config never moves scores.
+	if !strings.Contains(res.Stdout, "ISOLATED") {
+		t.Errorf("stdout = %q, want the isolation env marker", res.Stdout)
 	}
 	if !strings.Contains(res.Stdout, "OCSKILL") {
 		t.Errorf("stdout = %q, want the installed skill under .opencode/skills", res.Stdout)
