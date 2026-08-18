@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func gitRun(t *testing.T, dir string, args ...string) {
@@ -316,5 +317,41 @@ func TestRunBenchRejectsBadRuns(t *testing.T) {
 	err := runBench(context.Background(), &strings.Builder{}, io.Discard, t.TempDir(), benchOptions{Skill: "ds-x", Runs: 0})
 	if err == nil || !strings.Contains(err.Error(), "--runs") {
 		t.Errorf("error = %v, want runs validation", err)
+	}
+}
+
+func TestRunBenchRejectsNegativeTimeout(t *testing.T) {
+	err := runBench(context.Background(), &strings.Builder{}, io.Discard, t.TempDir(), benchOptions{Skill: "ds-x", Runs: 1, Timeout: -time.Second})
+	if err == nil || !strings.Contains(err.Error(), "--timeout") {
+		t.Errorf("error = %v, want timeout validation", err)
+	}
+}
+
+func TestRunBenchTimeoutFlagBoundsRuns(t *testing.T) {
+	root := benchRoot(t, "alpha")
+	fakeClaudeCLI(t, `sleep 5`)
+	var out strings.Builder
+	err := runBench(context.Background(), &out, io.Discard, root, benchOptions{Skill: "ds-x", Runs: 1, Timeout: 100 * time.Millisecond})
+	if err == nil || !strings.Contains(err.Error(), "all 2 runs failed") {
+		t.Errorf("error = %v, want every run timed out", err)
+	}
+	if !strings.Contains(out.String(), "timed out after 100ms") {
+		t.Errorf("output = %q, want the flag's timeout reported", out.String())
+	}
+}
+
+func TestRunBenchInterruptedContextAborts(t *testing.T) {
+	root := benchRoot(t, "alpha")
+	fakeClaudeCLI(t, `echo ok`)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	var out strings.Builder
+	err := runBench(ctx, &out, io.Discard, root, benchOptions{Skill: "ds-x", Runs: 3})
+	if err == nil || !strings.Contains(err.Error(), "interrupted") {
+		t.Errorf("error = %v, want the bench aborted on cancellation", err)
+	}
+	// One aborted run at most — never the full grind of fake failures.
+	if n := strings.Count(out.String(), "== ds-x/alpha"); n > 1 {
+		t.Errorf("run headers = %d, want the bench to stop at the first canceled run", n)
 	}
 }

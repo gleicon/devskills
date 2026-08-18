@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"time"
 
 	"charm.land/lipgloss/v2"
 	"github.com/spf13/cobra"
@@ -22,9 +23,10 @@ type benchOptions struct {
 	Scenario string // empty runs all of the skill's scenarios
 	Model    string // empty uses each harness's pinned model
 	Runs     int
-	Harness  string // comma-separated harness IDs; empty means claude only
-	Format   string // "" streams raw runs; "pr-md" emits the markdown report
-	Out      string // pr-md destination file; empty writes to stdout
+	Harness  string        // comma-separated harness IDs; empty means claude only
+	Format   string        // "" streams raw runs; "pr-md" emits the markdown report
+	Out      string        // pr-md destination file; empty writes to stdout
+	Timeout  time.Duration // per-run bound; 0 means bench.DefaultTimeout
 }
 
 func newBenchCmd() *cobra.Command {
@@ -49,6 +51,7 @@ func newBenchCmd() *cobra.Command {
 	f.StringVar(&opts.Harness, "harness", "claude", "comma-separated assistants to bench (claude,codex,opencode)")
 	f.StringVar(&opts.Format, "format", "", `output format: "pr-md" for the PR-ready markdown report`)
 	f.StringVar(&opts.Out, "out", "", "with --format pr-md, write the report to this file")
+	f.DurationVar(&opts.Timeout, "timeout", bench.DefaultTimeout, "per-run timeout")
 	return cmd
 }
 
@@ -61,6 +64,9 @@ func newBenchCmd() *cobra.Command {
 func runBench(ctx context.Context, out, errOut io.Writer, root string, opts benchOptions) error {
 	if opts.Runs < 1 {
 		return fmt.Errorf("--runs must be at least 1, got %d", opts.Runs)
+	}
+	if opts.Timeout < 0 {
+		return fmt.Errorf("--timeout must be positive, got %s", opts.Timeout)
 	}
 	if opts.Format != "" && opts.Format != "pr-md" {
 		return fmt.Errorf(`--format must be "pr-md", got %q`, opts.Format)
@@ -117,7 +123,7 @@ func runBench(ctx context.Context, out, errOut io.Writer, root string, opts benc
 	total, failures := 0, 0
 	for _, h := range harnesses {
 		model := models[h]
-		runner := bench.Runner{Harness: h, Model: model}
+		runner := bench.Runner{Harness: h, Model: model, Timeout: opts.Timeout}
 		group := bench.HarnessReport{Harness: h.Name(), Model: model}
 		for _, s := range scenarios {
 			sr := bench.ScenarioReport{Name: s.Name, Tier: s.Tier, Expectations: s.ExpectedHits()}
@@ -129,6 +135,12 @@ func runBench(ctx context.Context, out, errOut io.Writer, root string, opts benc
 					res, err := runner.Run(ctx, s, v)
 					if err != nil {
 						return err
+					}
+					// A canceled context (SIGINT/SIGTERM) aborts the bench;
+					// grinding on would record every remaining run as a
+					// fake failure and could still emit a report.
+					if err := ctx.Err(); err != nil {
+						return fmt.Errorf("bench interrupted: %w", err)
 					}
 					rr, err := recordRun(stream, s, res, opts.Format == "")
 					if err != nil {
@@ -234,6 +246,11 @@ func reproCommand(opts benchOptions, harnesses []harness.ID, models map[harness.
 		fmt.Fprintf(&b, " --model %s", opts.Model)
 	} else if len(harnesses) == 1 {
 		fmt.Fprintf(&b, " --model %s", models[harnesses[0]])
+	}
+	// A non-default timeout shapes results (it decides which slow runs fail),
+	// so a faithful reproduction carries it.
+	if opts.Timeout != 0 && opts.Timeout != bench.DefaultTimeout {
+		fmt.Fprintf(&b, " --timeout %s", opts.Timeout)
 	}
 	return b.String() + " --format pr-md"
 }

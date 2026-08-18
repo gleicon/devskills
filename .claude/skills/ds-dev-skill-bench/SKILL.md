@@ -13,7 +13,7 @@ When invoked, run `devskills bench` against the skills under development and act
 - **Skills** — explicit names bench exactly those, skipping auto-detection.
 - **Mode** — `improve` or `report`. Free text may resolve it when unambiguous ("…for the PR" → report). Otherwise ask at pre-flight; never guess — a wrongly guessed mode wastes a paid run.
 - **Assistants** — bare assistant names (`claude`, `opencode`, `codex`) or free text ("all assistants") resolve to `--harness`; registry assistants only.
-- **Bench flags** — `--runs`, `--harness`, `--scenario`, `--model` pass through verbatim. Don't add flags the user didn't give; the bench owns its defaults.
+- **Bench flags** — `--runs`, `--harness`, `--scenario`, `--model`, `--timeout` pass through verbatim. Don't add flags the user didn't give; the bench owns its defaults.
 
 ## Targets
 
