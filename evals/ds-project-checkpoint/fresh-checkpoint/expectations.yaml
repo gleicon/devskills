@@ -1,0 +1,9 @@
+# Structural: the produced .project/state.md (surfaced in the post-run diff)
+# or the run's report of it must contain all four required sections.
+task: "Run /ds-project-checkpoint to record where this project stands."
+tier: structural
+elements:
+  - "# now"
+  - "# next"
+  - "# settled"
+  - "# hazards"

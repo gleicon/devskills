@@ -2,11 +2,15 @@ module github.com/gleicon/devskills
 
 go 1.26
 
+// Benchmark fixtures are standalone repos, not part of this module's build.
+ignore ./evals
+
 require (
 	charm.land/huh/v2 v2.0.3
 	charm.land/lipgloss/v2 v2.0.5
 	github.com/charmbracelet/fang v1.0.0
 	github.com/charmbracelet/x/term v0.2.2
+	github.com/goccy/go-yaml v1.19.2
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.9
 )

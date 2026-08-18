@@ -1,0 +1,21 @@
+# One planted defect per expectation; a hit requires the post-run diff to
+# change at least one anchor line in the named file (apply-style skill).
+task: "Run /ds-deslop to remove the AI slop this branch introduced."
+tier: planted-defect
+style: apply
+expectations:
+  # Narrating comments restating each line of shout.
+  - file: greet.go
+    anchors:
+      - "// First we get the greeting for the name."
+      - "// Convert the greeting to uppercase using strings.ToUpper."
+      - "// Return an empty string if the greeting was empty."
+  # Defensive overkill: greeting never returns empty, the guard can't fire.
+  - file: greet.go
+    anchors:
+      - 'if g != "" {'
+      - "// Check that the greeting is not empty before proceeding."
+  # Narrating comment at the call site.
+  - file: main.go
+    anchors:
+      - "// Print the shouted greeting to standard output."

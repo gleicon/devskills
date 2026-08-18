@@ -1,6 +1,6 @@
 # Skill reference
 
-Every devskills skill is a single `SKILL.md` invoked as `/<name>` in Claude Code and OpenCode (and as `$<name>` in OpenAI Codex — a mention, not a slash). This is the reference: what each one does, its arguments, and when to reach for it. Browse the catalog interactively with **`/ds`**, the router — it names every skill by phase and does no work itself. For worked, multi-step workflows see [recipes.md](recipes.md).
+Every devskills skill is a single `SKILL.md` invoked as `/<name>` in Claude Code and OpenCode (and as `$<name>` in OpenAI Codex — a mention, not a slash). This is the reference: what each one does, its arguments, and when to reach for it. Browse the catalog interactively with **`/ds`**, the router — it names every skill by phase and does no work itself. For worked, multi-step workflows see [recipes.md](recipes.md). Changing a skill's prompt? Benchmark the change with `devskills bench` — see [bench.md](bench.md).
 
 ## Kinds of skill
 

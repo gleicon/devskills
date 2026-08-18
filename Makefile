@@ -1,4 +1,4 @@
-.PHONY: build install test test-integration lint fmt clean snapshot release
+.PHONY: build install test test-integration bench lint fmt clean snapshot release
 
 # Version from the VERSION file (used by local/snapshot builds).
 VERSION ?= $(shell cat VERSION)
@@ -19,6 +19,11 @@ test:
 
 test-integration:
 	go test -tags integration ./internal/acceptance/
+
+# Always benches the working tree, never a stale installed binary.
+# Usage: make bench SKILL=ds-deslop [ARGS="--format pr-md"]
+bench: build
+	./devskills bench $(SKILL) $(ARGS)
 
 lint:
 	golangci-lint run

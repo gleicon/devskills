@@ -1,0 +1,7 @@
+# Structural: the skill mandates this exact confirmation line, so the run
+# must produce it — smoke would pass on any non-blank output, even a refusal.
+# No trailing period: substring matching absorbs bolding and punctuation.
+task: "Run /ds-interaction-mode to activate interaction mode for this session."
+tier: structural
+elements:
+  - "Interaction mode active"

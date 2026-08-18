@@ -1,0 +1,24 @@
+# One planted AI tell per expectation; a hit requires the post-run diff to
+# change at least one anchor line in the named file (apply-style skill).
+task: "Run /ds-humanize to remove the AI tells from the prose this branch added."
+tier: planted-defect
+style: apply
+expectations:
+  # Emoji + Title Case heading; the base document's convention is sentence case.
+  - file: README.md
+    anchors:
+      - "🚀 Watch Mode"
+  # Chatbot artifact: conversation residue shipped as content.
+  - file: README.md
+    anchors:
+      - "Here's the updated section"
+      - "I hope this helps"
+  # Negative parallelism.
+  - file: README.md
+    anchors:
+      - "isn't just a file watcher"
+  # Signposting plus filler phrases.
+  - file: README.md
+    anchors:
+      - "Let's dive into how it works"
+      - "it's important to"

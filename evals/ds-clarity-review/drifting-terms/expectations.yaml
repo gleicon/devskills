@@ -1,0 +1,17 @@
+# One planted clarity defect per expectation; report style: a hit requires
+# the output to mention the file plus any keyword.
+task: "Run /ds-clarity-review on this branch."
+tier: planted-defect
+style: report
+expectations:
+  # Term drift: relay.yaml is "the config file" until the last section
+  # calls it "the settings file" — one concept, two names.
+  - file: docs/usage.md
+    keywords: [drift, inconsistent, same concept, two names, settings file]
+  # Nominalized passive: "Utilization of the --retry flag should be
+  # undertaken when delivery failures are experienced."
+  - file: docs/usage.md
+    keywords: [passive, nominaliz, utilization]
+  # Double negative: "Not infrequently, a target that is not unreachable…"
+  - file: docs/usage.md
+    keywords: [double negative, not infrequently, not unreachable]

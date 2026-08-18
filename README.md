@@ -156,7 +156,7 @@ Preferences (the modes resume auto-applies) live in `.project/config.md`, writte
 
 ## The CLI
 
-One binary, five commands:
+One binary, six commands:
 
 | Command | Does |
 |---------|------|
@@ -164,6 +164,7 @@ One binary, five commands:
 | `devskills init` | scaffold a project's `AGENTS.md` + a `CLAUDE.md` import (`--lang`, `--concise`, `--interaction`, `--plain-language`, `--phases`, `--spec-discipline`) |
 | `devskills config` | pick the modes a session starts with (`--modes`, `--dry-run`) |
 | `devskills doctor` | check — or, with `--fix`, install — the external tools some skills need |
+| `devskills bench` | benchmark a skill change old-vs-new against its `evals/` scenarios (`--runs`, `--harness`, `--format pr-md`) — see [docs/bench.md](docs/bench.md) |
 | `devskills version` | print version and build info |
 
 `init` builds `AGENTS.md` from stacked, independently-managed blocks marked `<!-- BEGIN/END devskills:<id> -->`, so re-running is idempotent and swapping a language replaces only that block. It's assistant-agnostic — Claude Code reads the `CLAUDE.md` import; OpenCode and Codex read `AGENTS.md` directly.
@@ -211,6 +212,7 @@ devskills ships no fixed pipeline. Each skill does one job and hands control bac
 - **[docs/migration.md](docs/migration.md)** — porting a pre-rebuild `.project/` onto the four-file model
 - **[docs/grill-me.md](docs/grill-me.md)** · **[docs/tiger-style.md](docs/tiger-style.md)** — the grill playbook and the engineering bar
 - **[docs/ast-grep.md](docs/ast-grep.md)** — the optional structural pass for `/ds-security-review`
+- **[docs/bench.md](docs/bench.md)** — benchmarking skill changes: scenario authoring, check tiers, PR evidence
 
 ## References
 
@@ -237,6 +239,7 @@ make build                    # build the ./devskills binary
 make install                  # install the current tree to $GOPATH/bin/devskills
 make test                     # unit tests (embed integrity, sync, scaffold, cli, …)
 make test-integration         # end-to-end acceptance — builds the binary, drives it in a sandbox
+make bench SKILL=<skill>      # build, then benchmark a skill change (ARGS="--format pr-md" etc.)
 make lint                     # lint gate (golangci-lint v2; config in .golangci.yml)
 make fmt                      # format
 make snapshot                 # goreleaser cross-build dry-run
@@ -254,5 +257,13 @@ gofmt -w .
 ```
 
 Skills and profiles live in `skills/` and `agents-md/` and are embedded into the binary at build time — edit the source there, not an installed copy.
+
+### Benchmarking skill changes
+
+Skill prompt changes are benchmarked with `devskills bench`: old (main branch) vs new (working tree) against committed scenarios under `evals/`, scored deterministically — no LLM judging. [docs/bench.md](docs/bench.md) covers authoring scenarios and the check tiers. The repo ships `/ds-dev-skill-bench` to drive the bench and act on its reports — committed under `.claude/skills/` (which OpenCode also reads) and `.codex/skills/`, so it works in all three assistants.
+
+- **Benchmark runs are local only.** `devskills bench` drives your installed assistant CLIs (Claude Code, Codex, OpenCode) with your own auth. The repo stores no LLM credentials, and CI never executes a benchmark. Runs execute the branch's committed tasks and fixtures with approvals off (only Codex is OS-sandboxed) — review `evals/` changes like code before benching an untrusted branch.
+- **CI is zero-token.** The `bench-report` workflow only checks that a PR touching a covered skill carries a report (in the PR body or a committed file); the unit tests exercise bench against fake CLIs and canned transcripts, fully offline.
+- **New skills need a scenario.** A catalog test fails any skill added without one under `evals/` — run the bench and paste the report into the PR's evidence section.
 
 A release is a `VERSION` bump. Merging that bump to `main` runs the checks above and, if `v<VERSION>` isn't tagged yet, tags it and hands off to goreleaser (`.github/workflows/release.yml`, upstream only). Merges that leave `VERSION` alone release nothing. `make snapshot` runs `goreleaser build --snapshot --clean` for a local cross-build dry-run.

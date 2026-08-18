@@ -4,6 +4,8 @@ package cli
 import (
 	"context"
 	"io/fs"
+	"os"
+	"syscall"
 
 	"github.com/charmbracelet/fang"
 	"github.com/spf13/cobra"
@@ -23,6 +25,7 @@ func NewRootCmd(catalog fs.FS) *cobra.Command {
 	root.AddCommand(newInitCmd(catalog))
 	root.AddCommand(newConfigCmd(catalog))
 	root.AddCommand(newDoctorCmd())
+	root.AddCommand(newBenchCmd())
 	return root
 }
 
@@ -32,5 +35,9 @@ func Execute(ctx context.Context, catalog fs.FS) error {
 	return fang.Execute(ctx, NewRootCmd(catalog),
 		fang.WithVersion(buildVersion()),
 		fang.WithColorSchemeFunc(fang.AnsiColorScheme),
+		// Cancel the context on SIGINT/SIGTERM instead of dying mid-run, so
+		// long commands (bench) abort cleanly and their deferred sandbox
+		// cleanup still runs.
+		fang.WithNotifySignal(os.Interrupt, syscall.SIGTERM),
 	)
 }
