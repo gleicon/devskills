@@ -72,6 +72,34 @@ func TestChooseInit(t *testing.T) {
 	}
 }
 
+// The flagsChanged chain in newInitCmd is the layer flags' regression surface:
+// a flag missing from it is silently ignored on piped runs (base-only default
+// instead of the flag's effect). Executing the command end-to-end pins a flag
+// to the block it lands.
+func TestInitCmdFlagWritesBlock(t *testing.T) {
+	t.Chdir(t.TempDir())
+	catalog := fstest.MapFS{
+		"agents-md/system/agents-base.md": {Data: []byte("BASE\n")},
+		"agents-md/system/phase-hints.md": {Data: []byte("PHASES\n")},
+		"agents-md/language/go.md":        {Data: []byte("GO\n")},
+	}
+	cmd := newInitCmd(catalog)
+	cmd.SetArgs([]string{"--phases"})
+	cmd.SetOut(io.Discard)
+	if err := cmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	got := readFile(t, "AGENTS.md")
+	for _, want := range []string{"<!-- BEGIN devskills:base -->", "<!-- BEGIN devskills:phases -->", "PHASES"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("AGENTS.md missing %q:\n%s", want, got)
+		}
+	}
+	if strings.Contains(got, "devskills:concise") {
+		t.Errorf("unselected layer written:\n%s", got)
+	}
+}
+
 // The README init row is the only init-flag enumeration outside the docs guard —
 // this test is what makes a missed flag a failure instead of stale docs.
 func TestReadmeInitRowNamesBlockFlags(t *testing.T) {

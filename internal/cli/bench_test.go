@@ -150,6 +150,21 @@ func TestRunBenchScenarioFilter(t *testing.T) {
 	}
 }
 
+// A reproduction that drops the filter would re-run the wrong scenario set
+// (NFR-3), so the pr-md Reproduce line must carry --scenario.
+func TestRunBenchScenarioFilterInRepro(t *testing.T) {
+	root := benchRoot(t, "alpha", "beta")
+	fakeClaudeCLI(t, `echo ok`)
+	var out strings.Builder
+	opts := benchOptions{Skill: "ds-x", Scenario: "beta", Runs: 1, Format: "pr-md"}
+	if err := runBench(context.Background(), &out, io.Discard, root, opts); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out.String(), "bench ds-x --scenario beta --harness claude --runs 1") {
+		t.Errorf("report = %q, want the repro to carry --scenario beta", out.String())
+	}
+}
+
 func TestRunBenchModelOverride(t *testing.T) {
 	root := benchRoot(t, "alpha")
 	fakeClaudeCLI(t, `echo ok`)

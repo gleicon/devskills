@@ -9,13 +9,14 @@ import (
 	"testing/fstest"
 )
 
-// fakeCatalog is a two-skill catalog; ds-a carries a companion file to prove
-// whole-directory copies.
+// fakeCatalog is a two-skill catalog; ds-a carries a companion file and a
+// nested one to prove whole-directory copies, subdirectories included.
 func fakeCatalog() fstest.MapFS {
 	return fstest.MapFS{
-		"skills/ds-a/SKILL.md": {Data: []byte("a")},
-		"skills/ds-a/extra.md": {Data: []byte("companion")},
-		"skills/ds-b/SKILL.md": {Data: []byte("b")},
+		"skills/ds-a/SKILL.md":    {Data: []byte("a")},
+		"skills/ds-a/extra.md":    {Data: []byte("companion")},
+		"skills/ds-a/ref/deep.md": {Data: []byte("nested")},
+		"skills/ds-b/SKILL.md":    {Data: []byte("b")},
 	}
 }
 
@@ -133,6 +134,7 @@ func TestApplyWritesAndPrunes(t *testing.T) {
 
 	assertFile(t, filepath.Join(skillsDir, "ds-a", "SKILL.md"), "a")
 	assertFile(t, filepath.Join(skillsDir, "ds-a", "extra.md"), "companion")
+	assertFile(t, filepath.Join(skillsDir, "ds-a", "ref", "deep.md"), "nested")
 	assertFile(t, filepath.Join(skillsDir, "ds-b", "SKILL.md"), "b")
 	assertAbsent(t, filepath.Join(skillsDir, "ds-typeset"))
 	assertFile(t, filepath.Join(skillsDir, "ds-mine", "SKILL.md"), "mine")
