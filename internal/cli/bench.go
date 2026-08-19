@@ -203,18 +203,7 @@ func recordRun(stream io.Writer, s *bench.Scenario, res bench.Result, verbose bo
 		rr.Checked = true
 		rr.Hits = c.HitCount()
 		rr.Extras = len(c.Extras)
-		switch s.Tier {
-		case bench.TierStructural:
-			lipgloss.Fprintf(stream, "elements: %d/%d\n", rr.Hits, s.ExpectedHits())
-		case bench.TierSmoke:
-			if rr.Hits > 0 {
-				lipgloss.Fprintln(stream, "smoke: ok")
-			} else {
-				lipgloss.Fprintln(stream, "smoke: no output")
-			}
-		default:
-			lipgloss.Fprintf(stream, "hits: %d/%d, extra findings: %d\n", rr.Hits, s.ExpectedHits(), rr.Extras)
-		}
+		lipgloss.Fprintf(stream, "score: %s\n", bench.ScoreCell(s.Tier, rr, s.ExpectedHits()))
 	}
 	if verbose {
 		for _, sec := range []struct{ name, body string }{

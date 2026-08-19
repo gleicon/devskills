@@ -133,7 +133,7 @@ func TestRunBenchScoresPlantedDefectRuns(t *testing.T) {
 	if err := runBench(context.Background(), &out, io.Discard, root, benchOptions{Skill: "ds-x", Runs: 1}); err != nil {
 		t.Fatal(err)
 	}
-	if strings.Count(out.String(), "hits: 1/1, extra findings: 0") != 2 {
+	if strings.Count(out.String(), "score: 1/1 hits, 0 extra") != 2 {
 		t.Errorf("output = %q, want a score line per version run", out.String())
 	}
 }
@@ -277,7 +277,7 @@ func TestRunBenchPrMdFormat(t *testing.T) {
 		t.Error("pr-md to stdout must not interleave streaming output")
 	}
 	// pr-md progress is diagnostics: run headers and scores stream to stderr.
-	if !strings.Contains(errOut.String(), "== ds-x/alpha") || !strings.Contains(errOut.String(), "hits: 1/1") {
+	if !strings.Contains(errOut.String(), "== ds-x/alpha") || !strings.Contains(errOut.String(), "1/1 hits") {
 		t.Errorf("stderr = %q, want run headers and score lines streamed", errOut.String())
 	}
 	if !strings.Contains(got, "(main branch), new `") {
