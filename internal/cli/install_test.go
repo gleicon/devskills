@@ -1,9 +1,15 @@
 package cli
 
 import (
+	"errors"
+	"io"
+	"io/fs"
+	"maps"
+	"os"
 	"path/filepath"
 	"slices"
 	"testing"
+	"testing/fstest"
 
 	"github.com/gleicon/devskills/internal/harness"
 	dsync "github.com/gleicon/devskills/internal/sync"
@@ -99,3 +105,73 @@ func TestBuildTarget(t *testing.T) {
 }
 
 func fromSlash(p string) string { return filepath.FromSlash(p) }
+
+// treeSnapshot maps every path under root to its content ("dir" for
+// directories), so byte-identity of a tree is one maps.Equal away.
+func treeSnapshot(t *testing.T, root string) map[string]string {
+	t.Helper()
+	snap := map[string]string{}
+	err := filepath.WalkDir(root, func(p string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			snap[p] = "dir"
+			return nil
+		}
+		b, err := os.ReadFile(p)
+		if err != nil {
+			return err
+		}
+		snap[p] = string(b)
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return snap
+}
+
+// runInstall is the wiring around the sync engine: the install/uninstall branch
+// and the dry-run gate. Uninstall is the binary's destructive path, so the
+// wiring is pinned here — the engine's own semantics live in internal/sync.
+// The Claude override keeps the resolver off the real machine env entirely.
+func TestRunInstallUninstallWiring(t *testing.T) {
+	home := t.TempDir()
+	cfg := filepath.Join(home, "claude-cfg")
+	r := harness.Resolver{Home: home, Overrides: map[harness.ID]string{harness.Claude: cfg}}
+	catalog := fstest.MapFS{"skills/ds-x/SKILL.md": &fstest.MapFile{Data: []byte("x")}}
+	ids := []harness.ID{harness.Claude}
+
+	if err := runInstall(io.Discard, catalog, r, harness.Global, ids, false, false); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(cfg, "skills", "ds-x", "SKILL.md")); err != nil {
+		t.Fatalf("install did not write the skill: %v", err)
+	}
+	legacy := filepath.Join(cfg, "commands", "ds-blueprint.md")
+	if err := os.MkdirAll(filepath.Dir(legacy), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(legacy, []byte("old"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	before := treeSnapshot(t, home)
+	if err := runInstall(io.Discard, catalog, r, harness.Global, ids, true, true); err != nil {
+		t.Fatal(err)
+	}
+	if !maps.Equal(before, treeSnapshot(t, home)) {
+		t.Error("uninstall --dry-run changed the tree")
+	}
+
+	if err := runInstall(io.Discard, catalog, r, harness.Global, ids, false, true); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(cfg, "skills", "ds-x")); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("uninstall left the skill dir: %v", err)
+	}
+	if _, err := os.Stat(legacy); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("uninstall left the legacy command file: %v", err)
+	}
+}

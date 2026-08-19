@@ -78,32 +78,15 @@ func newConfigCmd(catalog fs.FS) *cobra.Command {
 // than a silent default: there is no sensible default set of modes.
 func chooseConfig(o configOpts, avail []string) ([]string, bool, error) {
 	if o.changed {
-		modes, err := parseModeCSV(o.modeCSV, avail)
+		// An empty --modes is valid — it clears the list, which is how you
+		// turn every mode off.
+		modes, err := parseCSV(o.modeCSV, "unknown or uninstalled mode", avail)
 		return modes, false, err
 	}
 	if o.tty {
 		return nil, true, nil
 	}
 	return nil, false, errors.New("no terminal to prompt on: pass --modes")
-}
-
-// parseModeCSV validates, trims, and dedupes the requested modes. Empty is valid
-// — it clears the list, which is how you turn every mode off.
-func parseModeCSV(csv string, avail []string) ([]string, error) {
-	var modes []string
-	for tok := range strings.SplitSeq(csv, ",") {
-		tok = strings.TrimSpace(tok)
-		if tok == "" {
-			continue
-		}
-		if !slices.Contains(avail, tok) {
-			return nil, fmt.Errorf("unknown or uninstalled mode %q (available: %s)", tok, strings.Join(avail, ", "))
-		}
-		if !slices.Contains(modes, tok) {
-			modes = append(modes, tok)
-		}
-	}
-	return modes, nil
 }
 
 func promptConfig(avail, current []string) ([]string, error) {

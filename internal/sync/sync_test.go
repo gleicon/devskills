@@ -5,17 +5,19 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 	"testing/fstest"
 )
 
-// fakeCatalog is a two-skill catalog; ds-a carries a companion file to prove
-// whole-directory copies.
+// fakeCatalog is a two-skill catalog; ds-a carries a companion file and a
+// nested one to prove whole-directory copies, subdirectories included.
 func fakeCatalog() fstest.MapFS {
 	return fstest.MapFS{
-		"skills/ds-a/SKILL.md": {Data: []byte("a")},
-		"skills/ds-a/extra.md": {Data: []byte("companion")},
-		"skills/ds-b/SKILL.md": {Data: []byte("b")},
+		"skills/ds-a/SKILL.md":    {Data: []byte("a")},
+		"skills/ds-a/extra.md":    {Data: []byte("companion")},
+		"skills/ds-a/ref/deep.md": {Data: []byte("nested")},
+		"skills/ds-b/SKILL.md":    {Data: []byte("b")},
 	}
 }
 
@@ -133,6 +135,7 @@ func TestApplyWritesAndPrunes(t *testing.T) {
 
 	assertFile(t, filepath.Join(skillsDir, "ds-a", "SKILL.md"), "a")
 	assertFile(t, filepath.Join(skillsDir, "ds-a", "extra.md"), "companion")
+	assertFile(t, filepath.Join(skillsDir, "ds-a", "ref", "deep.md"), "nested")
 	assertFile(t, filepath.Join(skillsDir, "ds-b", "SKILL.md"), "b")
 	assertAbsent(t, filepath.Join(skillsDir, "ds-typeset"))
 	assertFile(t, filepath.Join(skillsDir, "ds-mine", "SKILL.md"), "mine")
@@ -364,5 +367,33 @@ func assertAbsent(t *testing.T, path string) {
 	t.Helper()
 	if _, err := os.Stat(path); !os.IsNotExist(err) {
 		t.Errorf("%s should be absent, stat err = %v", path, err)
+	}
+}
+
+// CopyTree with root "." is the bench-materialize path: dot-named entries must
+// survive (a prefix trim on "." would corrupt ".gitignore" to "gitignore").
+func TestCopyTreeDotRootCopiesDotfiles(t *testing.T) {
+	src := t.TempDir()
+	mkfile(t, filepath.Join(src, ".gitignore"), "g")
+	mkfile(t, filepath.Join(src, "sub", "f.md"), "f")
+	dst := t.TempDir()
+	if err := CopyTree(os.DirFS(src), ".", dst); err != nil {
+		t.Fatal(err)
+	}
+	assertFile(t, filepath.Join(dst, ".gitignore"), "g")
+	assertFile(t, filepath.Join(dst, "sub", "f.md"), "f")
+}
+
+// A symlink in repo-controlled content would pull its target's bytes into the
+// copy — CopyTree must refuse it loudly, not follow or skip it.
+func TestCopyTreeRefusesSymlink(t *testing.T) {
+	src := t.TempDir()
+	mkfile(t, filepath.Join(src, "ok.md"), "x")
+	if err := os.Symlink(filepath.Join(src, "ok.md"), filepath.Join(src, "sneaky.md")); err != nil {
+		t.Fatal(err)
+	}
+	err := CopyTree(os.DirFS(src), ".", t.TempDir())
+	if err == nil || !strings.Contains(err.Error(), "non-regular") {
+		t.Errorf("err = %v, want a non-regular refusal", err)
 	}
 }

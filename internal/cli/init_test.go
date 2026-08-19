@@ -47,10 +47,7 @@ func TestChooseInit(t *testing.T) {
 		wantErr    bool
 	}{
 		{name: "lang flag wins", o: initOpts{flagsChanged: true, langCSV: "go", tty: true}, wantSel: initSelection{langs: []string{"go"}}},
-		{name: "concise flag skips prompt", o: initOpts{flagsChanged: true, concise: true, tty: true}, wantSel: initSelection{concise: true}},
-		{name: "interaction flag skips prompt", o: initOpts{flagsChanged: true, interaction: true, tty: true}, wantSel: initSelection{interaction: true}},
-		{name: "plain-language flag skips prompt", o: initOpts{flagsChanged: true, plain: true, tty: true}, wantSel: initSelection{plain: true}},
-		{name: "spec-discipline flag skips prompt", o: initOpts{flagsChanged: true, discipline: true, tty: true}, wantSel: initSelection{discipline: true}},
+		{name: "layer flag skips prompt", o: initOpts{flagsChanged: true, layers: []string{"concise"}, tty: true}, wantSel: initSelection{layers: []string{"concise"}}},
 		{name: "unknown lang errors", o: initOpts{flagsChanged: true, langCSV: "cobol"}, wantErr: true},
 		{name: "tty no flags prompts", o: initOpts{tty: true}, wantPrompt: true},
 		{name: "yes takes base-only default", o: initOpts{tty: true, yes: true}, wantSel: initSelection{}},
@@ -68,10 +65,38 @@ func TestChooseInit(t *testing.T) {
 			if prompt != tt.wantPrompt {
 				t.Errorf("prompt = %v, want %v", prompt, tt.wantPrompt)
 			}
-			if !slices.Equal(sel.langs, tt.wantSel.langs) || sel.concise != tt.wantSel.concise || sel.interaction != tt.wantSel.interaction || sel.plain != tt.wantSel.plain || sel.phases != tt.wantSel.phases || sel.discipline != tt.wantSel.discipline {
+			if !slices.Equal(sel.langs, tt.wantSel.langs) || !slices.Equal(sel.layers, tt.wantSel.layers) {
 				t.Errorf("sel = %+v, want %+v", sel, tt.wantSel)
 			}
 		})
+	}
+}
+
+// The flagsChanged chain in newInitCmd is the layer flags' regression surface:
+// a flag missing from it is silently ignored on piped runs (base-only default
+// instead of the flag's effect). Executing the command end-to-end pins a flag
+// to the block it lands.
+func TestInitCmdFlagWritesBlock(t *testing.T) {
+	t.Chdir(t.TempDir())
+	catalog := fstest.MapFS{
+		"agents-md/system/agents-base.md": {Data: []byte("BASE\n")},
+		"agents-md/system/phase-hints.md": {Data: []byte("PHASES\n")},
+		"agents-md/language/go.md":        {Data: []byte("GO\n")},
+	}
+	cmd := newInitCmd(catalog)
+	cmd.SetArgs([]string{"--phases"})
+	cmd.SetOut(io.Discard)
+	if err := cmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	got := readFile(t, "AGENTS.md")
+	for _, want := range []string{"<!-- BEGIN devskills:base -->", "<!-- BEGIN devskills:phases -->", "PHASES"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("AGENTS.md missing %q:\n%s", want, got)
+		}
+	}
+	if strings.Contains(got, "devskills:concise") {
+		t.Errorf("unselected layer written:\n%s", got)
 	}
 }
 
@@ -114,17 +139,17 @@ func TestReadmeInitRowNamesBlockFlags(t *testing.T) {
 
 func TestParseLangCSV(t *testing.T) {
 	avail := []string{"go", "typescript"}
-	got, err := parseLangCSV(" go , typescript ,go", avail)
+	got, err := parseCSV(" go , typescript ,go", "unknown language profile", avail)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !slices.Equal(got, []string{"go", "typescript"}) {
 		t.Errorf("got %v, want [go typescript]", got)
 	}
-	if got, err := parseLangCSV("", avail); err != nil || got != nil {
+	if got, err := parseCSV("", "unknown language profile", avail); err != nil || got != nil {
 		t.Errorf("empty = (%v, %v), want (nil, nil)", got, err)
 	}
-	if _, err := parseLangCSV("cobol", avail); err == nil {
+	if _, err := parseCSV("cobol", "unknown language profile", avail); err == nil {
 		t.Error("want error for unknown language")
 	}
 }
@@ -141,7 +166,7 @@ func TestAvailableLanguages(t *testing.T) {
 
 func TestRunInitWritesBlocks(t *testing.T) {
 	root := t.TempDir()
-	sel := initSelection{langs: []string{"go"}, concise: true, interaction: true, plain: true, discipline: true}
+	sel := initSelection{langs: []string{"go"}, layers: []string{"concise", "interaction", "plain-language", "spec-discipline"}}
 	if err := runInit(io.Discard, fakeAssets(), root, sel, false); err != nil {
 		t.Fatal(err)
 	}
@@ -190,7 +215,7 @@ func TestRunInitMigratesBareLanguageBlock(t *testing.T) {
 
 func TestRunInitDryRunWritesNothing(t *testing.T) {
 	root := t.TempDir()
-	sel := initSelection{langs: []string{"go"}, concise: true}
+	sel := initSelection{langs: []string{"go"}, layers: []string{"concise"}}
 	if err := runInit(io.Discard, fakeAssets(), root, sel, true); err != nil {
 		t.Fatal(err)
 	}
@@ -204,7 +229,7 @@ func TestRunInitDryRunWritesNothing(t *testing.T) {
 func TestRunInitUninstallRemovesOurFiles(t *testing.T) {
 	root := t.TempDir()
 	// Scaffold, then back out: both files held only devskills content.
-	if err := runInit(io.Discard, fakeAssets(), root, initSelection{langs: []string{"go"}, concise: true}, false); err != nil {
+	if err := runInit(io.Discard, fakeAssets(), root, initSelection{langs: []string{"go"}, layers: []string{"concise"}}, false); err != nil {
 		t.Fatal(err)
 	}
 	if err := runInitUninstall(io.Discard, root, false); err != nil {

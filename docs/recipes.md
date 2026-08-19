@@ -609,7 +609,7 @@ Indexed by *what you want to do*, not by kind — for the suffix taxonomy (`-mod
 | Plan a performance optimization (costed) | `/ds-perf-plan` |
 | Plan a refactor of an existing architecture | `/ds-architecture-plan` |
 | Commit to an architecture for a new system | `/ds-blueprint` |
-| Review language idioms + security | `/ds-go-review` · `/ds-ts-review` · `/ds-rust-review` |
+| Review language idioms + security | `/ds-go-review` · `/ds-ts-review` · `/ds-rust-review` · `/ds-python-review` · `/ds-java-review` · `/ds-zig-review` |
 | Find why something fails, then fix it | `/ds-debug` |
 | Prove a change actually works | `/ds-verify-this` |
 | Hold the session to a strict bar | `/ds-tiger-style-mode` |

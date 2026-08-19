@@ -151,7 +151,7 @@ func (e Engine) writeSkill(name, dest string, codex bool) error {
 	if err := os.RemoveAll(dest); err != nil {
 		return fmt.Errorf("clean %s: %w", dest, err)
 	}
-	if err := copyTree(e.catalog, path.Join("skills", name), dest); err != nil {
+	if err := CopyTree(e.catalog, path.Join("skills", name), dest); err != nil {
 		return fmt.Errorf("write skill %s: %w", name, err)
 	}
 	if codex {
@@ -176,15 +176,21 @@ func emitCodexSidecar(skillDir string) error {
 	return nil
 }
 
-func copyTree(src fs.FS, root, dest string) error {
+// CopyTree copies src's tree under root into dest, overwriting existing files
+// (os.CopyFS refuses to). It rejects non-regular entries: reading through a
+// symlink in repo-controlled content would pull the target's bytes — possibly
+// a secret — into the copy.
+func CopyTree(src fs.FS, root, dest string) error {
 	return fs.WalkDir(src, root, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		rel := strings.TrimPrefix(strings.TrimPrefix(p, root), "/")
-		target := filepath.Join(dest, filepath.FromSlash(rel))
+		target := filepath.Join(dest, filepath.FromSlash(relPath(root, p)))
 		if d.IsDir() {
 			return os.MkdirAll(target, 0o755)
+		}
+		if !d.Type().IsRegular() {
+			return fmt.Errorf("%s: non-regular file (symlink?) refused", p)
 		}
 		b, err := fs.ReadFile(src, p)
 		if err != nil {
@@ -192,6 +198,18 @@ func copyTree(src fs.FS, root, dest string) error {
 		}
 		return os.WriteFile(target, b, 0o644)
 	})
+}
+
+// relPath is p relative to walk root — handling "." as root, which a plain
+// prefix trim would corrupt for dot-named entries like ".gitignore".
+func relPath(root, p string) string {
+	if p == root {
+		return ""
+	}
+	if root == "." {
+		return p
+	}
+	return strings.TrimPrefix(p, root+"/")
 }
 
 func skillNames(catalog fs.FS) ([]string, error) {

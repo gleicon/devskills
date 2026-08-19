@@ -42,8 +42,8 @@ func TestCommittedScenarios(t *testing.T) {
 	}
 }
 
-// TestEvalsNotEmbedded guards AC-13: the go:embed directive in main.go must
-// never pick up evals/.
+// TestEvalsNotEmbedded guards that the go:embed directive in main.go never
+// picks up evals/ — scenarios ship in the repo, not the binary (docs/bench.md).
 func TestEvalsNotEmbedded(t *testing.T) {
 	b, err := os.ReadFile("../../main.go")
 	if err != nil {

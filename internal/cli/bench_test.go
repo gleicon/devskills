@@ -133,7 +133,7 @@ func TestRunBenchScoresPlantedDefectRuns(t *testing.T) {
 	if err := runBench(context.Background(), &out, io.Discard, root, benchOptions{Skill: "ds-x", Runs: 1}); err != nil {
 		t.Fatal(err)
 	}
-	if strings.Count(out.String(), "hits: 1/1, extra findings: 0") != 2 {
+	if strings.Count(out.String(), "score: 1/1 hits, 0 extra") != 2 {
 		t.Errorf("output = %q, want a score line per version run", out.String())
 	}
 }
@@ -147,6 +147,64 @@ func TestRunBenchScenarioFilter(t *testing.T) {
 	}
 	if strings.Contains(out.String(), "ds-x/alpha") || !strings.Contains(out.String(), "ds-x/beta") {
 		t.Errorf("output = %q, want only beta", out.String())
+	}
+}
+
+// A reproduction that drops the filter would re-run the wrong scenario set
+// (NFR-3), so the pr-md Reproduce line must carry --scenario.
+func TestRunBenchScenarioFilterInRepro(t *testing.T) {
+	root := benchRoot(t, "alpha", "beta")
+	fakeClaudeCLI(t, `echo ok`)
+	var out strings.Builder
+	opts := benchOptions{Skill: "ds-x", Scenario: "beta", Runs: 1, Format: "pr-md"}
+	if err := runBench(context.Background(), &out, io.Discard, root, opts); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out.String(), "bench ds-x --scenario beta --harness claude --runs 1") {
+		t.Errorf("report = %q, want the repro to carry --scenario beta", out.String())
+	}
+}
+
+// Skill and scenario names are joined into paths and git specs; anything
+// path-shaped is rejected before touching the filesystem.
+func TestRunBenchRejectsPathyNames(t *testing.T) {
+	for _, opts := range []benchOptions{
+		{Skill: "../../etc", Runs: 1},
+		{Skill: "ds-x", Scenario: "a/b", Runs: 1},
+	} {
+		err := runBench(context.Background(), io.Discard, io.Discard, t.TempDir(), opts)
+		if err == nil || !strings.Contains(err.Error(), "bare directory name") {
+			t.Errorf("opts %+v: err = %v, want bare-name rejection", opts, err)
+		}
+	}
+}
+
+// claude runs approvals-off and unconfined; the warning must land on stderr
+// before any run — and not for Codex, whose sandbox actually confines.
+func TestRunBenchWarnsApprovalsOff(t *testing.T) {
+	root := benchRoot(t, "alpha")
+	fakeClaudeCLI(t, `echo ok`)
+	var out, errOut strings.Builder
+	if err := runBench(context.Background(), &out, &errOut, root, benchOptions{Skill: "ds-x", Runs: 1}); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(errOut.String(), "approvals-off") {
+		t.Errorf("errOut = %q, want the approvals-off warning", errOut.String())
+	}
+	if strings.Contains(out.String(), "approvals-off") {
+		t.Error("warning must go to stderr, not the product stream")
+	}
+}
+
+func TestRunBenchNoWarningForCodexOnly(t *testing.T) {
+	root := benchRoot(t, "alpha")
+	fakeHarnessCLI(t, "codex", `echo ok`)
+	var errOut strings.Builder
+	if err := runBench(context.Background(), io.Discard, &errOut, root, benchOptions{Skill: "ds-x", Runs: 1, Harness: "codex"}); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(errOut.String(), "approvals-off") {
+		t.Errorf("errOut = %q, codex runs sandboxed — no warning owed", errOut.String())
 	}
 }
 
@@ -262,7 +320,7 @@ func TestRunBenchPrMdFormat(t *testing.T) {
 		t.Error("pr-md to stdout must not interleave streaming output")
 	}
 	// pr-md progress is diagnostics: run headers and scores stream to stderr.
-	if !strings.Contains(errOut.String(), "== ds-x/alpha") || !strings.Contains(errOut.String(), "hits: 1/1") {
+	if !strings.Contains(errOut.String(), "== ds-x/alpha") || !strings.Contains(errOut.String(), "1/1 hits") {
 		t.Errorf("stderr = %q, want run headers and score lines streamed", errOut.String())
 	}
 	if !strings.Contains(got, "(main branch), new `") {

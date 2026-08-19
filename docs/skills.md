@@ -7,12 +7,12 @@ Every devskills skill is a single `SKILL.md` invoked as `/<name>` in Claude Code
 A skill's **suffix tells you its kind**:
 
 - **`-mode`** — persistent, toggleable session behavior; changes *how* the agent works until you turn it off. *tiger-style, ui, data, git, step, tdd, test, interaction.*
-- **`-review`** — a findings-list audit. Report-only by default (several take `--fix`); findings are independent and fixable in any order. *bug, security, data, code-quality, doc-quality, test-quality, ui-quality, comment, clarity, notebook, osv, semgrep, and the six language reviews.*
+- **`-review`** — a findings-list audit. Report-only by default (several take `--fix`); findings are independent and fixable in any order. *bug, security, data, code-quality, doc-quality, test-quality, ui-quality, comment, clarity, notebook, the six language reviews, and — named for their tools rather than the suffix — osv and semgrep.*
 - **`-plan`** — graded, sequenced moves that each carry a trade-off or dependency, so the output is a *plan*, not a verdict. *perf-plan, architecture-plan.*
 - **no suffix** — a one-shot action that produces a result and returns. *spec, roadmap, explore, blueprint, grill-me, retro, debug, deslop, humanize, verify-this, zoom-out, onboarding, handoff, tldt, quality-gate, the recall trio, and the project-\* family.*
 - **language profiles** — configured per project via `devskills init --lang`, not invoked as slash commands (see the [README](../README.md#language-profiles)).
 
-Everything except `-mode` runs once and finishes; a `-mode` stays on. The per-skill headings below tag each one with its kind. Each skill is self-contained; a few use an external tool when it's present — `/ds-osv`, `/ds-tldt`, and `/ds-security-review`'s structural pass — which `devskills doctor` can install.
+Everything except `-mode` runs once and finishes; a `-mode` stays on. The per-skill headings below tag each one with its kind. Each skill is self-contained; a few use an external tool when it's present — `/ds-osv`, `/ds-semgrep`, `/ds-tldt`, and `/ds-security-review`'s structural pass — which `devskills doctor` can install.
 
 ---
 
@@ -218,7 +218,7 @@ Prose-clarity review governed by the **Federal Plain Language Guidelines**, appl
 
 Six-pass review pipeline for a feature branch or scoped path, **bookended by `/ds-deslop`**. Run in order; implement accepted findings between passes before proceeding.
 
-Pipeline: `/ds-deslop` → `/ds-test-quality-review` → `/ds-security-review` → `/ds-bug-review` → `/ds-data-review` → `/ds-code-quality-review` → `/ds-doc-quality-review` → `/ds-deslop`
+Pipeline: `/ds-deslop` → `/ds-code-quality-review` → `/ds-test-quality-review` → `/ds-security-review` → `/ds-bug-review` → `/ds-data-review` → `/ds-doc-quality-review` → `/ds-deslop`
 
 Deslop runs first to clean the incoming diff, then again last because the gate implements fixes between passes — that freshly-generated fix code can carry its own slop. `/ds-data-review` runs only when the change touches schema, queries, transactions, or migrations; otherwise it's skipped with a note.
 

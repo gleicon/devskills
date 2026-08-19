@@ -120,4 +120,7 @@ func TestRunConfigDryRunWritesNothing(t *testing.T) {
 	if _, err := os.Stat(path); !os.IsNotExist(err) {
 		t.Errorf("dry run created %s (err = %v)", path, err)
 	}
+	if _, err := os.Stat(filepath.Dir(path)); !os.IsNotExist(err) {
+		t.Errorf("dry run created the .project dir (err = %v)", err)
+	}
 }

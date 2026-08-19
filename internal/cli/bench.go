@@ -56,33 +56,95 @@ func newBenchCmd() *cobra.Command {
 }
 
 // runBench benches the old (main-branch) and new (working-tree) versions of a
-// skill against its scenarios on Claude Code, K runs each. The default output
-// streams each run raw; --format pr-md collects everything into a markdown
-// report instead. With the skill absent on main it runs baseline mode: new
-// version only. Failed runs are reported, never skipped (FR-9); the command
-// exits non-zero only when every run failed.
+// skill against its scenarios on each selected harness (default Claude Code),
+// K runs each. The default output streams each run raw; --format pr-md
+// collects everything into a markdown report instead. With the skill absent
+// on main it runs baseline mode: new version only. Failed runs are reported,
+// never skipped (FR-9); the command exits non-zero only when every run failed.
 func runBench(ctx context.Context, out, errOut io.Writer, root string, opts benchOptions) error {
+	b, err := loadBenchRun(root, opts)
+	if err != nil {
+		return err
+	}
+	// Only Codex's sandbox actually confines a run; claude/opencode execute
+	// approvals-off with the sandbox being just a throwaway worktree
+	// (docs/bench.md).
+	if unconfined := slices.DeleteFunc(slices.Clone(b.harnesses), func(h harness.ID) bool { return h == harness.Codex }); len(unconfined) > 0 {
+		lipgloss.Fprintf(errOut, "warning: %s runs approvals-off and unconfined — treat evals/ content like code you are about to run (docs/bench.md)\n", joinNames(unconfined))
+	}
+	// Raw mode's product is the run stream itself, so it goes to out. In
+	// pr-md mode the product is the report; every streamed line — run
+	// headers, scores, failures — is diagnostics and goes to errOut.
+	stream := out
+	if opts.Format == "pr-md" {
+		stream = errOut
+	}
+	if b.baseline {
+		lipgloss.Fprintf(stream, "baseline mode: %s is absent on the main branch, benching the new version only\n", opts.Skill)
+	}
+	var groups []bench.HarnessReport
+	total, failures := 0, 0
+	for _, h := range b.harnesses {
+		group, t, f, err := b.runHarness(ctx, stream, h)
+		if err != nil {
+			return err
+		}
+		groups = append(groups, group)
+		total += t
+		failures += f
+	}
+	if opts.Format == "pr-md" {
+		if err := b.emitReport(out, groups); err != nil {
+			return err
+		}
+	}
+	if failures == total {
+		return fmt.Errorf("all %d runs failed", failures)
+	}
+	return nil
+}
+
+// benchRun is one resolved bench invocation: everything loaded and validated
+// before any run spends tokens.
+type benchRun struct {
+	opts      benchOptions
+	harnesses []harness.ID
+	models    map[harness.ID]string
+	versions  []bench.SkillVersion
+	scenarios []*bench.Scenario
+	baseline  bool
+}
+
+// loadBenchRun validates opts and loads the versions, model pins, and
+// scenarios the bench will run.
+func loadBenchRun(root string, opts benchOptions) (benchRun, error) {
 	if opts.Runs < 1 {
-		return fmt.Errorf("--runs must be at least 1, got %d", opts.Runs)
+		return benchRun{}, fmt.Errorf("--runs must be at least 1, got %d", opts.Runs)
 	}
 	if opts.Timeout < 0 {
-		return fmt.Errorf("--timeout must be positive, got %s", opts.Timeout)
+		return benchRun{}, fmt.Errorf("--timeout must not be negative, got %s", opts.Timeout)
 	}
 	if opts.Format != "" && opts.Format != "pr-md" {
-		return fmt.Errorf(`--format must be "pr-md", got %q`, opts.Format)
+		return benchRun{}, fmt.Errorf(`--format must be "pr-md", got %q`, opts.Format)
+	}
+	// Skill and scenario names are joined into paths and git specs below —
+	// keep them bare directory names.
+	for _, n := range []struct{ what, val string }{{"skill", opts.Skill}, {"scenario", opts.Scenario}} {
+		if strings.ContainsAny(n.val, `/\`) || strings.Contains(n.val, "..") {
+			return benchRun{}, fmt.Errorf("%s name %q must be a bare directory name", n.what, n.val)
+		}
 	}
 	harnesses, err := parseHarnesses(opts.Harness)
 	if err != nil {
-		return err
+		return benchRun{}, err
 	}
 	versions, err := bench.LoadVersions(root, opts.Skill)
 	if err != nil {
-		return err
+		return benchRun{}, err
 	}
-	baseline := len(versions) == 1
 	cfg, err := bench.LoadConfig(filepath.Join(root, "evals", "bench.yaml"))
 	if err != nil {
-		return err
+		return benchRun{}, err
 	}
 	// Resolve every harness's model up front so a missing pin fails before
 	// any run spends tokens.
@@ -93,97 +155,88 @@ func runBench(ctx context.Context, out, errOut io.Writer, root string, opts benc
 			continue
 		}
 		if models[h], err = cfg.Model(h); err != nil {
-			return err
+			return benchRun{}, err
 		}
 	}
-
 	var scenarios []*bench.Scenario
 	if opts.Scenario != "" {
 		s, err := bench.LoadScenario(filepath.Join(root, "evals", opts.Skill, opts.Scenario))
 		if err != nil {
-			return err
+			return benchRun{}, err
 		}
 		scenarios = []*bench.Scenario{s}
 	} else if scenarios, err = bench.LoadScenarios(filepath.Join(root, "evals"), opts.Skill); err != nil {
-		return err
+		return benchRun{}, err
 	}
+	return benchRun{
+		opts: opts, harnesses: harnesses, models: models,
+		versions: versions, scenarios: scenarios, baseline: len(versions) == 1,
+	}, nil
+}
 
-	// Raw mode's product is the run stream itself, so it goes to out. In
-	// pr-md mode the product is the report; every streamed line — run
-	// headers, scores, failures — is diagnostics and goes to errOut.
-	stream := out
-	if opts.Format == "pr-md" {
-		stream = errOut
-	}
-	if baseline {
-		lipgloss.Fprintf(stream, "baseline mode: %s is absent on the main branch, benching the new version only\n", opts.Skill)
-	}
-
-	var groups []bench.HarnessReport
+// runHarness benches every scenario, version, and run for one harness,
+// streaming progress, and returns its report group plus run/failure counts.
+func (b benchRun) runHarness(ctx context.Context, stream io.Writer, h harness.ID) (bench.HarnessReport, int, int, error) {
+	model := b.models[h]
+	runner := bench.Runner{Harness: h, Model: model, Timeout: b.opts.Timeout}
+	group := bench.HarnessReport{Harness: h.Name(), Model: model}
 	total, failures := 0, 0
-	for _, h := range harnesses {
-		model := models[h]
-		runner := bench.Runner{Harness: h, Model: model, Timeout: opts.Timeout}
-		group := bench.HarnessReport{Harness: h.Name(), Model: model}
-		for _, s := range scenarios {
-			sr := bench.ScenarioReport{Name: s.Name, Tier: s.Tier, Expectations: s.ExpectedHits()}
-			for _, v := range versions {
-				for i := 1; i <= opts.Runs; i++ {
-					total++
-					lipgloss.Fprintf(stream, "== %s/%s %s run %d/%d (%s, model %s)\n",
-						opts.Skill, s.Name, v.Label, i, opts.Runs, h.Name(), model)
-					res, err := runner.Run(ctx, s, v)
-					if err != nil {
-						return err
-					}
-					// A canceled context (SIGINT/SIGTERM) aborts the bench;
-					// grinding on would record every remaining run as a
-					// fake failure and could still emit a report.
-					if err := ctx.Err(); err != nil {
-						return fmt.Errorf("bench interrupted: %w", err)
-					}
-					rr, err := recordRun(stream, s, res, opts.Format == "")
-					if err != nil {
-						return err
-					}
-					if rr.Failed {
-						failures++
-					}
-					if v.Label == bench.LabelOld {
-						sr.Old = append(sr.Old, rr)
-					} else {
-						sr.New = append(sr.New, rr)
-					}
+	for _, s := range b.scenarios {
+		sr := bench.ScenarioReport{Name: s.Name, Tier: s.Tier, Expectations: s.ExpectedHits()}
+		for _, v := range b.versions {
+			for i := 1; i <= b.opts.Runs; i++ {
+				total++
+				lipgloss.Fprintf(stream, "== %s/%s %s run %d/%d (%s, model %s)\n",
+					b.opts.Skill, s.Name, v.Label, i, b.opts.Runs, h.Name(), model)
+				res, err := runner.Run(ctx, s, v)
+				if err != nil {
+					return bench.HarnessReport{}, 0, 0, err
+				}
+				// A canceled context (SIGINT/SIGTERM) aborts the bench;
+				// grinding on would record every remaining run as a
+				// fake failure and could still emit a report.
+				if err := ctx.Err(); err != nil {
+					return bench.HarnessReport{}, 0, 0, fmt.Errorf("bench interrupted: %w", err)
+				}
+				rr, err := recordRun(stream, s, res, b.opts.Format == "")
+				if err != nil {
+					return bench.HarnessReport{}, 0, 0, err
+				}
+				if rr.Failed {
+					failures++
+				}
+				if v.Label == bench.LabelOld {
+					sr.Old = append(sr.Old, rr)
+				} else {
+					sr.New = append(sr.New, rr)
 				}
 			}
-			group.Scenarios = append(group.Scenarios, sr)
 		}
-		groups = append(groups, group)
+		group.Scenarios = append(group.Scenarios, sr)
 	}
+	return group, total, failures, nil
+}
 
-	if opts.Format == "pr-md" {
-		report := bench.Report{
-			Skill:    opts.Skill,
-			Command:  reproCommand(opts, harnesses, models),
-			Baseline: baseline,
-			NewSHA:   versions[len(versions)-1].SHA,
-			Groups:   groups,
-		}
-		if !baseline {
-			report.OldSHA = versions[0].SHA
-		}
-		md := report.Markdown()
-		if opts.Out != "" {
-			if err := os.WriteFile(opts.Out, []byte(md), 0o644); err != nil {
-				return err
-			}
-			lipgloss.Fprintf(out, "report written to %s\n", opts.Out)
-		} else {
-			lipgloss.Fprint(out, md)
-		}
+// emitReport assembles the pr-md report and writes it to --out, or to out.
+func (b benchRun) emitReport(out io.Writer, groups []bench.HarnessReport) error {
+	report := bench.Report{
+		Skill:    b.opts.Skill,
+		Command:  reproCommand(b.opts, b.harnesses, b.models),
+		Baseline: b.baseline,
+		NewSHA:   b.versions[len(b.versions)-1].SHA,
+		Groups:   groups,
 	}
-	if failures == total {
-		return fmt.Errorf("all %d runs failed", failures)
+	if !b.baseline {
+		report.OldSHA = b.versions[0].SHA
+	}
+	md := report.Markdown()
+	if b.opts.Out != "" {
+		if err := os.WriteFile(b.opts.Out, []byte(md), 0o644); err != nil {
+			return err
+		}
+		lipgloss.Fprintf(out, "report written to %s\n", b.opts.Out)
+	} else {
+		lipgloss.Fprint(out, md)
 	}
 	return nil
 }
@@ -204,18 +257,7 @@ func recordRun(stream io.Writer, s *bench.Scenario, res bench.Result, verbose bo
 		rr.Checked = true
 		rr.Hits = c.HitCount()
 		rr.Extras = len(c.Extras)
-		switch s.Tier {
-		case bench.TierStructural:
-			lipgloss.Fprintf(stream, "elements: %d/%d\n", rr.Hits, s.ExpectedHits())
-		case bench.TierSmoke:
-			if rr.Hits > 0 {
-				lipgloss.Fprintln(stream, "smoke: ok")
-			} else {
-				lipgloss.Fprintln(stream, "smoke: no output")
-			}
-		default:
-			lipgloss.Fprintf(stream, "hits: %d/%d, extra findings: %d\n", rr.Hits, s.ExpectedHits(), rr.Extras)
-		}
+		lipgloss.Fprintf(stream, "score: %s\n", bench.ScoreCell(s.Tier, rr, s.ExpectedHits()))
 	}
 	if verbose {
 		for _, sec := range []struct{ name, body string }{
@@ -255,20 +297,11 @@ func reproCommand(opts benchOptions, harnesses []harness.ID, models map[harness.
 	return b.String() + " --format pr-md"
 }
 
-// parseHarnesses turns the --harness flag into validated, deduplicated IDs.
+// parseHarnesses turns the --harness flag into validated, deduplicated IDs,
+// defaulting to Claude Code so zero-value benchOptions callers bench something.
 func parseHarnesses(list string) ([]harness.ID, error) {
 	if list == "" {
 		list = string(harness.Claude)
 	}
-	var ids []harness.ID
-	for part := range strings.SplitSeq(list, ",") {
-		id := harness.ID(strings.TrimSpace(part))
-		if !id.Valid() {
-			return nil, fmt.Errorf("unknown harness %q in --harness", part)
-		}
-		if !slices.Contains(ids, id) {
-			ids = append(ids, id)
-		}
-	}
-	return ids, nil
+	return parseCSV(list, "unknown harness", harness.All())
 }

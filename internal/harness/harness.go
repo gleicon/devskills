@@ -29,6 +29,13 @@ const (
 	Local
 )
 
+func (s Scope) String() string {
+	if s == Local {
+		return "local"
+	}
+	return "global"
+}
+
 type info struct {
 	name   string // human-readable
 	binary string // executable name for PATH detection
@@ -156,16 +163,21 @@ func (r Resolver) configDir(id ID) string {
 	return ""
 }
 
-func localSkillsDir(id ID) string {
+// LocalDir is the project-local dot directory a harness reads (".claude", …).
+func LocalDir(id ID) string {
 	switch id {
 	case Claude:
-		return filepath.Join(".claude", "skills")
+		return ".claude"
 	case OpenCode:
-		return filepath.Join(".opencode", "skills")
+		return ".opencode"
 	case Codex:
-		return filepath.Join(".codex", "skills")
+		return ".codex"
 	}
 	return ""
+}
+
+func localSkillsDir(id ID) string {
+	return filepath.Join(LocalDir(id), "skills")
 }
 
 // expand resolves a leading ~ against Home, since env vars and flag values are

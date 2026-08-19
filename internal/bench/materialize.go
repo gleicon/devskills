@@ -2,11 +2,12 @@ package bench
 
 import (
 	"fmt"
-	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	devsync "github.com/gleicon/devskills/internal/sync"
 )
 
 // Branch names of the materialized fixture repo.
@@ -20,7 +21,7 @@ const (
 // overlaid and committed on WorkBranch, which is left checked out. Host and
 // system git config are ignored so runs are reproducible across machines.
 func Materialize(s *Scenario, dir string) error {
-	if err := copyTree(filepath.Join(s.Dir, "base"), dir); err != nil {
+	if err := devsync.CopyTree(os.DirFS(filepath.Join(s.Dir, "base")), ".", dir); err != nil {
 		return fmt.Errorf("scenario %s: copy base/: %w", s.Name, err)
 	}
 	steps := [][]string{
@@ -34,7 +35,7 @@ func Materialize(s *Scenario, dir string) error {
 			return fmt.Errorf("scenario %s: %w", s.Name, err)
 		}
 	}
-	if err := copyTree(filepath.Join(s.Dir, "change"), dir); err != nil {
+	if err := devsync.CopyTree(os.DirFS(filepath.Join(s.Dir, "change")), ".", dir); err != nil {
 		return fmt.Errorf("scenario %s: copy change/: %w", s.Name, err)
 	}
 	for _, args := range [][]string{{"add", "-A"}, {"commit", "-q", "-m", "change"}} {
@@ -66,27 +67,4 @@ func gitOutput(dir string, args ...string) (string, error) {
 		return "", fmt.Errorf("git %s: %w: %s", strings.Join(args, " "), err, strings.TrimSpace(string(out)))
 	}
 	return string(out), nil
-}
-
-// copyTree copies src into dst, overwriting existing files so change/ can
-// overlay base/. os.CopyFS is not used because it refuses to overwrite.
-func copyTree(src, dst string) error {
-	return filepath.WalkDir(src, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		rel, err := filepath.Rel(src, path)
-		if err != nil {
-			return err
-		}
-		target := filepath.Join(dst, rel)
-		if d.IsDir() {
-			return os.MkdirAll(target, 0o755)
-		}
-		b, err := os.ReadFile(path)
-		if err != nil {
-			return err
-		}
-		return os.WriteFile(target, b, 0o644)
-	})
 }

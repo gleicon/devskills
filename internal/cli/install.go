@@ -7,7 +7,6 @@ import (
 	"io/fs"
 	"os"
 	"slices"
-	"strings"
 
 	"charm.land/huh/v2"
 	"charm.land/lipgloss/v2"
@@ -109,20 +108,12 @@ func chooseHarnesses(o installOpts, universe, detected []harness.ID) (ids []harn
 	return detected, false, nil
 }
 
+// parseHarnessCSV wraps parseCSV with install's empty-set policy: an explicit
+// --harness that names nothing is a mistake, not "none".
 func parseHarnessCSV(csv string, universe []harness.ID) ([]harness.ID, error) {
-	var ids []harness.ID
-	for tok := range strings.SplitSeq(csv, ",") {
-		tok = strings.TrimSpace(tok)
-		if tok == "" {
-			continue
-		}
-		id := harness.ID(tok)
-		if !slices.Contains(universe, id) {
-			return nil, fmt.Errorf("unknown or unsupported harness %q (supported: %s)", tok, joinIDs(universe))
-		}
-		if !slices.Contains(ids, id) {
-			ids = append(ids, id)
-		}
+	ids, err := parseCSV(csv, "unknown or unsupported harness", universe)
+	if err != nil {
+		return nil, err
 	}
 	if len(ids) == 0 {
 		return nil, errors.New("--harness listed no assistants")
@@ -219,7 +210,7 @@ func buildTarget(r harness.Resolver, id harness.ID, scope harness.Scope) (dsync.
 func renderPlan(out io.Writer, p dsync.Plan, scope harness.Scope, dryRun, uninstall bool) {
 	header := lipgloss.NewStyle().Bold(true)
 	dim := lipgloss.NewStyle().Faint(true)
-	lipgloss.Fprintln(out, header.Render(fmt.Sprintf("%s (%s) → %s", p.Target.Name, scopeName(scope), p.Target.SkillsDir)))
+	lipgloss.Fprintln(out, header.Render(fmt.Sprintf("%s (%s) → %s", p.Target.Name, scope, p.Target.SkillsDir)))
 	if uninstall {
 		lipgloss.Fprintf(out, "  %d items to remove\n", len(p.Removes))
 	} else {
@@ -236,21 +227,6 @@ func renderPlan(out io.Writer, p dsync.Plan, scope harness.Scope, dryRun, uninst
 		lipgloss.Fprintln(out, dim.Render(msg))
 	}
 	lipgloss.Fprintln(out)
-}
-
-func scopeName(s harness.Scope) string {
-	if s == harness.Local {
-		return "local"
-	}
-	return "global"
-}
-
-func joinIDs(ids []harness.ID) string {
-	s := make([]string, len(ids))
-	for i, id := range ids {
-		s[i] = string(id)
-	}
-	return strings.Join(s, ", ")
 }
 
 // isTTY reports whether a huh form can run: it reads stdin and draws to stdout,

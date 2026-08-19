@@ -102,22 +102,28 @@ func (s ScenarioReport) runCell(runs []RunReport, i int) string {
 }
 
 func (s ScenarioReport) cell(r RunReport) string {
+	return ScoreCell(s.Tier, r, s.Expectations)
+}
+
+// ScoreCell renders one run's score for a tier — the single wording shared by
+// the run stream and the report table, so the two can't drift.
+func ScoreCell(tier string, r RunReport, expected int) string {
 	switch {
 	case r.Failed:
 		return "failed"
 	case !r.Checked:
 		return "ok"
 	}
-	switch s.Tier {
+	switch tier {
 	case TierStructural:
-		return fmt.Sprintf("%d/%d elements", r.Hits, s.Expectations)
+		return fmt.Sprintf("%d/%d elements", r.Hits, expected)
 	case TierSmoke:
 		if r.Hits > 0 {
 			return "ok"
 		}
 		return "no output"
 	default:
-		return fmt.Sprintf("%d/%d hits, %d extra", r.Hits, s.Expectations, r.Extras)
+		return fmt.Sprintf("%d/%d hits, %d extra", r.Hits, expected, r.Extras)
 	}
 }
 

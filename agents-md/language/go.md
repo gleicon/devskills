@@ -19,7 +19,7 @@ Test with `go test -race ./...`. Lint with `golangci-lint run`. Benchmark with `
 - `json:",omitzero"` over `omitempty` when the intent is "omit the zero value" — it handles zero `time.Time` and zero structs correctly.
 - Take a pointer to any expression with `new(expr)` — retires the hand-rolled `func ptr[T](v T) *T` helper for optional JSON/proto fields. *(Go 1.26+)*
 - Self-bounded generics reference their own type-parameter list (`T Ordered[T]`) instead of an extra interface indirection, where it reads cleaner. *(Go 1.26+)*
-- Heavy JSON paths may evaluate `encoding/json/v2` (`GOEXPERIMENT=jsonv2`) for correctness/perf wins — still experimental, don't require it in production. *(Go 1.26+)*
+- Heavy JSON paths may evaluate `encoding/json/v2` (`GOEXPERIMENT=jsonv2`) for correctness/perf wins — still experimental, don't require it in production. *(Go 1.25+)*
 
 ### Error Handling
 
