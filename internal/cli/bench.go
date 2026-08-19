@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -65,6 +66,13 @@ func runBench(ctx context.Context, out, errOut io.Writer, root string, opts benc
 	if err != nil {
 		return err
 	}
+	// Only Codex's sandbox actually confines a run; claude/opencode execute
+	// approvals-off with the sandbox being just a throwaway worktree. The
+	// posture is documented in docs/bench.md, but a doc can be skipped —
+	// say it where it applies.
+	if unconfined := slices.DeleteFunc(slices.Clone(b.harnesses), func(h harness.ID) bool { return h == harness.Codex }); len(unconfined) > 0 {
+		lipgloss.Fprintf(errOut, "warning: %s runs approvals-off and unconfined — treat evals/ content like code you are about to run (docs/bench.md)\n", joinNames(unconfined))
+	}
 	// Raw mode's product is the run stream itself, so it goes to out. In
 	// pr-md mode the product is the report; every streamed line — run
 	// headers, scores, failures — is diagnostics and goes to errOut.
@@ -119,6 +127,13 @@ func loadBenchRun(root string, opts benchOptions) (benchRun, error) {
 	}
 	if opts.Format != "" && opts.Format != "pr-md" {
 		return benchRun{}, fmt.Errorf(`--format must be "pr-md", got %q`, opts.Format)
+	}
+	// Skill and scenario names are joined into paths and git specs below —
+	// keep them bare directory names.
+	for _, n := range []struct{ what, val string }{{"skill", opts.Skill}, {"scenario", opts.Scenario}} {
+		if strings.ContainsAny(n.val, `/\`) || strings.Contains(n.val, "..") {
+			return benchRun{}, fmt.Errorf("%s name %q must be a bare directory name", n.what, n.val)
+		}
 	}
 	harnesses, err := parseHarnesses(opts.Harness)
 	if err != nil {
