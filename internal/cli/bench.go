@@ -67,9 +67,8 @@ func runBench(ctx context.Context, out, errOut io.Writer, root string, opts benc
 		return err
 	}
 	// Only Codex's sandbox actually confines a run; claude/opencode execute
-	// approvals-off with the sandbox being just a throwaway worktree. The
-	// posture is documented in docs/bench.md, but a doc can be skipped —
-	// say it where it applies.
+	// approvals-off with the sandbox being just a throwaway worktree
+	// (docs/bench.md).
 	if unconfined := slices.DeleteFunc(slices.Clone(b.harnesses), func(h harness.ID) bool { return h == harness.Codex }); len(unconfined) > 0 {
 		lipgloss.Fprintf(errOut, "warning: %s runs approvals-off and unconfined — treat evals/ content like code you are about to run (docs/bench.md)\n", joinNames(unconfined))
 	}
