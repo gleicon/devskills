@@ -68,6 +68,12 @@ func TestSkillsDirPrecedence(t *testing.T) {
 			want:      "/flag/claude/skills",
 		},
 		{
+			name: "codex env overrides default",
+			id:   Codex, scope: Global,
+			env:  map[string]string{"CODEX_HOME": "/env/codex"},
+			want: "/env/codex/skills",
+		},
+		{
 			name: "opencode XDG env appends opencode",
 			id:   OpenCode, scope: Global,
 			env:  map[string]string{"XDG_CONFIG_HOME": "/xdg"},
