@@ -47,7 +47,7 @@ func TestChooseInit(t *testing.T) {
 		wantErr    bool
 	}{
 		{name: "lang flag wins", o: initOpts{flagsChanged: true, langCSV: "go", tty: true}, wantSel: initSelection{langs: []string{"go"}}},
-		{name: "concise flag skips prompt", o: initOpts{flagsChanged: true, concise: true, tty: true}, wantSel: initSelection{concise: true}},
+		{name: "layer flag skips prompt", o: initOpts{flagsChanged: true, layers: []string{"concise"}, tty: true}, wantSel: initSelection{layers: []string{"concise"}}},
 		{name: "unknown lang errors", o: initOpts{flagsChanged: true, langCSV: "cobol"}, wantErr: true},
 		{name: "tty no flags prompts", o: initOpts{tty: true}, wantPrompt: true},
 		{name: "yes takes base-only default", o: initOpts{tty: true, yes: true}, wantSel: initSelection{}},
@@ -65,7 +65,7 @@ func TestChooseInit(t *testing.T) {
 			if prompt != tt.wantPrompt {
 				t.Errorf("prompt = %v, want %v", prompt, tt.wantPrompt)
 			}
-			if !slices.Equal(sel.langs, tt.wantSel.langs) || sel.concise != tt.wantSel.concise || sel.interaction != tt.wantSel.interaction || sel.plain != tt.wantSel.plain || sel.phases != tt.wantSel.phases || sel.discipline != tt.wantSel.discipline {
+			if !slices.Equal(sel.langs, tt.wantSel.langs) || !slices.Equal(sel.layers, tt.wantSel.layers) {
 				t.Errorf("sel = %+v, want %+v", sel, tt.wantSel)
 			}
 		})
@@ -166,7 +166,7 @@ func TestAvailableLanguages(t *testing.T) {
 
 func TestRunInitWritesBlocks(t *testing.T) {
 	root := t.TempDir()
-	sel := initSelection{langs: []string{"go"}, concise: true, interaction: true, plain: true, discipline: true}
+	sel := initSelection{langs: []string{"go"}, layers: []string{"concise", "interaction", "plain-language", "spec-discipline"}}
 	if err := runInit(io.Discard, fakeAssets(), root, sel, false); err != nil {
 		t.Fatal(err)
 	}
@@ -215,7 +215,7 @@ func TestRunInitMigratesBareLanguageBlock(t *testing.T) {
 
 func TestRunInitDryRunWritesNothing(t *testing.T) {
 	root := t.TempDir()
-	sel := initSelection{langs: []string{"go"}, concise: true}
+	sel := initSelection{langs: []string{"go"}, layers: []string{"concise"}}
 	if err := runInit(io.Discard, fakeAssets(), root, sel, true); err != nil {
 		t.Fatal(err)
 	}
@@ -229,7 +229,7 @@ func TestRunInitDryRunWritesNothing(t *testing.T) {
 func TestRunInitUninstallRemovesOurFiles(t *testing.T) {
 	root := t.TempDir()
 	// Scaffold, then back out: both files held only devskills content.
-	if err := runInit(io.Discard, fakeAssets(), root, initSelection{langs: []string{"go"}, concise: true}, false); err != nil {
+	if err := runInit(io.Discard, fakeAssets(), root, initSelection{langs: []string{"go"}, layers: []string{"concise"}}, false); err != nil {
 		t.Fatal(err)
 	}
 	if err := runInitUninstall(io.Discard, root, false); err != nil {
