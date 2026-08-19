@@ -111,7 +111,9 @@ func newInitCmd(catalog fs.FS) *cobra.Command {
 // the base-only default.
 func chooseInit(o initOpts, avail []string) (initSelection, bool, error) {
 	if o.flagsChanged {
-		langs, err := parseLangCSV(o.langCSV, avail)
+		// An empty --lang is valid (base only) — unlike --harness, a
+		// language is optional.
+		langs, err := parseCSV(o.langCSV, "unknown language profile", avail)
 		if err != nil {
 			return initSelection{}, false, err
 		}
@@ -121,25 +123,6 @@ func chooseInit(o initOpts, avail []string) (initSelection, bool, error) {
 		return initSelection{}, true, nil
 	}
 	return initSelection{}, false, nil
-}
-
-// parseLangCSV validates, trims, and dedupes the requested profiles. Empty is
-// valid (base only) — unlike --harness, a language is optional.
-func parseLangCSV(csv string, avail []string) ([]string, error) {
-	var langs []string
-	for tok := range strings.SplitSeq(csv, ",") {
-		tok = strings.TrimSpace(tok)
-		if tok == "" {
-			continue
-		}
-		if !slices.Contains(avail, tok) {
-			return nil, fmt.Errorf("unknown language profile %q (available: %s)", tok, strings.Join(avail, ", "))
-		}
-		if !slices.Contains(langs, tok) {
-			langs = append(langs, tok)
-		}
-	}
-	return langs, nil
 }
 
 func promptInit(avail []string) (initSelection, error) {

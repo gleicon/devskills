@@ -139,17 +139,17 @@ func TestReadmeInitRowNamesBlockFlags(t *testing.T) {
 
 func TestParseLangCSV(t *testing.T) {
 	avail := []string{"go", "typescript"}
-	got, err := parseLangCSV(" go , typescript ,go", avail)
+	got, err := parseCSV(" go , typescript ,go", "unknown language profile", avail)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !slices.Equal(got, []string{"go", "typescript"}) {
 		t.Errorf("got %v, want [go typescript]", got)
 	}
-	if got, err := parseLangCSV("", avail); err != nil || got != nil {
+	if got, err := parseCSV("", "unknown language profile", avail); err != nil || got != nil {
 		t.Errorf("empty = (%v, %v), want (nil, nil)", got, err)
 	}
-	if _, err := parseLangCSV("cobol", avail); err == nil {
+	if _, err := parseCSV("cobol", "unknown language profile", avail); err == nil {
 		t.Error("want error for unknown language")
 	}
 }

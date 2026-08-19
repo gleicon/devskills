@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
 	"time"
 
@@ -255,20 +254,11 @@ func reproCommand(opts benchOptions, harnesses []harness.ID, models map[harness.
 	return b.String() + " --format pr-md"
 }
 
-// parseHarnesses turns the --harness flag into validated, deduplicated IDs.
+// parseHarnesses turns the --harness flag into validated, deduplicated IDs,
+// defaulting to Claude Code so zero-value benchOptions callers bench something.
 func parseHarnesses(list string) ([]harness.ID, error) {
 	if list == "" {
 		list = string(harness.Claude)
 	}
-	var ids []harness.ID
-	for part := range strings.SplitSeq(list, ",") {
-		id := harness.ID(strings.TrimSpace(part))
-		if !id.Valid() {
-			return nil, fmt.Errorf("unknown harness %q in --harness", part)
-		}
-		if !slices.Contains(ids, id) {
-			ids = append(ids, id)
-		}
-	}
-	return ids, nil
+	return parseCSV(list, "unknown harness", harness.All())
 }
