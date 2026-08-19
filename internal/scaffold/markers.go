@@ -72,6 +72,11 @@ func (e *Engine) Upsert(file, id, body string) error {
 	if err != nil {
 		return err
 	}
+	if existed {
+		if err := checkMarkers(orig, id); err != nil {
+			return fmt.Errorf("%s: %w", file, err)
+		}
+	}
 	wrapped := wrapBlock(id, body)
 	var next string
 	if re := blockRE(id); existed && re.MatchString(orig) {
@@ -112,6 +117,9 @@ func (e *Engine) RemoveBlocks(file string, ids ...string) error {
 	}
 	found := false
 	for _, id := range ids {
+		if err := checkMarkers(orig, id); err != nil {
+			return fmt.Errorf("%s: %w", file, err)
+		}
 		if strings.Contains(orig, beginMarker(id)) {
 			found = true
 		}
@@ -123,9 +131,9 @@ func (e *Engine) RemoveBlocks(file string, ids ...string) error {
 
 	next := orig
 	for _, id := range ids {
-		next = blockRE(id).ReplaceAllLiteralString(next, "")
+		next = blockRE(id).ReplaceAllLiteralString(next, spliceMark+"\n")
 	}
-	next = normalizeBlankLines(next)
+	next = collapseSplices(next)
 
 	if next == "" {
 		if e.dryRun {
@@ -244,27 +252,71 @@ func appendBlock(content, wrapped string) string {
 	return content + "\n" + wrapped
 }
 
-// normalizeBlankLines drops leading and trailing blank lines and collapses
-// internal blank runs to a single blank — so stripping a block doesn't leave a
-// gap. All-blank input yields "".
-func normalizeBlankLines(s string) string {
+// checkMarkers rejects content whose BEGIN/END marker lines for id don't pair
+// up: blockRE would then either miss the block (so an upsert appends a
+// duplicate) or swallow user content between an orphan BEGIN and an unrelated
+// END. Failing here is what keeps a hand-mangled file from being eaten.
+func checkMarkers(content, id string) error {
+	begin, end := beginMarker(id), endMarker(id)
+	rest := blockRE(id).ReplaceAllLiteralString(content, "")
+	if markerLines(content, begin) == markerLines(content, end) &&
+		markerLines(rest, begin) == 0 && markerLines(rest, end) == 0 {
+		return nil
+	}
+	return fmt.Errorf("unpaired devskills:%s marker; repair or delete the marker lines, then rerun", id)
+}
+
+// markerLines counts whole-line occurrences of marker, mirroring blockRE's
+// anchoring — a marker quoted mid-line doesn't count.
+func markerLines(content, marker string) int {
+	re := regexp.MustCompile("(?m)^" + regexp.QuoteMeta(marker) + "$")
+	return len(re.FindAllStringIndex(content, -1))
+}
+
+// spliceMark stands in for a removed block while the seam around it collapses;
+// NUL bytes never occur in the text files the engine manages.
+const spliceMark = "\x00devskills:splice\x00"
+
+// collapseSplices removes the spliceMark lines, closing each seam: blank lines
+// around a mark collapse to the single blank that separated the neighbors, or
+// to nothing at the start or end of the file. Content away from the seams keeps
+// its exact bytes. All-seam input yields "".
+func collapseSplices(s string) string {
+	if !strings.Contains(s, spliceMark) {
+		return s
+	}
+	hadFinalNL := strings.HasSuffix(s, "\n")
+	lines := strings.Split(strings.TrimSuffix(s, "\n"), "\n")
 	var out []string
-	printed, pending := false, false
-	for ln := range strings.SplitSeq(s, "\n") {
-		if strings.TrimSpace(ln) == "" {
-			pending = true
+	for i := 0; i < len(lines); {
+		if lines[i] != spliceMark {
+			out = append(out, lines[i])
+			i++
 			continue
 		}
-		if printed && pending {
+		sawBlank := false
+		for len(out) > 0 && strings.TrimSpace(out[len(out)-1]) == "" {
+			out = out[:len(out)-1]
+			sawBlank = true
+		}
+		for i < len(lines) && (lines[i] == spliceMark || strings.TrimSpace(lines[i]) == "") {
+			sawBlank = sawBlank || lines[i] != spliceMark
+			i++
+		}
+		if sawBlank && len(out) > 0 && i < len(lines) {
 			out = append(out, "")
 		}
-		out = append(out, ln)
-		printed, pending = true, false
 	}
 	if len(out) == 0 {
 		return ""
 	}
-	return strings.Join(out, "\n") + "\n"
+	res := strings.Join(out, "\n")
+	// The original final newline survives; one is also owed when the seam
+	// swallowed the original last line.
+	if hadFinalNL || out[len(out)-1] != lines[len(lines)-1] {
+		res += "\n"
+	}
+	return res
 }
 
 func readMaybe(file string) (content string, existed bool, err error) {

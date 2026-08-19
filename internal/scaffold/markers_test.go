@@ -163,6 +163,69 @@ func TestRemoveBlocksNoMarkersLeavesAsIs(t *testing.T) {
 	}
 }
 
+// An unterminated block used to make the first upsert append a duplicate and
+// the second one swallow every user line between the orphan BEGIN and the
+// appended END. The engine must refuse to touch such a file.
+func TestUpsertUnpairedMarkerFailsLoudly(t *testing.T) {
+	dir := t.TempDir()
+	f := filepath.Join(dir, "AGENTS.md")
+	orig := "<!-- BEGIN devskills:base -->\nuser line A\nuser line B\n"
+	write(t, f, orig)
+	if err := fixedEngine(false).Upsert(f, "base", "body"); err == nil {
+		t.Fatal("want an error for an unpaired marker, got nil")
+	}
+	if got := read(t, f); got != orig {
+		t.Errorf("error path changed the file: %q", got)
+	}
+	if got := baks(t, dir); len(got) != 0 {
+		t.Errorf("error path created backups: %v", got)
+	}
+}
+
+// An orphan BEGIN above a healthy pair would make blockRE match from the
+// orphan to the pair's END, swallowing the user lines in between.
+func TestUpsertOrphanBeginAboveValidPairFails(t *testing.T) {
+	dir := t.TempDir()
+	f := filepath.Join(dir, "AGENTS.md")
+	orig := "<!-- BEGIN devskills:base -->\nuser text\n\n" +
+		"<!-- BEGIN devskills:base -->\nours\n<!-- END devskills:base -->\n"
+	write(t, f, orig)
+	if err := fixedEngine(false).Upsert(f, "base", "new"); err == nil {
+		t.Fatal("want an error for an orphan BEGIN above a valid pair, got nil")
+	}
+	if got := read(t, f); got != orig {
+		t.Errorf("error path changed the file: %q", got)
+	}
+}
+
+func TestRemoveBlocksUnpairedMarkerFailsLoudly(t *testing.T) {
+	dir := t.TempDir()
+	f := filepath.Join(dir, "AGENTS.md")
+	orig := "keep\n\n<!-- END devskills:base -->\n"
+	write(t, f, orig)
+	if err := fixedEngine(false).RemoveBlocks(f, "base"); err == nil {
+		t.Fatal("want an error for an unpaired marker, got nil")
+	}
+	if got := read(t, f); got != orig {
+		t.Errorf("error path changed the file: %q", got)
+	}
+}
+
+// Removal must only close the seam where the block sat; blank runs, trailing
+// whitespace, and fenced code elsewhere in the file keep their exact bytes.
+func TestRemoveBlocksPreservesContentAwayFromSeam(t *testing.T) {
+	dir := t.TempDir()
+	f := filepath.Join(dir, "AGENTS.md")
+	user := "# Mine\n\n\n```go\nfunc a() {}\n\n\nfunc b() {}\n```\n   \n\ntail\n"
+	write(t, f, user+"\n<!-- BEGIN devskills:base -->\nours\n<!-- END devskills:base -->\n")
+	if err := fixedEngine(false).RemoveBlocks(f, "base"); err != nil {
+		t.Fatal(err)
+	}
+	if got := read(t, f); got != user {
+		t.Errorf("user content rewritten:\ngot  %q\nwant %q", got, user)
+	}
+}
+
 func TestEnsureClaudeImportRespectsManualImport(t *testing.T) {
 	dir := t.TempDir()
 	f := filepath.Join(dir, "CLAUDE.md")
