@@ -7,7 +7,7 @@ Every devskills skill is a single `SKILL.md` invoked as `/<name>` in Claude Code
 A skill's **suffix tells you its kind**:
 
 - **`-mode`** — persistent, toggleable session behavior; changes *how* the agent works until you turn it off. *tiger-style, ui, data, git, step, tdd, test, interaction.*
-- **`-review`** — a findings-list audit. Report-only by default (several take `--fix`); findings are independent and fixable in any order. *bug, security, data, code-quality, doc-quality, test-quality, ui-quality, comment, clarity, notebook, the six language reviews, and — named for their tools rather than the suffix — osv and semgrep.*
+- **`-review`** — a findings-list audit. Report-only by default (several take `--fix`); findings are independent and fixable in any order. *bug, security, agent, data, code-quality, doc-quality, test-quality, ui-quality, comment, clarity, notebook, the six language reviews, and — named for their tools rather than the suffix — osv and semgrep.*
 - **`-plan`** — graded, sequenced moves that each carry a trade-off or dependency, so the output is a *plan*, not a verdict. *perf-plan, architecture-plan.*
 - **no suffix** — a one-shot action that produces a result and returns. *spec, roadmap, explore, blueprint, grill-me, retro, debug, deslop, humanize, verify-this, zoom-out, onboarding, handoff, tldt, quality-gate, the recall trio, and the project-\* family.*
 - **language profiles** — configured per project via `devskills init --lang`, not invoked as slash commands (see the [README](../README.md#language-profiles)).
@@ -246,7 +246,7 @@ Language-agnostic **correctness** audit — the bug-hunting pass. Asks one thing
 
 Language-agnostic **security** audit — the portable counterpart to the per-language Security sections. Traces untrusted data from entry to dangerous sink: injection (SQL/command/path/SSRF/template), output handling (XSS, unsafe deserialization), broken access control (IDOR, privilege escalation), secrets and weak crypto, sensitive-data exposure, mass assignment / unsafe upload / DoS, and transport/config gaps.
 
-- **Args:** treated as scope (files, directories, globs); defaults to code changed on the current branch. `--full` widens scope to the whole codebase. An optional [ast-grep](ast-grep.md) structural pass widens reach when the tool is present.
+- **Args:** treated as scope (files, directories, globs); defaults to code changed on the current branch. `--full` widens scope to the whole codebase. An optional [ast-grep](ast-grep.md) structural pass widens reach when the tool is present. When the scope touches login, registration, password or address change, sessions, MFA, or an OAuth/OIDC/SAML integration, it also reads its `authn` companion for the identity-specific failure modes.
 - **Output:** prioritized findings anchored to `file:line` — critical (code exec / breach / auth bypass) → high → hardening. Each **describes the attack** (input → sink) and the fix. Exploitable over theoretical. Changes nothing by default; `--fix` applies only mechanical, unambiguous fixes — anything that changes behavior or rests on an assumption stays reported.
 - **Reach for it when:** any change that touches input handling, auth, secrets, or external I/O — and as a pre-PR gate. The deeper language-specific checks live in `/go·ts·rust·python·java·zig-review`.
 
