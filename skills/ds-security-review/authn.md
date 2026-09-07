@@ -55,29 +55,18 @@ one that survives.
 
 - **Message discrepancy.** "Invalid password" vs "no such user"; "we sent you a reset link" vs
   "that email isn't in our database"; "this user ID is already in use" on registration. Fix:
-  one generic response per flow — `Login failed; Invalid user ID or password.`, `If that email
-  address is in our database, we will send you an email to reset your password.`, `A link to
-  activate your account has been emailed to the address provided.`
+  one generic response per flow — `Sign-in failed. Check your username and password.`, `If an
+  account exists for that address, a reset link is on its way.`, `Check your inbox for an
+  activation link.`
 - **Status-code or redirect discrepancy** behind an identical page — 200 vs 403, a different
   `Location`, a different error code in a JSON envelope. The body being generic does not matter
   if the envelope is not.
 - **Timing discrepancy from a quick-exit branch.** This is a control-flow finding, not a string
-  finding. When the code shape is:
-
-      IF USER_EXISTS(username) THEN
-          password_hash = HASH(password)
-          ...verify...
-      ELSE
-          RETURN generic_error
-      ENDIF
-
-  the expensive hash only runs for accounts that exist, so the response time answers the
-  question the error message refused to. Fix: hash unconditionally and verify against the
-  looked-up record (or a dummy hash when there is none), so both paths do the same work:
-
-      password_hash = HASH(password)
-      IS_VALID = LOOKUP_CREDENTIALS_IN_STORE(username, password_hash)
-      IF NOT IS_VALID THEN RETURN generic_error
+  finding. When the hash runs only inside the "user exists" branch, the response time answers
+  the question the error message refused to: the expensive work happens for real accounts and
+  is skipped for the rest. Fix: look up the record first, then run the hash on every request —
+  against the stored hash when there is one and a fixed dummy hash when there isn't — so both
+  paths cost the same.
 
 Where a generic message is unacceptable for usability, the compensating control is rate
 limiting plus CAPTCHA — note that trade-off in the finding rather than reporting nothing.
