@@ -6,14 +6,14 @@ style: report
 expectations:
   # Wildcard shell tool: allowed_commands "*" reached by shell=True.
   - file: agent/tools.py
-    keywords: [least privilege, allowlist, wildcard, shell, execute_command]
+    keywords: [wildcard, allowed_commands, execute_command, least privilege]
   # Indirect prompt injection: attacker-authored email body is concatenated
   # into the prompt with a shell tool and an email tool available.
   - file: agent/tools.py
-    keywords: [prompt injection, indirect, untrusted, email body]
+    keywords: [prompt injection, indirect injection, email body, concatenat]
   # No approval gate on send_email, and no depth/cost cap on the while loop.
   - file: agent/tools.py
-    keywords: [approval, human-in-the-loop, unbounded, loop, cost]
+    keywords: [approval gate, human-in-the-loop, unbounded, denial of wallet, circuit breaker]
   # Global memory with no per-user isolation, validation, or expiry.
   - file: agent/memory.py
-    keywords: [memory, isolation, poisoning, shared, expiry]
+    keywords: [isolation, poisoning, shared, expiry, per-user]
