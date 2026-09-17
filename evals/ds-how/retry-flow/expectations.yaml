@@ -1,0 +1,9 @@
+# Structural: the explanation must carry the mandated headings. Gotchas is
+# optional in the skill, so it is not required here.
+task: "Run /ds-how how does a call get retried in the retry package?"
+tier: structural
+elements:
+  - "## Overview"
+  - "## Key concepts"
+  - "## How it works"
+  - "## Where things live"

@@ -9,7 +9,7 @@ A skill's **suffix tells you its kind**:
 - **`-mode`** — persistent, toggleable session behavior; changes *how* the agent works until you turn it off. *tiger-style, ui, data, git, step, tdd, test, interaction.*
 - **`-review`** — a findings-list audit. Report-only by default (several take `--fix`); findings are independent and fixable in any order. *bug, security, agent, data, code-quality, doc-quality, test-quality, ui-quality, comment, clarity, notebook, the seven language reviews, and — named for their tools rather than the suffix — osv and semgrep.*
 - **`-plan`** — graded, sequenced moves that each carry a trade-off or dependency, so the output is a *plan*, not a verdict. *perf-plan, architecture-plan.*
-- **no suffix** — a one-shot action that produces a result and returns. *spec, roadmap, explore, blueprint, grill-me, retro, debug, deslop, humanize, verify-this, zoom-out, onboarding, handoff, tldt, quality-gate, the recall trio, and the project-\* family.*
+- **no suffix** — a one-shot action that produces a result and returns. *spec, roadmap, explore, blueprint, grill-me, retro, debug, deslop, humanize, verify-this, zoom-out, how, onboarding, handoff, tldt, quality-gate, the recall trio, and the project-\* family.*
 - **language profiles** — configured per project via `devskills init --lang`, not invoked as slash commands (see the [README](../README.md#language-profiles)).
 
 Everything except `-mode` runs once and finishes; a `-mode` stays on. The per-skill headings below tag each one with its kind. Each skill is self-contained; a few use an external tool when it's present — `/ds-osv`, `/ds-semgrep`, `/ds-tldt`, and `/ds-security-review`'s structural pass — which `devskills doctor` can install.
@@ -353,6 +353,14 @@ Prove or disprove a **falsifiable** claim with fresh local evidence — not a re
 Step up one layer of abstraction and map how an area fits the bigger picture: its responsibility, neighbouring modules, callers, and boundaries. No line-by-line read, no code dumps.
 
 - **Reach for it when:** entering unfamiliar code, or before planning a change in an area you don't hold in your head.
+
+### `/ds-how` — action
+
+Explain how a subsystem works as a mental model: overview, key concepts, the runtime flow step by step, where things live, and the gotchas a newcomer would misread. Reads the code rather than inferring from names; on a large subsystem it fans 2 to 4 read-only explorers out first and synthesizes their findings. `/ds-zoom-out` places an area among its neighbours; this walks the machinery inside it.
+
+- **Args:** the question — a subsystem, a flow, or a placement question ("where should this live", "which package owns this").
+- **Output:** `Overview`, `Key concepts`, `How it works`, `Where things live`, `Gotchas` — the last dropped when empty.
+- **Reach for it when:** you need to work inside code you don't understand yet, or someone asks "how does X actually work?".
 
 ### `/ds-onboarding` — action
 

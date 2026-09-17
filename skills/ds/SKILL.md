@@ -12,6 +12,7 @@ The phase spine is the usual arc of a change; the groups below it (modes, langua
 
 ### Orient — *"Where am I? What does this code do?"*
 - `/ds-zoom-out` — step up a level and map how the current code fits the bigger picture, before you change it.
+- `/ds-how` — explain how a subsystem works as a mental model: key concepts, the runtime flow, where things live, gotchas.
 - `/ds-onboarding` — onboard a new team member to a project: team context, ownership, rituals, and a safe first contribution.
 
 To restore a persisted session, see `/ds-project-resume` under Project memory.
