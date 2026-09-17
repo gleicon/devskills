@@ -4,6 +4,7 @@
 
 Before implementing:
 - State your assumptions explicitly; when something's unclear, name it and ask.
+- Ask at most one question per message, and put it last. Two open questions make every answer ambiguous.
 - If multiple interpretations exist, present them — don't choose one silently.
 - If a simpler approach exists, say so. Push back when warranted.
 
