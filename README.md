@@ -128,7 +128,7 @@ Turn one on and it governs the rest of the session; several can be active at onc
 
 ### Language reviews
 
-`/ds-go-review` · `/ds-python-review` · `/ds-rust-review` · `/ds-java-review` · `/ds-ts-review` · `/ds-zig-review`
+`/ds-go-review` · `/ds-python-review` · `/ds-rust-review` · `/ds-java-review` · `/ds-ts-review` · `/ds-zig-review` · `/ds-shell-review`
 
 Each folds Tiger Style, that language's idioms, and security into one pass, and detects the project's target version to layer on version-specific checks. Prefer these over the general reviews when the diff is single-language.
 
@@ -187,6 +187,7 @@ One binary, six commands:
 | `python` | Python 3.13+ — backend, APIs, CLIs, data pipelines |
 | `java` | Java 25+ (LTS) — backend, APIs, systems tooling |
 | `zig` | Zig 0.16 — systems, CLIs, embedded |
+| `shell` | bash 3.2+ on macOS and Linux — build glue, CI, installers |
 
 ### External tools
 

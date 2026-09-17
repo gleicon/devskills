@@ -1,0 +1,19 @@
+# One planted shell defect per expectation; report style: a hit requires the
+# output to mention the file plus any keyword. Keywords are fix phrases, not
+# tokens of the planted line, so quoting the script back does not score.
+task: "Run /ds-shell-review on this branch."
+tier: planted-defect
+style: report
+expectations:
+  # `sed -i` with no suffix argument: GNU accepts it, BSD sed on macOS fails.
+  - file: scripts/install.sh
+    keywords: [BSD, GNU sed, in-place, temp file]
+  # `readlink -f` for the script directory: BSD readlink has no -f.
+  - file: scripts/install.sh
+    keywords: [BASH_SOURCE, readlink]
+  # Unquoted `$prefix` in `rm -rf`, and no `${prefix:?}` guard against empty.
+  - file: scripts/install.sh
+    keywords: [unquoted, word split, "prefix:?", empty prefix]
+  # `#!/bin/bash` pins macOS to the stock 3.2 binary.
+  - file: scripts/install.sh
+    keywords: [shebang, usr/bin/env]

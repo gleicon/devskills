@@ -7,7 +7,7 @@ Every devskills skill is a single `SKILL.md` invoked as `/<name>` in Claude Code
 A skill's **suffix tells you its kind**:
 
 - **`-mode`** — persistent, toggleable session behavior; changes *how* the agent works until you turn it off. *tiger-style, ui, data, git, step, tdd, test, interaction.*
-- **`-review`** — a findings-list audit. Report-only by default (several take `--fix`); findings are independent and fixable in any order. *bug, security, agent, data, code-quality, doc-quality, test-quality, ui-quality, comment, clarity, notebook, the six language reviews, and — named for their tools rather than the suffix — osv and semgrep.*
+- **`-review`** — a findings-list audit. Report-only by default (several take `--fix`); findings are independent and fixable in any order. *bug, security, agent, data, code-quality, doc-quality, test-quality, ui-quality, comment, clarity, notebook, the seven language reviews, and — named for their tools rather than the suffix — osv and semgrep.*
 - **`-plan`** — graded, sequenced moves that each carry a trade-off or dependency, so the output is a *plan*, not a verdict. *perf-plan, architecture-plan.*
 - **no suffix** — a one-shot action that produces a result and returns. *spec, roadmap, explore, blueprint, grill-me, retro, debug, deslop, humanize, verify-this, zoom-out, onboarding, handoff, tldt, quality-gate, the recall trio, and the project-\* family.*
 - **language profiles** — configured per project via `devskills init --lang`, not invoked as slash commands (see the [README](../README.md#language-profiles)).
@@ -248,7 +248,7 @@ Language-agnostic **security** audit — the portable counterpart to the per-lan
 
 - **Args:** treated as scope (files, directories, globs); defaults to code changed on the current branch. `--full` widens scope to the whole codebase. An optional [ast-grep](ast-grep.md) structural pass widens reach when the tool is present. When the scope touches login, registration, password or address change, sessions, MFA, or an OAuth/OIDC/SAML integration, it also reads its `authn` companion for the identity-specific failure modes.
 - **Output:** prioritized findings anchored to `file:line` — critical (code exec / breach / auth bypass) → high → hardening. Each **describes the attack** (input → sink) and the fix. Exploitable over theoretical. Changes nothing by default; `--fix` applies only mechanical, unambiguous fixes — anything that changes behavior or rests on an assumption stays reported.
-- **Reach for it when:** any change that touches input handling, auth, secrets, or external I/O — and as a pre-PR gate. The deeper language-specific checks live in `/go·ts·rust·python·java·zig-review`.
+- **Reach for it when:** any change that touches input handling, auth, secrets, or external I/O — and as a pre-PR gate. The deeper language-specific checks live in `/go·ts·rust·python·java·zig·shell-review`.
 
 ### `/ds-agent-review` — review
 
@@ -266,7 +266,7 @@ Store-agnostic **data correctness** audit — the question no other review owns:
 - **Output:** prioritized findings anchored to `file:line` — critical (silent data loss/corruption, or a migration that can lock production) → wrong-results → integrity-gap → hardening. Each names **the exact condition that triggers wrong/lost/inconsistent data**, the fix (prefer a store-enforced constraint over an app-side check that races), and the store/engine assumption it rests on. Changes nothing by default; `--fix` applies only mechanical, unambiguous fixes — migration-altering or uncertain ones stay reported.
 - **Reach for it when:** a change touches schema, queries, transactions, or migrations (add `--pipelines` for ETL/pipeline code). Confirmed findings hand off to `/ds-verify-this` (prove the fix against real before/after data). The build-time complement is the `/ds-data-mode` mode.
 
-### `/ds-go-review` · `/ds-ts-review` · `/ds-rust-review` · `/ds-python-review` · `/ds-java-review` · `/ds-zig-review` — review
+### `/ds-go-review` · `/ds-ts-review` · `/ds-rust-review` · `/ds-python-review` · `/ds-java-review` · `/ds-zig-review` · `/ds-shell-review` — review
 
 Language-specific review passes.
 
@@ -276,7 +276,8 @@ Language-specific review passes.
 - **`/ds-python-review`** — Python idioms, `mypy --strict` typing, security, Tiger Style.
 - **`/ds-java-review`** — Java idioms (records, sealed types, pattern matching), security, Tiger Style.
 - **`/ds-zig-review`** — explicit allocators, errors-as-values, no hidden control flow, safety, Tiger Style (its native context).
-- **Version-aware:** each detects the project's target version (from `go.mod`, `pyproject`, Gradle/Maven, etc.) and layers on version-specific checks when it meets a companion's floor; undeterminable → runs the base and says so.
+- **`/ds-shell-review`** — `shellcheck`/`shfmt`, quoting, macOS/Linux portability on a bash 3.2 floor, security, Tiger Style.
+- **Version-aware:** each detects the project's target version (from `go.mod`, `pyproject`, Gradle/Maven, etc.) and layers on version-specific checks when it meets a companion's floor; undeterminable → runs the base and says so. `/ds-shell-review` forks by platform instead: bash 3.2 and BSD userland on macOS, bash 5 and GNU on Linux, both always in scope.
 - **Args:** `--no-tiger` skips the Tiger Style section (all of them). `--full` widens scope to the whole codebase (all of them). `--fix` (all of them) applies the mechanical, unambiguous violations; security and correctness findings stay reported.
 - **Reach for it when:** reviewing code in that language, or as a pre-PR gate.
 
