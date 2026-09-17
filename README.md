@@ -128,7 +128,7 @@ Turn one on and it governs the rest of the session; several can be active at onc
 
 ### Language reviews
 
-`/ds-go-review` · `/ds-python-review` · `/ds-rust-review` · `/ds-java-review` · `/ds-ts-review` · `/ds-zig-review`
+`/ds-go-review` · `/ds-python-review` · `/ds-rust-review` · `/ds-java-review` · `/ds-ts-review` · `/ds-zig-review` · `/ds-shell-review`
 
 Each folds Tiger Style, that language's idioms, and security into one pass, and detects the project's target version to layer on version-specific checks. Prefer these over the general reviews when the diff is single-language.
 

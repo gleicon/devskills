@@ -78,7 +78,7 @@ Turn one on and it governs the rest of the session; several can be active at onc
 
 ## Language reviews — one per language, idioms + security
 
-`/ds-go-review` · `/ds-python-review` · `/ds-rust-review` · `/ds-java-review` · `/ds-ts-review` · `/ds-zig-review`
+`/ds-go-review` · `/ds-python-review` · `/ds-rust-review` · `/ds-java-review` · `/ds-ts-review` · `/ds-zig-review` · `/ds-shell-review`
 
 Each reviews with Tiger Style constraints plus that language's idioms; reach for it over the general reviews when the diff is single-language.
 
