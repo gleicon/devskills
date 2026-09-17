@@ -110,6 +110,7 @@ The **phase spine** follows the arc of a change. The groups below it — modes, 
 | **Verify** | `/ds-verify-this` | a before/after repro with a hard verdict |
 | **Ship** | `/ds-handoff` | compact the session into a handoff doc |
 | | `/ds-retro` | post-release: compare decided vs shipped, distill rules |
+| | `/ds-reflect` | mine the session for lessons and propose exact skill or `AGENTS.md` edits; applies nothing before a yes |
 
 Every review reports by default and changes nothing; most take `--fix` to apply the mechanical, unambiguous findings, and `--full` to widen scope from the branch diff to the whole codebase (the tool-backed `/ds-osv` and `/ds-semgrep` scope by path instead).
 

@@ -1,0 +1,9 @@
+# Structural: the proposal carries the three mandated sections and the
+# closing line that states nothing was edited.
+task: "Run /ds-reflect notes/session-2026-09-12.md"
+tier: structural
+elements:
+  - "## Proposed"
+  - "## Backlog"
+  - "## Dropped"
+  - "Nothing applied."

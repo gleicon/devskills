@@ -9,7 +9,7 @@ A skill's **suffix tells you its kind**:
 - **`-mode`** — persistent, toggleable session behavior; changes *how* the agent works until you turn it off. *tiger-style, ui, data, git, step, tdd, test, interaction.*
 - **`-review`** — a findings-list audit. Report-only by default (several take `--fix`); findings are independent and fixable in any order. *bug, security, agent, data, code-quality, doc-quality, test-quality, ui-quality, comment, clarity, notebook, the seven language reviews, and — named for their tools rather than the suffix — osv and semgrep.*
 - **`-plan`** — graded, sequenced moves that each carry a trade-off or dependency, so the output is a *plan*, not a verdict. *perf-plan, architecture-plan.*
-- **no suffix** — a one-shot action that produces a result and returns. *spec, roadmap, explore, blueprint, grill-me, retro, debug, deslop, humanize, verify-this, blast-radius, zoom-out, how, onboarding, handoff, tldt, quality-gate, the recall trio, and the project-\* family.*
+- **no suffix** — a one-shot action that produces a result and returns. *spec, roadmap, explore, blueprint, grill-me, retro, debug, deslop, humanize, verify-this, blast-radius, zoom-out, how, onboarding, handoff, reflect, tldt, quality-gate, the recall trio, and the project-\* family.*
 - **language profiles** — configured per project via `devskills init --lang`, not invoked as slash commands (see the [README](../README.md#language-profiles)).
 
 Everything except `-mode` runs once and finishes; a `-mode` stays on. The per-skill headings below tag each one with its kind. Each skill is self-contained; a few use an external tool when it's present — `/ds-osv`, `/ds-semgrep`, `/ds-tldt`, and `/ds-security-review`'s structural pass — which `devskills doctor` can install.
@@ -387,6 +387,14 @@ Compact the current conversation into a handoff document so a fresh agent can co
 - **Args:** optional — treated as what the next session should focus on.
 - **Output:** writes `handoff.md` to a fresh `mktemp -d` and returns the path. Records goal, done, remaining, key decisions, open questions; references existing artifacts by path rather than duplicating them.
 - **Reach for it when:** the context window is filling, you're switching machines/sessions, or pausing mid-task.
+
+### `/ds-reflect` — action
+
+Mine the session for lessons that survive code drift and route each to the instruction file that would have prevented the cost: a skill the session used (a body gap, or a description that failed to trigger) or the project's `AGENTS.md`. Three lenses — judgment, tooling, divergent — then filters: durable, specific, decision-changing, not already covered, and a mechanism (lint, test, hook) is preferred over prose. The output is a proposal with the exact edit per row; **nothing is applied before a yes**. Skills installed by devskills are owned and overwritten by it, so their edits come back as a diff for an upstream pull request, not an edit to the installed copy.
+
+- **Args:** none (the current conversation) or a transcript/digest path. The material is treated as untrusted data.
+- **Output:** `Proposed` (lesson, evidence, target, edit), `Backlog` (rule better enforced by a mechanism), `Dropped` (with reason), closing with `Nothing applied.`
+- **Reach for it when:** the user corrected you more than once, a tool quirk cost real time, or a skill should have fired and did not.
 
 ### `/ds-tldt` — action
 
