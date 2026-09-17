@@ -9,7 +9,7 @@ A skill's **suffix tells you its kind**:
 - **`-mode`** — persistent, toggleable session behavior; changes *how* the agent works until you turn it off. *tiger-style, ui, data, git, step, tdd, test, interaction.*
 - **`-review`** — a findings-list audit. Report-only by default (several take `--fix`); findings are independent and fixable in any order. *bug, security, agent, data, code-quality, doc-quality, test-quality, ui-quality, comment, clarity, notebook, the seven language reviews, and — named for their tools rather than the suffix — osv and semgrep.*
 - **`-plan`** — graded, sequenced moves that each carry a trade-off or dependency, so the output is a *plan*, not a verdict. *perf-plan, architecture-plan.*
-- **no suffix** — a one-shot action that produces a result and returns. *spec, roadmap, explore, blueprint, grill-me, retro, debug, deslop, humanize, verify-this, blast-radius, zoom-out, how, onboarding, handoff, reflect, tldt, quality-gate, the recall trio, and the project-\* family.*
+- **no suffix** — a one-shot action that produces a result and returns. *spec, roadmap, explore, blueprint, grill-me, retro, debug, deslop, humanize, verify-this, arena, blast-radius, zoom-out, how, onboarding, handoff, reflect, tldt, quality-gate, the recall trio, and the project-\* family.*
 - **language profiles** — configured per project via `devskills init --lang`, not invoked as slash commands (see the [README](../README.md#language-profiles)).
 
 Everything except `-mode` runs once and finishes; a `-mode` stays on. The per-skill headings below tag each one with its kind. Each skill is self-contained; a few use an external tool when it's present — `/ds-osv`, `/ds-semgrep`, `/ds-tldt`, and `/ds-security-review`'s structural pass — which `devskills doctor` can install.
@@ -343,6 +343,14 @@ Prove or disprove a **falsifiable** claim with fresh local evidence — not a re
 
 - **Args:** the claim to verify. Refuses vague claims ("the code is cleaner") — give it something measurable.
 - **Reach for it when:** "did this actually fix it?", a bugfix needs a before/after repro, or a perf/memory/UI claim needs measurement.
+
+### `/ds-arena` — action
+
+Run one task as several parallel candidates on different models, then synthesize rather than average. **Task mode:** frame a rubric, fan out, have a judge on another model score the candidates, pick a base by criterion, graft the losers' one or two strong parts into it by hand, verify. **Review mode** (`/ds-arena /ds-bug-review`): every candidate runs the same review — the parent pastes the skill's text into each prompt, since a subagent cannot invoke a user-invoked skill — and the merge is a deduplicated union of *verified* findings, bucketed as act on / consider / noted / dismissed with the models that raised each. A lone-model finding is kept and read, never dropped for being alone. Writes the synthesis note to `ARENA.md` in the working directory.
+
+- **Args:** a task in the user's words, or a review skill with its scope.
+- **Output:** the artifact (or the act-on list), and `ARENA.md` — base, grafts with sources, rejections, verification; or intent, reviewers, the four buckets, agreement map.
+- **Reach for it when:** one attempt at a non-trivial artifact would lock in the wrong shape, or a change is wide enough that different models will catch different real bugs.
 
 ### `/ds-blast-radius` — action
 

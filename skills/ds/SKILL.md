@@ -51,6 +51,7 @@ Turn on the relevant **Modes** (below) for the build — they set the engineerin
 - `/ds-clarity-review` — is the prose understandable? Plain-language review of any text.
 - `/ds-notebook-review` — notebook state, output hygiene, reproducibility.
 - `/ds-quality-gate` — run the review pipeline as a gate over the whole branch/feature.
+- `/ds-arena` — fan a task or a review skill out to several models, cross-judge, and synthesize one result with an `ARENA.md` note.
 - `/ds-osv` — scan dependencies for known vulnerabilities (OSV).
 - `/ds-semgrep` — run a local SAST scan with Semgrep for code-level security patterns.
 

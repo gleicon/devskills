@@ -1,0 +1,8 @@
+# Task mode: the candidates each draft docs/usage.md; the synthesis note
+# ARENA.md must record the base, the grafts and the rejections.
+task: "Run /ds-arena write docs/usage.md as TODO.md describes."
+tier: structural
+elements:
+  - "## Base"
+  - "## Grafts"
+  - "## Rejected"

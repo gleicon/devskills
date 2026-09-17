@@ -1,0 +1,17 @@
+# Review mode: the arena runs /ds-bug-review on every candidate and reports
+# the verified union. Three planted defects of distinct types; a hit requires
+# the output to mention the file plus any keyword. Keywords are fix phrases,
+# never tokens of the planted lines.
+task: "Run /ds-arena /ds-bug-review on this branch."
+tier: planted-defect
+style: report
+expectations:
+  # New no longer allocates items, so the first Set writes to a nil map.
+  - file: cache/cache.go
+    keywords: [nil map, uninitialized map, allocate the map, make(map]
+  # evict loops while len >= Limit, so the cache holds Limit-1 entries.
+  - file: cache/cache.go
+    keywords: [off-by-one, one fewer, Limit-1, strictly greater]
+  # Snapshot discards both errors and always returns nil.
+  - file: cache/cache.go
+    keywords: [swallow, discarded error, always returns nil, propagate]

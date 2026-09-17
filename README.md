@@ -95,6 +95,7 @@ The **phase spine** follows the arc of a change. The groups below it — modes, 
 | **Review** | `/ds-code-quality-review` | maintainability + single source of truth |
 | | `/ds-bug-review` | correctness — real bugs, not style |
 | | `/ds-blast-radius` | what the change breaks beyond the diff, with the one safety fact proven by running code |
+| | `/ds-arena` | run a task or a review as N candidates on different models, then synthesize into one |
 | | `/ds-security-review` | exploitable weaknesses; each finding names the attack |
 | | `/ds-agent-review` | AI agent systems — tool permissions, prompt injection, approval gates |
 | | `/ds-semgrep` | local SAST scan with Semgrep (pairs with /ds-security-review) |
