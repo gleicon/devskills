@@ -231,6 +231,7 @@ devskills builds on these upstream sources.
 | [Tiger Style](https://tigerstyle.dev/) | `/ds-tiger-style-mode`, all review skills |
 | [mattpocock/skills](https://github.com/mattpocock/skills) | `/ds-grill-me`, `/ds-handoff`, `/ds-zoom-out`, `/ds-tdd-mode` |
 | [cursor-team-kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit/skills) | `/ds-code-quality-review`, `/ds-deslop`, `/ds-verify-this` |
+| [pstack](https://github.com/cursor/plugins/tree/main/pstack) | `/ds-how`, `/ds-blast-radius`, `/ds-reflect`, `/ds-arena`, six rules in the `AGENTS.md` baseline |
 | [Andrej Karpathy](https://x.com/karpathy/status/2015883857489522876) · [andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) | the `AGENTS.md` baseline |
 | [recall](https://github.com/gleicon/recall) | `/ds-recall`, `/ds-recall-capture`, `/ds-recall-setup` |
 
