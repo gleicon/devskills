@@ -100,3 +100,17 @@ func TestLoadVersionsNoDefaultBranch(t *testing.T) {
 		t.Errorf("error = %v, want no-default-branch", err)
 	}
 }
+
+func TestLoadSkills(t *testing.T) {
+	root := skillRepo(t, "main")
+	skills, err := LoadSkills(root, []string{"ds-x"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(skills) != 1 || skills[0].Name != "ds-x" || string(skills[0].Files["SKILL.md"]) != "NEW\n" || string(skills[0].Files["guide.md"]) != "NEWGUIDE\n" {
+		t.Errorf("skills = %+v, want ds-x from the working tree with its companion", skills)
+	}
+	if _, err := LoadSkills(root, []string{"ds-missing"}); err == nil || !strings.Contains(err.Error(), "ds-missing") {
+		t.Errorf("error = %v, want the missing skill named", err)
+	}
+}

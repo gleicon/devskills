@@ -2,6 +2,7 @@ package bench
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -43,15 +44,15 @@ type Result struct {
 type Runner struct {
 	Harness harness.ID
 	Model   string
-	Timeout time.Duration // 0 means DefaultTimeout
+	Timeout time.Duration // 0 defers to the scenario's timeout, then DefaultTimeout
 }
 
 // Run benches one skill version against one scenario: materialize the fixture
-// into a fresh sandbox, install the version project-locally, invoke the
-// harness headlessly in the sandbox, capture output and the post-run diff.
-// The returned error is infrastructural (sandbox, git); harness failures land
-// in Result.Err.
-func (r Runner) Run(ctx context.Context, s *Scenario, skill SkillVersion) (Result, error) {
+// into a fresh sandbox, install the version project-locally alongside extras
+// (the scenario's Skills), invoke the harness headlessly in the sandbox,
+// capture output and the post-run diff. The returned error is infrastructural
+// (sandbox, git); harness failures land in Result.Err.
+func (r Runner) Run(ctx context.Context, s *Scenario, skill SkillVersion, extras []SkillVersion) (Result, error) {
 	argv, err := headlessArgs(r.Harness, s.Task, r.Model, skill.Name)
 	if err != nil {
 		return Result{}, err
@@ -75,14 +76,11 @@ func (r Runner) Run(ctx context.Context, s *Scenario, skill SkillVersion) (Resul
 	if err := excludeHarnessDirs(sandbox); err != nil {
 		return Result{}, err
 	}
-	if err := installSkill(sandbox, r.Harness, skill); err != nil {
+	if err := installSkills(sandbox, r.Harness, append([]SkillVersion{skill}, extras...)); err != nil {
 		return Result{}, err
 	}
 
-	timeout := r.Timeout
-	if timeout == 0 {
-		timeout = DefaultTimeout
-	}
+	timeout := cmp.Or(r.Timeout, s.Timeout, DefaultTimeout)
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
@@ -148,18 +146,20 @@ func headlessArgs(id harness.ID, task, model, skill string) ([]string, error) {
 	return nil, fmt.Errorf("harness %q is not supported by bench", id)
 }
 
-// installSkill writes the skill version — its full directory, companions
-// included — under the harness's project-local skills path in the sandbox,
-// reusing the sync engine with a one-skill in-memory catalog so install
-// semantics (layout, Codex sidecar) stay single-sourced.
-func installSkill(sandbox string, id harness.ID, skill SkillVersion) error {
+// installSkills writes each skill — its full directory, companions included —
+// under the harness's project-local skills path in the sandbox, reusing the
+// sync engine with an in-memory catalog so install semantics (layout, Codex
+// sidecar) stay single-sourced.
+func installSkills(sandbox string, id harness.ID, skills []SkillVersion) error {
 	dir, err := harness.Resolver{ProjectRoot: sandbox}.SkillsDir(id, harness.Local)
 	if err != nil {
 		return err
 	}
 	catalog := fstest.MapFS{}
-	for rel, data := range skill.Files {
-		catalog["skills/"+skill.Name+"/"+rel] = &fstest.MapFile{Data: data}
+	for _, skill := range skills {
+		for rel, data := range skill.Files {
+			catalog["skills/"+skill.Name+"/"+rel] = &fstest.MapFile{Data: data}
+		}
 	}
 	eng := devsync.New(catalog)
 	plan, err := eng.Plan(devsync.Target{Name: id.Name(), SkillsDir: dir, Codex: id == harness.Codex})

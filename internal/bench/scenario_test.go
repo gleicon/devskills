@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 // writeScenario builds a scenario dir under a temp root with the given
@@ -44,6 +45,20 @@ func TestLoadScenarioValid(t *testing.T) {
 	}
 	if len(s.Expectations) != 1 || s.Expectations[0].File != "main.go" || len(s.Expectations[0].Keywords) != 2 {
 		t.Errorf("expectations = %+v", s.Expectations)
+	}
+}
+
+func TestLoadScenarioSkillsAndTimeout(t *testing.T) {
+	y := validReport + "skills: [ds-bug-review]\ntimeout: 20m\n"
+	s, err := LoadScenario(writeScenario(t, "s", y, "base", "change"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(s.Skills) != 1 || s.Skills[0] != "ds-bug-review" {
+		t.Errorf("skills = %v, want [ds-bug-review]", s.Skills)
+	}
+	if s.Timeout != 20*time.Minute {
+		t.Errorf("timeout = %s, want 20m", s.Timeout)
 	}
 }
 
@@ -97,6 +112,10 @@ func TestLoadScenarioRejectsMalformed(t *testing.T) {
 		{"apply without anchors", "task: t\ntier: planted-defect\nstyle: apply\nexpectations:\n  - {file: f, keywords: [k]}\n", []string{"base", "change"}, "requires anchors"},
 		{"report keyword shared across expectations", "task: t\ntier: planted-defect\nstyle: report\nexpectations:\n  - {file: f, keywords: [Dead Code]}\n  - {file: g, keywords: [dead code]}\n", []string{"base", "change"}, "collides"},
 		{"report keyword substring collision", "task: t\ntier: planted-defect\nstyle: report\nexpectations:\n  - {file: f, keywords: [narrating comment]}\n  - {file: g, keywords: [comment]}\n", []string{"base", "change"}, "collides"},
+		{"skill name with path", "task: t\ntier: smoke\nskills: [../ds-x]\n", []string{"base", "change"}, "bare skill name"},
+		{"empty skill name", "task: t\ntier: smoke\nskills: [\"\"]\n", []string{"base", "change"}, "bare skill name"},
+		{"negative timeout", "task: t\ntier: smoke\ntimeout: -1m\n", []string{"base", "change"}, "must not be negative"},
+		{"unparseable timeout", "task: t\ntier: smoke\ntimeout: soon\n", []string{"base", "change"}, "invalid duration"},
 		{"structural without elements", "task: t\ntier: structural\n", []string{"base", "change"}, "requires elements"},
 		{"structural with expectations", "task: t\ntier: structural\nelements: [E]\nexpectations:\n  - {file: f, keywords: [k]}\n", []string{"base", "change"}, "elements only"},
 		{"smoke with elements", "task: t\ntier: smoke\nelements: [E]\n", []string{"base", "change"}, "no style, expectations, or elements"},

@@ -52,6 +52,21 @@ func LoadVersions(root, skill string) ([]SkillVersion, error) {
 	return []SkillVersion{{Name: skill, Label: LabelOld, SHA: trimSHA(oldSHA), Files: old}, newV}, nil
 }
 
+// LoadSkills reads the named skills from the working tree, for installing
+// beside the skill under bench. They are never versioned or reported, so
+// they carry no label or SHA.
+func LoadSkills(root string, names []string) ([]SkillVersion, error) {
+	skills := make([]SkillVersion, 0, len(names))
+	for _, name := range names {
+		files, err := workingTreeFiles(root, name)
+		if err != nil {
+			return nil, err
+		}
+		skills = append(skills, SkillVersion{Name: name, Files: files})
+	}
+	return skills, nil
+}
+
 // workingTreeFiles reads the skill's directory from the working tree, keyed by
 // slash-separated path relative to skills/<skill>/.
 func workingTreeFiles(root, skill string) (map[string][]byte, error) {

@@ -3,6 +3,8 @@
 # the output to mention the file plus any keyword. Keywords are fix phrases,
 # never tokens of the planted lines.
 task: "Run /ds-arena /ds-bug-review on this branch."
+skills: [ds-bug-review]
+timeout: 20m
 tier: planted-defect
 style: report
 expectations:

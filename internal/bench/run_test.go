@@ -45,7 +45,7 @@ echo "one warning" >&2
 	skill := benchSkill("SKILLBODY\n")
 	skill.Files["ref.md"] = []byte("COMPANION\n")
 	r := Runner{Harness: harness.Claude, Model: "pin-model"}
-	res, err := r.Run(context.Background(), fixtureScenario(t), skill)
+	res, err := r.Run(context.Background(), fixtureScenario(t), skill, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -88,7 +88,7 @@ export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null
 git add -A
 git -c user.name=h -c user.email=h@h commit -q -m done`)
 	r := Runner{Harness: harness.Claude, Model: "m"}
-	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"))
+	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -103,7 +103,7 @@ git -c user.name=h -c user.email=h@h commit -q -m done`)
 func TestRunnerRecordsFailure(t *testing.T) {
 	fakeClaude(t, `echo "boom" >&2; exit 3`)
 	r := Runner{Harness: harness.Claude, Model: "m"}
-	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"))
+	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -118,12 +118,55 @@ func TestRunnerRecordsFailure(t *testing.T) {
 func TestRunnerRecordsTimeout(t *testing.T) {
 	fakeClaude(t, `sleep 5`)
 	r := Runner{Harness: harness.Claude, Model: "m", Timeout: 100 * time.Millisecond}
-	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"))
+	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if res.Err == nil || !strings.Contains(res.Err.Error(), "timed out") {
 		t.Errorf("Result.Err = %v, want timeout", res.Err)
+	}
+}
+
+func TestRunnerScenarioTimeoutPrecedence(t *testing.T) {
+	tests := []struct {
+		name     string
+		runner   time.Duration
+		scenario time.Duration
+		want     string
+	}{
+		{"scenario timeout replaces the default", 0, 100 * time.Millisecond, "timed out after 100ms"},
+		{"runner timeout beats the scenario", 100 * time.Millisecond, 10 * time.Second, "timed out after 100ms"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fakeClaude(t, `sleep 5`)
+			s := fixtureScenario(t)
+			s.Timeout = tt.scenario
+			r := Runner{Harness: harness.Claude, Model: "m", Timeout: tt.runner}
+			res, err := r.Run(context.Background(), s, benchSkill("s"), nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if res.Err == nil || !strings.Contains(res.Err.Error(), tt.want) {
+				t.Errorf("Result.Err = %v, want %q", res.Err, tt.want)
+			}
+		})
+	}
+}
+
+func TestRunnerInstallsExtraSkills(t *testing.T) {
+	fakeClaude(t, `cat .claude/skills/ds-x/SKILL.md .claude/skills/ds-y/SKILL.md`)
+	extra := SkillVersion{Name: "ds-y", Files: map[string][]byte{"SKILL.md": []byte("EXTRABODY\n")}}
+	r := Runner{Harness: harness.Claude, Model: "m"}
+	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("SKILLBODY\n"), []SkillVersion{extra})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Err != nil {
+		t.Fatalf("Result.Err = %v", res.Err)
+	}
+	if !strings.Contains(res.Stdout, "SKILLBODY") || !strings.Contains(res.Stdout, "EXTRABODY") {
+		t.Errorf("stdout = %q, want both the skill under test and the extra installed", res.Stdout)
 	}
 }
 
@@ -139,7 +182,7 @@ func TestRunnerMissingCLI(t *testing.T) {
 	}
 	t.Setenv("PATH", bin)
 	r := Runner{Harness: harness.Claude, Model: "m"}
-	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"))
+	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -154,7 +197,7 @@ func TestRunnerCodexInvocation(t *testing.T) {
 	fakeCLI(t, "codex", `printf '%s\n' "$@" > "$ARGS_OUT"
 cat .codex/skills/ds-x/agents/openai.yaml`)
 	r := Runner{Harness: harness.Codex, Model: "codex-model"}
-	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("S"))
+	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("S"), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -183,7 +226,7 @@ func TestRunnerOpenCodeInvocation(t *testing.T) {
 [ -d "$OPENCODE_CONFIG_DIR" ] && [ -z "$(ls -A "$OPENCODE_CONFIG_DIR")" ] && [ "$OPENCODE_DISABLE_CLAUDE_CODE" = 1 ] && echo ISOLATED
 cat .opencode/skills/ds-x/SKILL.md`)
 	r := Runner{Harness: harness.OpenCode, Model: "anthropic/some-model"}
-	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("OCSKILL"))
+	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("OCSKILL"), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
