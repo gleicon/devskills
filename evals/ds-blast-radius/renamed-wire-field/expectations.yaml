@@ -1,0 +1,20 @@
+# Three planted breaks, each outside the diff; report style: a hit requires
+# the output to mention the changed file plus any keyword. Keywords are fix
+# phrases, never tokens of the planted lines, so quoting the diff back does
+# not score.
+task: "Run /ds-blast-radius on this branch."
+tier: planted-defect
+style: report
+expectations:
+  # JSON tags renamed to camelCase: tools/report.sh reads owner_id/created_at
+  # with jq, and testdata/records.json is stored in the old keys.
+  - file: store/record.go
+    keywords: [jq, report.sh, wire format, snake_case]
+  # Now() switched from seconds to milliseconds: stored created_at values are
+  # seconds, so Age() is off by a factor of a thousand.
+  - file: store/clock.go
+    keywords: [unit mismatch, factor of 1000, thousand, seconds]
+  # Owner made required: the system record in testdata has an empty owner, so
+  # Load refuses the whole file.
+  - file: store/validate.go
+    keywords: [system record, empty owner, sys-bootstrap, refuses the whole file]

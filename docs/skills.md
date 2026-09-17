@@ -9,7 +9,7 @@ A skill's **suffix tells you its kind**:
 - **`-mode`** — persistent, toggleable session behavior; changes *how* the agent works until you turn it off. *tiger-style, ui, data, git, step, tdd, test, interaction.*
 - **`-review`** — a findings-list audit. Report-only by default (several take `--fix`); findings are independent and fixable in any order. *bug, security, agent, data, code-quality, doc-quality, test-quality, ui-quality, comment, clarity, notebook, the seven language reviews, and — named for their tools rather than the suffix — osv and semgrep.*
 - **`-plan`** — graded, sequenced moves that each carry a trade-off or dependency, so the output is a *plan*, not a verdict. *perf-plan, architecture-plan.*
-- **no suffix** — a one-shot action that produces a result and returns. *spec, roadmap, explore, blueprint, grill-me, retro, debug, deslop, humanize, verify-this, zoom-out, how, onboarding, handoff, tldt, quality-gate, the recall trio, and the project-\* family.*
+- **no suffix** — a one-shot action that produces a result and returns. *spec, roadmap, explore, blueprint, grill-me, retro, debug, deslop, humanize, verify-this, blast-radius, zoom-out, how, onboarding, handoff, tldt, quality-gate, the recall trio, and the project-\* family.*
 - **language profiles** — configured per project via `devskills init --lang`, not invoked as slash commands (see the [README](../README.md#language-profiles)).
 
 Everything except `-mode` runs once and finishes; a `-mode` stays on. The per-skill headings below tag each one with its kind. Each skill is self-contained; a few use an external tool when it's present — `/ds-osv`, `/ds-semgrep`, `/ds-tldt`, and `/ds-security-review`'s structural pass — which `devskills doctor` can install.
@@ -343,6 +343,14 @@ Prove or disprove a **falsifiable** claim with fresh local evidence — not a re
 
 - **Args:** the claim to verify. Refuses vague claims ("the code is cleaner") — give it something measurable.
 - **Reach for it when:** "did this actually fix it?", a bugfix needs a before/after repro, or a perf/memory/UI claim needs measurement.
+
+### `/ds-blast-radius` — action
+
+Trace what a change could break **beyond the diff** — a consumer in another language, a stored format, a unit or ordering assumption, code three hops downstream — then name the one fact the change is safe because of and prove it by running real code, not by writing it up. Every safety fact carries its rung on the evidence ladder (said so → pointed at the line → walked the bad case → ran it → reproduced it); anything short of "ran it" is reported as unproven. Closes with the minimal test that would have caught the break. `/ds-bug-review` asks whether the diff is correct in itself; this asks what it changes for everything that was not in it.
+
+- **Args:** a diff, commit range, or files. With none, the code changed on the current branch.
+- **Output:** what it does, the one safety fact with its proof (or *unproven*), real risks with `file:line`, what was cleared, and the before-you-merge test.
+- **Reach for it when:** "what could this break?", a small diff you don't trust yet, or a change to a shared type, format, default, or unit.
 
 ---
 
