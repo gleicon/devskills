@@ -173,6 +173,21 @@ Then write the PR description from what you learned and `gh pr ready`. Each step
 
 ---
 
+## A wide change: arena the review
+
+One reviewer, one model, one set of blind spots. When a change is wide enough that different models will catch different real bugs, run the review as an arena and read the union:
+
+```
+/ds-blast-radius                 # 1. what does this break outside the diff? proves the one safety fact by running code
+/ds-arena /ds-bug-review         # 2. every candidate model runs the same review; the merge is a verified union
+/ds-arena /ds-security-review    # 3. same, when the change touches input, auth, secrets, or I/O
+/ds-verify-this <claim>          # 4. prove the headline change holds
+```
+
+The arena pastes the review skill's text into each candidate — a subagent cannot invoke a user-invoked skill — and hands back `ARENA.md`: the act-on list first, then consider, noted and dismissed, each finding tagged with the models that raised it. A finding only one model produced is kept and verified, never dropped for being alone. The agreement map at the end tells you where the models converged and where the change is genuinely ambiguous. Costs N reviews instead of one; reach for it on the change you would otherwise ask two colleagues to read.
+
+---
+
 ## A standalone build loop
 
 This loop covers the full spec-to-ship ground — spec, plan, build, verify, ship — using only standalone skills:

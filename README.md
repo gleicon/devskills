@@ -80,6 +80,7 @@ The **phase spine** follows the arc of a change. The groups below it — modes, 
 | Phase | Skill | What it does |
 |-------|-------|--------------|
 | **Orient** | `/ds-zoom-out` | step up a level — map how the code fits before you change it |
+| | `/ds-how` | explain how a subsystem works — concepts, runtime flow, where things live |
 | | `/ds-onboarding` | brief a new teammate: ownership, rituals, a safe first contribution |
 | **Spec** | `/ds-spec` | turn a description into a structured spec with acceptance criteria |
 | | `/ds-explore` | at a fork, lay out candidate approaches without deciding |
@@ -93,6 +94,8 @@ The **phase spine** follows the arc of a change. The groups below it — modes, 
 | | `/ds-humanize` | remove AI tells from prose — filler, hedging, signposting, chatbot artifacts |
 | **Review** | `/ds-code-quality-review` | maintainability + single source of truth |
 | | `/ds-bug-review` | correctness — real bugs, not style |
+| | `/ds-blast-radius` | what the change breaks beyond the diff, with the one safety fact proven by running code |
+| | `/ds-arena` | run a task or a review as N candidates on different models, then synthesize into one |
 | | `/ds-security-review` | exploitable weaknesses; each finding names the attack |
 | | `/ds-agent-review` | AI agent systems — tool permissions, prompt injection, approval gates |
 | | `/ds-semgrep` | local SAST scan with Semgrep (pairs with /ds-security-review) |
@@ -108,6 +111,7 @@ The **phase spine** follows the arc of a change. The groups below it — modes, 
 | **Verify** | `/ds-verify-this` | a before/after repro with a hard verdict |
 | **Ship** | `/ds-handoff` | compact the session into a handoff doc |
 | | `/ds-retro` | post-release: compare decided vs shipped, distill rules |
+| | `/ds-reflect` | mine the session for lessons and propose exact skill or `AGENTS.md` edits; applies nothing before a yes |
 
 Every review reports by default and changes nothing; most take `--fix` to apply the mechanical, unambiguous findings, and `--full` to widen scope from the branch diff to the whole codebase (the tool-backed `/ds-osv` and `/ds-semgrep` scope by path instead).
 
@@ -227,6 +231,7 @@ devskills builds on these upstream sources.
 | [Tiger Style](https://tigerstyle.dev/) | `/ds-tiger-style-mode`, all review skills |
 | [mattpocock/skills](https://github.com/mattpocock/skills) | `/ds-grill-me`, `/ds-handoff`, `/ds-zoom-out`, `/ds-tdd-mode` |
 | [cursor-team-kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit/skills) | `/ds-code-quality-review`, `/ds-deslop`, `/ds-verify-this` |
+| [pstack](https://github.com/cursor/plugins/tree/main/pstack) | `/ds-how`, `/ds-blast-radius`, `/ds-reflect`, `/ds-arena`, six rules in the `AGENTS.md` baseline |
 | [Andrej Karpathy](https://x.com/karpathy/status/2015883857489522876) · [andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) | the `AGENTS.md` baseline |
 | [recall](https://github.com/gleicon/recall) | `/ds-recall`, `/ds-recall-capture`, `/ds-recall-setup` |
 

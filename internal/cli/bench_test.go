@@ -412,6 +412,38 @@ func TestRunBenchReproCarriesTimeout(t *testing.T) {
 	}
 }
 
+func TestRunBenchInstallsScenarioSkills(t *testing.T) {
+	root := benchRoot(t, "alpha")
+	writeFile(t, root, "skills/ds-y/SKILL.md", "EXTRASKILL\n")
+	writeFile(t, root, "evals/ds-x/alpha/expectations.yaml", `task: "Do the thing"
+tier: smoke
+skills: [ds-y]
+`)
+	fakeClaudeCLI(t, `cat .claude/skills/ds-y/SKILL.md`)
+	var out strings.Builder
+	if err := runBench(context.Background(), &out, io.Discard, root, benchOptions{Skill: "ds-x", Runs: 1}); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out.String(), "EXTRASKILL") {
+		t.Errorf("output = %q, want the scenario's declared skill installed in the sandbox", out.String())
+	}
+}
+
+func TestRunBenchUnknownScenarioSkillFailsBeforeRuns(t *testing.T) {
+	root := benchRoot(t, "alpha")
+	writeFile(t, root, "evals/ds-x/alpha/expectations.yaml", "task: t\ntier: smoke\nskills: [ds-missing]\n")
+	marker := filepath.Join(t.TempDir(), "ran")
+	t.Setenv("MARKER", marker)
+	fakeClaudeCLI(t, `touch "$MARKER"`)
+	err := runBench(context.Background(), &strings.Builder{}, io.Discard, root, benchOptions{Skill: "ds-x", Runs: 1})
+	if err == nil || !strings.Contains(err.Error(), "ds-missing") {
+		t.Errorf("error = %v, want the missing skill named", err)
+	}
+	if _, statErr := os.Stat(marker); statErr == nil {
+		t.Error("harness ran despite the scenario naming an unknown skill")
+	}
+}
+
 func TestRunBenchDedupesHarnesses(t *testing.T) {
 	root := benchRoot(t, "alpha")
 	fakeClaudeCLI(t, `echo ok`)

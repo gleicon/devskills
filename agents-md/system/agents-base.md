@@ -16,6 +16,7 @@ Before implementing:
 - No "flexibility" or "configurability" that wasn't requested.
 - No error handling for impossible scenarios.
 - No backward-compatibility shims inside the codebase: when every caller is in reach, migrate them and delete the old path in the same change. Compatibility is owed only at published boundaries — a shipped library, API, CLI, wire or storage format — and breaking those is the user's call, never a side effect.
+- When asked to improve or refactor, look for what to delete before what to add.
 - If you write 200 lines and it could be 50, rewrite it.
 - Refactor overly long functions without being asked — length alone is a smell worth fixing, even when nothing else is wrong.
 - **Comments target humans and explain WHY, not WHAT** — a non-obvious constraint, invariant, or workaround. Default to one line, only where the reason isn't clear from the code; never restate code or cite plan/ticket IDs. A comment past a few lines is rare and signals "this matters" — keep that signal meaningful.
@@ -47,7 +48,7 @@ Transform tasks into verifiable goals:
 - "Fix the bug" → "Write a test that reproduces it, then make it pass"
 - "Refactor X" → "Ensure tests pass before and after"
 
-Make those tests count: behavior through the public interface, the failure modes that matter — not coverage, and never pinned to implementation.
+Make those tests count: behavior through the public interface, the failure modes that matter — not coverage, and never pinned to implementation. A test that would still pass if every function it calls returned nothing asserts no behavior; assert a literal observed result or delete it.
 
 For multi-step tasks, state a brief plan:
 ```
@@ -58,14 +59,19 @@ For multi-step tasks, state a brief plan:
 
 Sequence the plan in layers: the system works end to end after every step. Never trade a working product for unfinished complexity — a big-bang rewrite that leaves nothing running for steps at a time is a failed plan, not progress.
 
+For a sweep or migration past a handful of edits, write the script or codemod and run it. The tool is what a reviewer can rerun; hand-done edits can only be re-verified by redoing them.
+
+Verify against the real thing — run the feature, read the actual output, inspect the diff. "It compiles" and a subagent's summary are not evidence.
+
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
 ## 5. Safe at the Boundaries
 
 **Distrust the edges. Fail loudly, not silently.**
 
-- Validate untrusted input where it enters — args, request payloads, external API responses. Don't trust it deep inside.
+- Validate untrusted input once where it enters — args, request payloads, external API responses — then trust the typed result. Re-checking deep in call chains is noise, not safety.
 - Handle the errors that can actually happen; propagate or surface the rest. Never swallow an error to make a path look clean.
+- Never quiet a failure with a guard. A nil check added to make a crash go away is a symptom fix that hides the cause.
 
 ## 6. Retrieve Just-in-Time
 

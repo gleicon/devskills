@@ -26,7 +26,7 @@ type benchOptions struct {
 	Harness  string        // comma-separated harness IDs; empty means claude only
 	Format   string        // "" streams raw runs; "pr-md" emits the markdown report
 	Out      string        // pr-md destination file; empty writes to stdout
-	Timeout  time.Duration // per-run bound; 0 means bench.DefaultTimeout
+	Timeout  time.Duration // per-run bound; 0 defers to the scenario, then bench.DefaultTimeout
 }
 
 func newBenchCmd() *cobra.Command {
@@ -51,7 +51,7 @@ func newBenchCmd() *cobra.Command {
 	f.StringVar(&opts.Harness, "harness", "claude", "comma-separated assistants to bench (claude,codex,opencode)")
 	f.StringVar(&opts.Format, "format", "", `output format: "pr-md" for the PR-ready markdown report`)
 	f.StringVar(&opts.Out, "out", "", "with --format pr-md, write the report to this file")
-	f.DurationVar(&opts.Timeout, "timeout", bench.DefaultTimeout, "per-run timeout")
+	f.DurationVar(&opts.Timeout, "timeout", 0, "per-run timeout (default the scenario's timeout, else "+bench.DefaultTimeout.String()+")")
 	return cmd
 }
 
@@ -112,6 +112,7 @@ type benchRun struct {
 	models    map[harness.ID]string
 	versions  []bench.SkillVersion
 	scenarios []*bench.Scenario
+	extras    map[string][]bench.SkillVersion // scenario name -> its declared skills
 	baseline  bool
 }
 
@@ -168,9 +169,17 @@ func loadBenchRun(root string, opts benchOptions) (benchRun, error) {
 	} else if scenarios, err = bench.LoadScenarios(filepath.Join(root, "evals"), opts.Skill); err != nil {
 		return benchRun{}, err
 	}
+	// Scenario-declared skills load up front too, so a bad name fails
+	// before any run spends tokens.
+	extras := map[string][]bench.SkillVersion{}
+	for _, s := range scenarios {
+		if extras[s.Name], err = bench.LoadSkills(root, s.Skills); err != nil {
+			return benchRun{}, fmt.Errorf("scenario %s: %w", s.Name, err)
+		}
+	}
 	return benchRun{
 		opts: opts, harnesses: harnesses, models: models,
-		versions: versions, scenarios: scenarios, baseline: len(versions) == 1,
+		versions: versions, scenarios: scenarios, extras: extras, baseline: len(versions) == 1,
 	}, nil
 }
 
@@ -188,7 +197,7 @@ func (b benchRun) runHarness(ctx context.Context, stream io.Writer, h harness.ID
 				total++
 				lipgloss.Fprintf(stream, "== %s/%s %s run %d/%d (%s, model %s)\n",
 					b.opts.Skill, s.Name, v.Label, i, b.opts.Runs, h.Name(), model)
-				res, err := runner.Run(ctx, s, v)
+				res, err := runner.Run(ctx, s, v, b.extras[s.Name])
 				if err != nil {
 					return bench.HarnessReport{}, 0, 0, err
 				}

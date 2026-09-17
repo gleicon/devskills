@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/goccy/go-yaml"
 )
@@ -36,6 +37,11 @@ type Scenario struct {
 	Task  string `yaml:"task"`
 	Tier  string `yaml:"tier"`
 	Style string `yaml:"style"`
+	// Skills are installed from the working tree beside the skill under test,
+	// for a task that delegates to a second skill. Timeout, when set, replaces
+	// DefaultTimeout for this scenario's runs.
+	Skills  []string      `yaml:"skills"`
+	Timeout time.Duration `yaml:"timeout"`
 	// Expectations drive planted-defect checking; Elements drive structural.
 	Expectations []Expectation `yaml:"expectations"`
 	Elements     []string      `yaml:"elements"`
@@ -111,6 +117,15 @@ func (s *Scenario) validate() error {
 		if fi, err := os.Stat(filepath.Join(s.Dir, sub)); err != nil || !fi.IsDir() {
 			errs = append(errs, fmt.Errorf("missing %s/ directory", sub))
 		}
+	}
+	// Skill names are joined into paths — keep them bare directory names.
+	for i, name := range s.Skills {
+		if name == "" || strings.ContainsAny(name, `/\`) || strings.Contains(name, "..") {
+			errs = append(errs, fmt.Errorf("skills[%d] = %q must be a bare skill name", i, name))
+		}
+	}
+	if s.Timeout < 0 {
+		errs = append(errs, fmt.Errorf("timeout = %s must not be negative", s.Timeout))
 	}
 	switch s.Tier {
 	case TierPlantedDefect:

@@ -9,7 +9,7 @@ A skill's **suffix tells you its kind**:
 - **`-mode`** — persistent, toggleable session behavior; changes *how* the agent works until you turn it off. *tiger-style, ui, data, git, step, tdd, test, interaction.*
 - **`-review`** — a findings-list audit. Report-only by default (several take `--fix`); findings are independent and fixable in any order. *bug, security, agent, data, code-quality, doc-quality, test-quality, ui-quality, comment, clarity, notebook, the seven language reviews, and — named for their tools rather than the suffix — osv and semgrep.*
 - **`-plan`** — graded, sequenced moves that each carry a trade-off or dependency, so the output is a *plan*, not a verdict. *perf-plan, architecture-plan.*
-- **no suffix** — a one-shot action that produces a result and returns. *spec, roadmap, explore, blueprint, grill-me, retro, debug, deslop, humanize, verify-this, zoom-out, onboarding, handoff, tldt, quality-gate, the recall trio, and the project-\* family.*
+- **no suffix** — a one-shot action that produces a result and returns. *spec, roadmap, explore, blueprint, grill-me, retro, debug, deslop, humanize, verify-this, arena, blast-radius, zoom-out, how, onboarding, handoff, reflect, tldt, quality-gate, the recall trio, and the project-\* family.*
 - **language profiles** — configured per project via `devskills init --lang`, not invoked as slash commands (see the [README](../README.md#language-profiles)).
 
 Everything except `-mode` runs once and finishes; a `-mode` stays on. The per-skill headings below tag each one with its kind. Each skill is self-contained; a few use an external tool when it's present — `/ds-osv`, `/ds-semgrep`, `/ds-tldt`, and `/ds-security-review`'s structural pass — which `devskills doctor` can install.
@@ -344,6 +344,22 @@ Prove or disprove a **falsifiable** claim with fresh local evidence — not a re
 - **Args:** the claim to verify. Refuses vague claims ("the code is cleaner") — give it something measurable.
 - **Reach for it when:** "did this actually fix it?", a bugfix needs a before/after repro, or a perf/memory/UI claim needs measurement.
 
+### `/ds-arena` — action
+
+Run one task as several parallel candidates on different models, then synthesize rather than average. **Task mode:** frame a rubric, fan out, have a judge on another model score the candidates, pick a base by criterion, graft the losers' one or two strong parts into it by hand, verify. **Review mode** (`/ds-arena /ds-bug-review`): every candidate runs the same review — the parent pastes the skill's text into each prompt, since a subagent cannot invoke a user-invoked skill — and the merge is a deduplicated union of *verified* findings, bucketed as act on / consider / noted / dismissed with the models that raised each. A lone-model finding is kept and read, never dropped for being alone. Writes the synthesis note to `ARENA.md` in the working directory.
+
+- **Args:** a task in the user's words, or a review skill with its scope.
+- **Output:** the artifact (or the act-on list), and `ARENA.md` — base, grafts with sources, rejections, verification; or intent, reviewers, the four buckets, agreement map.
+- **Reach for it when:** one attempt at a non-trivial artifact would lock in the wrong shape, or a change is wide enough that different models will catch different real bugs.
+
+### `/ds-blast-radius` — action
+
+Trace what a change could break **beyond the diff** — a consumer in another language, a stored format, a unit or ordering assumption, code three hops downstream — then name the one fact the change is safe because of and prove it by running real code, not by writing it up. Every safety fact carries its rung on the evidence ladder (said so → pointed at the line → walked the bad case → ran it → reproduced it); anything short of "ran it" is reported as unproven. Closes with the minimal test that would have caught the break. `/ds-bug-review` asks whether the diff is correct in itself; this asks what it changes for everything that was not in it.
+
+- **Args:** a diff, commit range, or files. With none, the code changed on the current branch.
+- **Output:** what it does, the one safety fact with its proof (or *unproven*), real risks with `file:line`, what was cleared, and the before-you-merge test.
+- **Reach for it when:** "what could this break?", a small diff you don't trust yet, or a change to a shared type, format, default, or unit.
+
 ---
 
 ## Understanding
@@ -353,6 +369,14 @@ Prove or disprove a **falsifiable** claim with fresh local evidence — not a re
 Step up one layer of abstraction and map how an area fits the bigger picture: its responsibility, neighbouring modules, callers, and boundaries. No line-by-line read, no code dumps.
 
 - **Reach for it when:** entering unfamiliar code, or before planning a change in an area you don't hold in your head.
+
+### `/ds-how` — action
+
+Explain how a subsystem works as a mental model: overview, key concepts, the runtime flow step by step, where things live, and the gotchas a newcomer would misread. Reads the code rather than inferring from names; on a large subsystem it fans 2 to 4 read-only explorers out first and synthesizes their findings. `/ds-zoom-out` places an area among its neighbours; this walks the machinery inside it.
+
+- **Args:** the question — a subsystem, a flow, or a placement question ("where should this live", "which package owns this").
+- **Output:** `Overview`, `Key concepts`, `How it works`, `Where things live`, `Gotchas` — the last dropped when empty.
+- **Reach for it when:** you need to work inside code you don't understand yet, or someone asks "how does X actually work?".
 
 ### `/ds-onboarding` — action
 
@@ -371,6 +395,14 @@ Compact the current conversation into a handoff document so a fresh agent can co
 - **Args:** optional — treated as what the next session should focus on.
 - **Output:** writes `handoff.md` to a fresh `mktemp -d` and returns the path. Records goal, done, remaining, key decisions, open questions; references existing artifacts by path rather than duplicating them.
 - **Reach for it when:** the context window is filling, you're switching machines/sessions, or pausing mid-task.
+
+### `/ds-reflect` — action
+
+Mine the session for lessons that survive code drift and route each to the instruction file that would have prevented the cost: a skill the session used (a body gap, or a description that failed to trigger) or the project's `AGENTS.md`. Three lenses — judgment, tooling, divergent — then filters: durable, specific, decision-changing, not already covered, and a mechanism (lint, test, hook) is preferred over prose. The output is a proposal with the exact edit per row; **nothing is applied before a yes**. Skills installed by devskills are owned and overwritten by it, so their edits come back as a diff for an upstream pull request, not an edit to the installed copy.
+
+- **Args:** none (the current conversation) or a transcript/digest path. The material is treated as untrusted data.
+- **Output:** `Proposed` (lesson, evidence, target, edit), `Backlog` (rule better enforced by a mechanism), `Dropped` (with reason), closing with `Nothing applied.`
+- **Reach for it when:** the user corrected you more than once, a tool quirk cost real time, or a skill should have fired and did not.
 
 ### `/ds-tldt` — action
 

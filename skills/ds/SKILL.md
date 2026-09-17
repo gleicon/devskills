@@ -12,6 +12,7 @@ The phase spine is the usual arc of a change; the groups below it (modes, langua
 
 ### Orient — *"Where am I? What does this code do?"*
 - `/ds-zoom-out` — step up a level and map how the current code fits the bigger picture, before you change it.
+- `/ds-how` — explain how a subsystem works as a mental model: key concepts, the runtime flow, where things live, gotchas.
 - `/ds-onboarding` — onboard a new team member to a project: team context, ownership, rituals, and a safe first contribution.
 
 To restore a persisted session, see `/ds-project-resume` under Project memory.
@@ -39,6 +40,7 @@ Turn on the relevant **Modes** (below) for the build — they set the engineerin
 ### Review — *"Is it correct, safe, idiomatic, maintainable?"*
 - `/ds-code-quality-review` — maintainability + single-source-of-truth: is the diff making the codebase worse?
 - `/ds-bug-review` — correctness: real bugs, not style.
+- `/ds-blast-radius` — what the change breaks beyond the diff; proves the one fact it's safe because of by running code, and emits the test that would catch the break.
 - `/ds-security-review` — exploitable weaknesses; reach for it when the change touches input, auth, secrets, or I/O.
 - `/ds-agent-review` — AI agent systems: tool permissions, prompt-injection exposure, memory isolation, approval gates, cost limits.
 - `/ds-data-review` — data-correctness, integrity, and migration-safety.
@@ -49,6 +51,7 @@ Turn on the relevant **Modes** (below) for the build — they set the engineerin
 - `/ds-clarity-review` — is the prose understandable? Plain-language review of any text.
 - `/ds-notebook-review` — notebook state, output hygiene, reproducibility.
 - `/ds-quality-gate` — run the review pipeline as a gate over the whole branch/feature.
+- `/ds-arena` — fan a task or a review skill out to several models, cross-judge, and synthesize one result with an `ARENA.md` note.
 - `/ds-osv` — scan dependencies for known vulnerabilities (OSV).
 - `/ds-semgrep` — run a local SAST scan with Semgrep for code-level security patterns.
 
@@ -60,6 +63,7 @@ For a specific language, prefer its **Language review** (below) — it folds in 
 ### Ship — *"Hand it off."*
 - `/ds-handoff` — compact the session into a handoff doc so a fresh agent or another person can continue.
 - `/ds-retro` — after a release, compare what SPEC/GRILL decided against what shipped and distill rules for the next cycle.
+- `/ds-reflect` — mine the session for durable lessons and propose exact edits to the skills it used or to `AGENTS.md`; nothing is applied before a yes.
 
 To persist `.project/` state before shipping, see `/ds-project-checkpoint` under Project memory. Then `git push` + `gh pr create`.
 
