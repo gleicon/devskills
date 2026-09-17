@@ -7,7 +7,7 @@ Every devskills skill is a single `SKILL.md` invoked as `/<name>` in Claude Code
 A skill's **suffix tells you its kind**:
 
 - **`-mode`** — persistent, toggleable session behavior; changes *how* the agent works until you turn it off. *tiger-style, ui, data, git, step, tdd, test, interaction.*
-- **`-review`** — a findings-list audit. Report-only by default (several take `--fix`); findings are independent and fixable in any order. *bug, security, data, code-quality, doc-quality, test-quality, ui-quality, comment, clarity, notebook, the six language reviews, and — named for their tools rather than the suffix — osv and semgrep.*
+- **`-review`** — a findings-list audit. Report-only by default (several take `--fix`); findings are independent and fixable in any order. *bug, security, agent, data, code-quality, doc-quality, test-quality, ui-quality, comment, clarity, notebook, the six language reviews, and — named for their tools rather than the suffix — osv and semgrep.*
 - **`-plan`** — graded, sequenced moves that each carry a trade-off or dependency, so the output is a *plan*, not a verdict. *perf-plan, architecture-plan.*
 - **no suffix** — a one-shot action that produces a result and returns. *spec, roadmap, explore, blueprint, grill-me, retro, debug, deslop, humanize, verify-this, zoom-out, onboarding, handoff, tldt, quality-gate, the recall trio, and the project-\* family.*
 - **language profiles** — configured per project via `devskills init --lang`, not invoked as slash commands (see the [README](../README.md#language-profiles)).
@@ -232,7 +232,7 @@ After each pass: shows findings for that pass, asks "accept all / reject all / s
 
 ## Reviews
 
-The review skills are a **layered gate, not competing alternatives** — cheapest and narrowest first, deepest last: `/ds-deslop` (noise) → `/ds-bug-review` (correctness) → `/ds-security-review` (exploitability) → `/ds-data-review` (data correctness, when the change touches schema/queries/transactions/migrations) → the language review (idioms) → `/ds-code-quality-review` (structure + single source of truth). Each answers a different question, so running several on the same code isn't redundant. The full pre-PR sequence is in [recipes.md](recipes.md#a-pre-pr-quality-gate).
+The review skills are a **layered gate, not competing alternatives** — cheapest and narrowest first, deepest last: `/ds-deslop` (noise) → `/ds-bug-review` (correctness) → `/ds-security-review` (exploitability) → `/ds-data-review` (data correctness, when the change touches schema/queries/transactions/migrations) → the language review (idioms) → `/ds-code-quality-review` (structure + single source of truth). Each answers a different question, so running several on the same code isn't redundant. `/ds-agent-review` sits outside that ladder — it reviews agent configuration rather than application code, so it runs when a change touches tools, prompts, memory, or approval logic. The full pre-PR sequence is in [recipes.md](recipes.md#a-pre-pr-quality-gate).
 
 ### `/ds-bug-review` — review
 
@@ -246,9 +246,17 @@ Language-agnostic **correctness** audit — the bug-hunting pass. Asks one thing
 
 Language-agnostic **security** audit — the portable counterpart to the per-language Security sections. Traces untrusted data from entry to dangerous sink: injection (SQL/command/path/SSRF/template), output handling (XSS, unsafe deserialization), broken access control (IDOR, privilege escalation), secrets and weak crypto, sensitive-data exposure, mass assignment / unsafe upload / DoS, and transport/config gaps.
 
-- **Args:** treated as scope (files, directories, globs); defaults to code changed on the current branch. `--full` widens scope to the whole codebase. An optional [ast-grep](ast-grep.md) structural pass widens reach when the tool is present.
+- **Args:** treated as scope (files, directories, globs); defaults to code changed on the current branch. `--full` widens scope to the whole codebase. An optional [ast-grep](ast-grep.md) structural pass widens reach when the tool is present. When the scope touches login, registration, password or address change, sessions, MFA, or an OAuth/OIDC/SAML integration, it also reads its `authn` companion for the identity-specific failure modes.
 - **Output:** prioritized findings anchored to `file:line` — critical (code exec / breach / auth bypass) → high → hardening. Each **describes the attack** (input → sink) and the fix. Exploitable over theoretical. Changes nothing by default; `--fix` applies only mechanical, unambiguous fixes — anything that changes behavior or rests on an assumption stays reported.
 - **Reach for it when:** any change that touches input handling, auth, secrets, or external I/O — and as a pre-PR gate. The deeper language-specific checks live in `/go·ts·rust·python·java·zig-review`.
+
+### `/ds-agent-review` — review
+
+Security audit of an **AI agent system** — the artifacts that decide what an autonomous system may do, which no code review covers: tool manifests and MCP server definitions, system prompts, retrieval sources, memory stores, approval logic, and agent-to-agent wiring. Checks tool least privilege (wildcards, missing path allowlists, escapable allowlists), prompt-injection exposure (every route by which content the operator doesn't control reaches a context that holds a high-impact tool — indirect injection included), memory poisoning and cross-session isolation, autonomy and approval gates (approval bound to the exact action, decision separated from execution, fail-closed classification), output handling (never derive authorization from model output), denial-of-wallet loop and cost caps, multi-agent trust boundaries, data protection, supply chain, and observability. Also reports which adversarial abuse cases the system has no test for.
+
+- **Args:** scope — files, directories, globs, a config path, or an exported manifest; defaults to agent-related files changed on the current branch. `--full` widens to every agent surface in the codebase. **Scope is whatever you point it at, including a deployed system's exported configuration** — the pass is static and read-only, so it never invokes the agent, sends it crafted input, or connects to an MCP server. Live adversarial testing is a separate, authorized activity.
+- **Output:** prioritized findings anchored to `file:line` (or to the config key when the artifact has no lines) — critical (attacker-controlled content reaching an irreversible, financial, or exfiltrating action) → high → hardening. Each names **where the attacker's content enters, which tool it reaches, and what it achieves**, plus what was assumed trusted. Changes nothing by default; `--fix` applies only mechanical fixes (narrowing a wildcard, pinning a dependency, removing a logged secret) and only to files tracked in the repository under review — an exported or pasted artifact stays report-only.
+- **Reach for it when:** shipping or changing an agent's tools, prompts, memory, retrieval, or approval logic — and before giving any agent a tool that writes, spends, deletes, or talks to the outside world. Application-code weaknesses stay with `/ds-security-review`; authentication depth lives in its `authn` pass.
 
 ### `/ds-data-review` — review
 

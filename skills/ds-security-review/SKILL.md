@@ -23,11 +23,15 @@ Use these as **mechanical aids**, not replacements for reading the code. A match
 
 If neither tool is installed, the full read is still the baseline.
 
+## Depth pass (conditional)
+
+- **`authn.md`** — read the companion when the scope touches login, registration, password reset or change, email/phone change, session issuance, MFA enrolment, or an OAuth/OIDC/SAML integration. It carries the identity-specific failure modes the generic checks below don't reach: password-policy thresholds, constant-time comparison, the three enumeration leaks (message, status, **response time**), lockout that becomes a denial of service, re-authentication before sensitive actions, and the pending-change email flow. Skip it when the scope has no identity code.
+
 ## What to check
 
 Trace untrusted data from where it enters to where it's used. Most vulnerabilities are an input that reaches a dangerous sink without validation in between.
 
-**1. Injection.** Untrusted input reaching an interpreter — SQL/NoSQL, OS commands, file paths (traversal), URLs (SSRF), templates, `eval`-like calls, LDAP. Look for string-built queries or commands instead of parameterized/escaped APIs.
+**1. Injection.** Untrusted input reaching an interpreter — SQL/NoSQL, OS commands, file paths (traversal), URLs (SSRF), templates, `eval`-like calls, LDAP. Look for string-built queries or commands instead of parameterized/escaped APIs. An LLM that can call tools is an interpreter too: untrusted content reaching its context is the same weakness with a different sink — flag it here and hand the system-level review to `/ds-agent-review`.
 
 **2. Output handling.** Untrusted data rendered without context-correct encoding (XSS), unsafe deserialization of attacker-controlled data, content-type confusion.
 
@@ -37,7 +41,7 @@ Trace untrusted data from where it enters to where it's used. Most vulnerabiliti
 
 **5. Sensitive-data exposure.** PII or secrets in logs, stack traces, or verbose errors returned to the caller; over-broad API responses; debug endpoints or stack traces reachable in production paths.
 
-**6. Untrusted input trusted too far.** Mass assignment / binding attacker-controlled fields; unvalidated redirects; unsafe file upload (type, size, path); unbounded input enabling resource exhaustion (DoS) — allocation, recursion, regex backtracking.
+**6. Untrusted input trusted too far.** Mass assignment / binding attacker-controlled fields; unvalidated redirects; unsafe file upload (type, size, path); unbounded input enabling resource exhaustion (DoS) — allocation, recursion, regex backtracking; unbounded work that costs *money* rather than CPU (metered API calls, LLM inference, egress) — denial of wallet.
 
 **7. Configuration & transport.** Missing TLS or certificate validation, permissive CORS, missing security headers, default credentials, overly broad permissions or IAM.
 

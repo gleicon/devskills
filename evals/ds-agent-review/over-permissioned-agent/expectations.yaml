@@ -1,0 +1,19 @@
+# One planted agent-security defect per expectation; report style: a hit
+# requires the output to mention the file plus any keyword.
+task: "Run /ds-agent-review on this branch."
+tier: planted-defect
+style: report
+expectations:
+  # Wildcard shell tool: allowed_commands "*" reached by shell=True.
+  - file: agent/tools.py
+    keywords: [wildcard, allowed_commands, execute_command, least privilege]
+  # Indirect prompt injection: attacker-authored email body is concatenated
+  # into the prompt with a shell tool and an email tool available.
+  - file: agent/tools.py
+    keywords: [prompt injection, indirect injection, email body, concatenat]
+  # No approval gate on send_email, and no depth/cost cap on the while loop.
+  - file: agent/tools.py
+    keywords: [approval gate, human-in-the-loop, unbounded, denial of wallet, circuit breaker]
+  # Global memory with no per-user isolation, validation, or expiry.
+  - file: agent/memory.py
+    keywords: [isolation, poisoning, shared, expiry, per-user]

@@ -40,6 +40,7 @@ Turn on the relevant **Modes** (below) for the build — they set the engineerin
 - `/ds-code-quality-review` — maintainability + single-source-of-truth: is the diff making the codebase worse?
 - `/ds-bug-review` — correctness: real bugs, not style.
 - `/ds-security-review` — exploitable weaknesses; reach for it when the change touches input, auth, secrets, or I/O.
+- `/ds-agent-review` — AI agent systems: tool permissions, prompt-injection exposure, memory isolation, approval gates, cost limits.
 - `/ds-data-review` — data-correctness, integrity, and migration-safety.
 - `/ds-test-quality-review` — is the risky logic actually covered, and are the tests real?
 - `/ds-doc-quality-review` — docs accuracy against the code, broken links, staleness.
