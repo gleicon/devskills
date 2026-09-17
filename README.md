@@ -187,6 +187,7 @@ One binary, six commands:
 | `python` | Python 3.13+ — backend, APIs, CLIs, data pipelines |
 | `java` | Java 25+ (LTS) — backend, APIs, systems tooling |
 | `zig` | Zig 0.16 — systems, CLIs, embedded |
+| `shell` | bash 3.2+ on macOS and Linux — build glue, CI, installers |
 
 ### External tools
 
