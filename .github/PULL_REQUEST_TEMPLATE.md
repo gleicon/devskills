@@ -2,6 +2,12 @@
 
 <!-- What changes and why. -->
 
+## Version
+
+<!-- A PR that changes skills/ or agents-md/ ships nothing until VERSION
+     moves. Bump it here, in this PR — no trailing "build: bump" PR.
+     Delete this section for PRs that touch neither. -->
+
 ## Benchmark evidence
 
 <!-- Required when this PR touches a skill covered by evals/ — CI checks for
