@@ -11,12 +11,14 @@ import (
 // never a verdict on old vs new (FR-13) — interpretation belongs to the
 // author and reviewer.
 type Report struct {
-	Skill    string
-	Command  string // exact reproduction command
-	Baseline bool
-	OldSHA   string // empty in baseline mode
-	NewSHA   string
-	Groups   []HarnessReport
+	Skill     string
+	Command   string // exact reproduction command
+	Baseline  bool
+	OldSHA    string // empty in baseline mode
+	NewSHA    string
+	Blocks    []string // agents-md block ids installed beside each version
+	NewBlocks []string // of Blocks, those absent on the main branch
+	Groups    []HarnessReport
 }
 
 // HarnessReport is one harness's runs. Reports never compare across
@@ -61,6 +63,13 @@ func (r Report) Markdown() string {
 		fmt.Fprintf(&b, "- Baseline mode: skill absent on the main branch; new version only, `%s` (working tree)\n", r.NewSHA)
 	} else {
 		fmt.Fprintf(&b, "- Versions: old `%s` (main branch), new `%s` (working tree)\n", r.OldSHA, r.NewSHA)
+	}
+	if len(r.Blocks) > 0 {
+		fmt.Fprintf(&b, "- Blocks: %s, each from its version's tree", strings.Join(r.Blocks, ", "))
+		if len(r.NewBlocks) > 0 && !r.Baseline {
+			fmt.Fprintf(&b, "; absent on the main branch, so old runs go without: %s", strings.Join(r.NewBlocks, ", "))
+		}
+		b.WriteString("\n")
 	}
 	for _, g := range r.Groups {
 		fmt.Fprintf(&b, "\n## %s — model `%s`\n", g.Harness, g.Model)

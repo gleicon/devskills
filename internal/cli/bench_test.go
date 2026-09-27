@@ -533,3 +533,62 @@ func TestRunBenchInterruptedContextAborts(t *testing.T) {
 		t.Errorf("run headers = %d, want the bench to stop at the first canceled run", n)
 	}
 }
+
+// blocksRoot adds agents-md blocks to a benchRoot: base and the go profile
+// committed on main then diverged, and concise new in the working tree.
+func blocksRoot(t *testing.T) string {
+	t.Helper()
+	root := benchRoot(t, "alpha")
+	writeFile(t, root, "agents-md/system/agents-base.md", "OLDBASE\n")
+	writeFile(t, root, "agents-md/language/go.md", "OLDGO\n")
+	gitRun(t, root, "add", "agents-md")
+	gitRun(t, root, "commit", "-q", "-m", "blocks")
+	writeFile(t, root, "agents-md/system/agents-base.md", "NEWBASE\n")
+	writeFile(t, root, "agents-md/language/go.md", "NEWGO\n")
+	writeFile(t, root, "agents-md/system/concise.md", "NEWCONCISE\n")
+	return root
+}
+
+func TestRunBenchInstallsBlocksPerVersion(t *testing.T) {
+	root := blocksRoot(t)
+	fakeClaudeCLI(t, `cat AGENTS.md`)
+	var out strings.Builder
+	opts := benchOptions{Skill: "ds-x", Runs: 1, Format: "pr-md", Blocks: "go,concise,base"}
+	if err := runBench(context.Background(), &out, io.Discard, root, opts); err != nil {
+		t.Fatal(err)
+	}
+	got := out.String()
+	oldRun, newRun, ok := strings.Cut(got, "#### new run 1")
+	if !ok {
+		t.Fatalf("report has no new-run transcript:\n%s", got)
+	}
+	if !strings.Contains(oldRun, "OLDBASE") || !strings.Contains(oldRun, "OLDGO") || strings.Contains(oldRun, "NEWCONCISE") {
+		t.Errorf("old run should get main's blocks and no branch-only block:\n%s", oldRun)
+	}
+	iBase, iConcise, iGo := strings.Index(newRun, "NEWBASE"), strings.Index(newRun, "NEWCONCISE"), strings.Index(newRun, "NEWGO")
+	if iBase < 0 || iConcise < iBase || iGo < iConcise {
+		t.Errorf("new run should get working-tree blocks in init's order (base, layers, languages):\n%s", newRun)
+	}
+	for _, want := range []string{
+		"<!-- profile: go — managed by devskills",
+		"- Blocks: base, concise, language:go, each from its version's tree; absent on the main branch, so old runs go without: concise",
+		"--blocks base,concise,go --format pr-md",
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("report missing %q:\n%s", want, got)
+		}
+	}
+}
+
+func TestRunBenchUnknownBlockFailsBeforeRuns(t *testing.T) {
+	root := blocksRoot(t)
+	fakeClaudeCLI(t, `echo ran`)
+	var out strings.Builder
+	err := runBench(context.Background(), &out, io.Discard, root, benchOptions{Skill: "ds-x", Runs: 1, Blocks: "base,cobol"})
+	if err == nil || !strings.Contains(err.Error(), `unknown block "cobol"`) || !strings.Contains(err.Error(), "go") {
+		t.Errorf("want an unknown-block error listing the available blocks, got %v", err)
+	}
+	if strings.Contains(out.String(), "ran") {
+		t.Error("a bad block name must fail before any run spends tokens")
+	}
+}

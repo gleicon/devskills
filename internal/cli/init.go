@@ -24,6 +24,9 @@ import (
 // bare "language" block predates the per-language language:<lang> ids.
 var retiredBlocks = []string{"language"}
 
+// baseAsset is the base block's file under agents-md/, written by every init.
+const baseAsset = "system/agents-base.md"
+
 // layers are the optional AGENTS.md blocks init offers beside base. Adding one
 // here is the whole change: flag, flagsChanged, prompt, and write all derive
 // from this table.
@@ -174,7 +177,7 @@ func runInit(out io.Writer, catalog fs.FS, root string, sel initSelection, dryRu
 		}
 		return e.Upsert(agentsPath, id, body)
 	}
-	if err := add("base", "system/agents-base.md"); err != nil {
+	if err := add("base", baseAsset); err != nil {
 		return err
 	}
 	// Iterate the table, not sel.layers, so block order stays canonical.
@@ -190,8 +193,7 @@ func runInit(out io.Writer, catalog fs.FS, root string, sel initSelection, dryRu
 		if err != nil {
 			return err
 		}
-		note := fmt.Sprintf("<!-- profile: %s — managed by devskills; edits between these markers are overwritten -->", lang)
-		if err := e.Upsert(agentsPath, "language:"+lang, note+"\n"+body); err != nil {
+		if err := e.Upsert(agentsPath, "language:"+lang, profileBody(lang, body)); err != nil {
 			return err
 		}
 	}
@@ -236,6 +238,12 @@ func removeLegacyProfile(out io.Writer, root string, dryRun bool) error {
 	os.Remove(filepath.Join(root, ".devskills")) // best effort: only succeeds if empty
 	lipgloss.Fprintln(out, "  removed legacy .devskills/language")
 	return nil
+}
+
+// profileBody is a language profile's block body as init writes it: an
+// ownership note, then the profile.
+func profileBody(lang, body string) string {
+	return fmt.Sprintf("<!-- profile: %s — managed by devskills; edits between these markers are overwritten -->\n%s", lang, body)
 }
 
 func readAsset(catalog fs.FS, rel string) (string, error) {

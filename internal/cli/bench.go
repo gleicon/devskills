@@ -27,6 +27,7 @@ type benchOptions struct {
 	Format   string        // "" streams raw runs; "pr-md" emits the markdown report
 	Out      string        // pr-md destination file; empty writes to stdout
 	Timeout  time.Duration // per-run bound; 0 defers to the scenario, then bench.DefaultTimeout
+	Blocks   string        // comma-separated agents-md blocks to install; empty installs none
 }
 
 func newBenchCmd() *cobra.Command {
@@ -51,6 +52,7 @@ func newBenchCmd() *cobra.Command {
 	f.StringVar(&opts.Harness, "harness", "claude", "comma-separated assistants to bench (claude,codex,opencode)")
 	f.StringVar(&opts.Format, "format", "", `output format: "pr-md" for the PR-ready markdown report`)
 	f.StringVar(&opts.Out, "out", "", "with --format pr-md, write the report to this file")
+	f.StringVar(&opts.Blocks, "blocks", "", "comma-separated agents-md blocks to install beside each version (base, init's layer ids, languages)")
 	f.DurationVar(&opts.Timeout, "timeout", 0, "per-run timeout (default the scenario's timeout, else "+bench.DefaultTimeout.String()+")")
 	return cmd
 }
@@ -114,6 +116,9 @@ type benchRun struct {
 	versions  []bench.SkillVersion
 	scenarios []*bench.Scenario
 	extras    map[string][]bench.SkillVersion // scenario name -> its declared skills
+	blocks    map[string][]bench.Block        // version label -> the blocks installed with it
+	blockIDs  []string                        // every requested block, canonical order
+	newBlocks []string                        // requested blocks absent on the main branch
 	baseline  bool
 }
 
@@ -141,6 +146,14 @@ func loadBenchRun(root string, opts benchOptions) (benchRun, error) {
 		return benchRun{}, err
 	}
 	versions, err := bench.LoadVersions(root, opts.Skill)
+	if err != nil {
+		return benchRun{}, err
+	}
+	refs, err := parseBlocks(root, opts.Blocks)
+	if err != nil {
+		return benchRun{}, err
+	}
+	oldBlocks, newBlocks, err := bench.LoadBlocks(root, refs)
 	if err != nil {
 		return benchRun{}, err
 	}
@@ -184,10 +197,67 @@ func loadBenchRun(root string, opts benchOptions) (benchRun, error) {
 			return benchRun{}, fmt.Errorf("scenario %s: %w", s.Name, err)
 		}
 	}
-	return benchRun{
+	b := benchRun{
 		opts: opts, harnesses: harnesses, models: models, prices: prices,
 		versions: versions, scenarios: scenarios, extras: extras, baseline: len(versions) == 1,
-	}, nil
+		blocks: map[string][]bench.Block{bench.LabelOld: withProfileNotes(oldBlocks), bench.LabelNew: withProfileNotes(newBlocks)},
+	}
+	for _, r := range refs {
+		b.blockIDs = append(b.blockIDs, r.ID)
+		if !slices.ContainsFunc(oldBlocks, func(o bench.Block) bool { return o.ID == r.ID }) {
+			b.newBlocks = append(b.newBlocks, r.ID)
+		}
+	}
+	return b, nil
+}
+
+// parseBlocks resolves the --blocks names to agents-md sources in init's
+// canonical order — base, layers, languages — so the sandbox's AGENTS.md reads
+// the way a real init would write it. Languages are listed from the working
+// tree, so a profile new on the branch can be benched.
+func parseBlocks(root, list string) ([]bench.Block, error) {
+	if list == "" {
+		return nil, nil
+	}
+	langs, err := availableLanguages(os.DirFS(root))
+	if err != nil {
+		return nil, err
+	}
+	avail := []string{"base"}
+	for _, l := range layers {
+		avail = append(avail, l.id)
+	}
+	avail = append(avail, langs...)
+	names, err := parseCSV(list, "unknown block", avail)
+	if err != nil {
+		return nil, err
+	}
+	var refs []bench.Block
+	if slices.Contains(names, "base") {
+		refs = append(refs, bench.Block{ID: "base", Path: baseAsset})
+	}
+	for _, l := range layers {
+		if slices.Contains(names, l.id) {
+			refs = append(refs, bench.Block{ID: l.id, Path: l.asset})
+		}
+	}
+	for _, lang := range langs {
+		if slices.Contains(names, lang) {
+			refs = append(refs, bench.Block{ID: "language:" + lang, Path: "language/" + lang + ".md"})
+		}
+	}
+	return refs, nil
+}
+
+// withProfileNotes gives language blocks the ownership note init writes above
+// each profile, so a benched block is byte-identical to an installed one.
+func withProfileNotes(blocks []bench.Block) []bench.Block {
+	for i, b := range blocks {
+		if lang, ok := strings.CutPrefix(b.ID, "language:"); ok {
+			blocks[i].Body = profileBody(lang, b.Body)
+		}
+	}
+	return blocks
 }
 
 // runHarness benches every scenario, version, and run for one harness,
@@ -204,7 +274,7 @@ func (b benchRun) runHarness(ctx context.Context, stream io.Writer, h harness.ID
 				total++
 				lipgloss.Fprintf(stream, "== %s/%s %s run %d/%d (%s, model %s)\n",
 					b.opts.Skill, s.Name, v.Label, i, b.opts.Runs, h.Name(), model)
-				res, err := runner.Run(ctx, s, v, b.extras[s.Name], nil)
+				res, err := runner.Run(ctx, s, v, b.extras[s.Name], b.blocks[v.Label])
 				if err != nil {
 					return bench.HarnessReport{}, 0, 0, err
 				}
@@ -236,11 +306,13 @@ func (b benchRun) runHarness(ctx context.Context, stream io.Writer, h harness.ID
 // emitReport assembles the pr-md report and writes it to --out, or to out.
 func (b benchRun) emitReport(out io.Writer, groups []bench.HarnessReport) error {
 	report := bench.Report{
-		Skill:    b.opts.Skill,
-		Command:  reproCommand(b.opts, b.harnesses, b.models),
-		Baseline: b.baseline,
-		NewSHA:   b.versions[len(b.versions)-1].SHA,
-		Groups:   groups,
+		Skill:     b.opts.Skill,
+		Command:   reproCommand(b.opts, b.harnesses, b.models, b.blockIDs),
+		Baseline:  b.baseline,
+		NewSHA:    b.versions[len(b.versions)-1].SHA,
+		Blocks:    b.blockIDs,
+		NewBlocks: b.newBlocks,
+		Groups:    groups,
 	}
 	if !b.baseline {
 		report.OldSHA = b.versions[0].SHA
@@ -292,7 +364,7 @@ func recordRun(stream io.Writer, s *bench.Scenario, res bench.Result, verbose bo
 // (NFR-3). With one harness the resolved model is made explicit so a later
 // pin change cannot alter a reproduction; with several, --model can't carry
 // per-harness values — the report's per-group model IDs pin them instead.
-func reproCommand(opts benchOptions, harnesses []harness.ID, models map[harness.ID]string) string {
+func reproCommand(opts benchOptions, harnesses []harness.ID, models map[harness.ID]string, blockIDs []string) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "devskills bench %s", opts.Skill)
 	if opts.Scenario != "" {
@@ -312,6 +384,13 @@ func reproCommand(opts benchOptions, harnesses []harness.ID, models map[harness.
 	// so a faithful reproduction carries it.
 	if opts.Timeout != 0 && opts.Timeout != bench.DefaultTimeout {
 		fmt.Fprintf(&b, " --timeout %s", opts.Timeout)
+	}
+	if len(blockIDs) > 0 {
+		names := make([]string, len(blockIDs))
+		for i, id := range blockIDs {
+			names[i] = strings.TrimPrefix(id, "language:")
+		}
+		fmt.Fprintf(&b, " --blocks %s", strings.Join(names, ","))
 	}
 	return b.String() + " --format pr-md"
 }
