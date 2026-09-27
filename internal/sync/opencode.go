@@ -60,6 +60,9 @@ func denySkills(src []byte) ([]byte, error) {
 // permission objects if that leaves them empty. It returns nil when nothing
 // else is left in the config, so the caller can delete the file.
 func allowSkills(src []byte) ([]byte, error) {
+	if len(bytes.TrimSpace(src)) == 0 {
+		return src, nil
+	}
 	root, top, err := parseConfig(src)
 	if err != nil {
 		return nil, err

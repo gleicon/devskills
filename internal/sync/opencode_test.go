@@ -162,6 +162,14 @@ func TestAllowSkills(t *testing.T) {
 	if got != nil {
 		t.Errorf("a fresh config should empty to nil so the file is deleted, got:\n%s", got)
 	}
+
+	got, err = allowSkills([]byte(" \n"))
+	if err != nil {
+		t.Fatalf("an empty config should be left alone, got error: %v", err)
+	}
+	if string(got) != " \n" {
+		t.Errorf("an empty config changed:\n%q", got)
+	}
 }
 
 func TestOpenCodeConfigLifecycle(t *testing.T) {
