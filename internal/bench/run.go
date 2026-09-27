@@ -157,10 +157,14 @@ func headlessArgs(id harness.ID, task, model, skill string) ([]string, error) {
 		// --setting-sources project drops the operator's user-level CLAUDE.md,
 		// skills, plugins, hooks and output styles, which move scores independent
 		// of the skill; --safe-mode would also drop the sandbox's own CLAUDE.md.
+		// Auto-memory and user MCP servers (claude.ai connectors included) sit
+		// outside setting sources, so they are switched off explicitly.
 		// --dangerously-skip-permissions runs approvals-off: only the cwd is the
 		// throwaway sandbox — the process is unconfined, so scenario tasks are
 		// trusted input (see the trust model in docs/bench.md).
-		return []string{"claude", "-p", prompt, "--model", model, "--output-format", "json", "--setting-sources", "project", "--dangerously-skip-permissions"}, nil
+		return []string{"claude", "-p", prompt, "--model", model, "--output-format", "json",
+			"--setting-sources", "project", "--settings", `{"autoMemoryEnabled":false}`, "--strict-mcp-config",
+			"--dangerously-skip-permissions"}, nil
 	case harness.Codex:
 		// exec is codex's non-interactive mode; workspace-write confines
 		// model-run commands to the sandbox repo.
