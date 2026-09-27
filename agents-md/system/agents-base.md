@@ -84,7 +84,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 - Read branch changes as `git --no-pager diff --no-ext-diff --no-color --stat <base>...HEAD` first; read the whole diff when it is small, and file by file when it is not.
 - Run `git log` with `--no-pager --no-color` and an explicit `--format` — never let the user's pager, diff tool, or color config shape what you read.
 - Send long tool output (scanners, JSON reports) to a temp file and read it through a projection — `jq`, `grep -c`, `head` — never raw.
-- Prefer quiet and compact flags.
+- Prefer quiet and compact flags. Start broad, then narrow with a second command rather than guessing a filter up front.
 - After writing a file, report its path and what changed — never reprint its contents.
 - Sufficiency beats thrift: when unsure, read more. A wrong answer costs far more than the tokens.
 
