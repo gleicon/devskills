@@ -22,7 +22,7 @@ Everything except `-mode` runs once and finishes; a `-mode` stays on. The per-sk
 
 Turn a rough description into a structured specification (the WHAT, not the HOW).
 
-- **Args:** an optional description. With one, it proceeds directly; without, it asks three focused questions (primary user action, what success looks like, hard constraints) then writes the spec.
+- **Args:** an optional description. With one, it proceeds directly; without, it asks up to three questions one per message (primary user action, what success looks like, hard constraints), then writes the spec.
 - **Output:** `SPEC.md` in the current directory (or a path you name), shown inline. Sections: Problem, Scope, Users, Functional/Non-Functional Requirements, Interfaces, Constraints, Acceptance Criteria, Open Questions.
 - **Reach for it when:** you have an idea and want a verifiable contract before any code.
 
