@@ -54,33 +54,20 @@ func Materialize(s *Scenario, dir string, blocks []Block) error {
 
 // installBlocks writes blocks into dir's AGENTS.md and imports it from
 // CLAUDE.md through the engine devskills init uses, so the markers match a real
-// project and a fixture's own AGENTS.md is merged, not replaced. The engine's
-// backup of a fixture file is deleted: it would be committed into the fixture.
+// project and a fixture's own AGENTS.md is merged, not replaced. Backups are
+// off: one would be committed into the fixture.
 func installBlocks(dir string, blocks []Block) error {
 	if len(blocks) == 0 {
 		return nil
 	}
 	e := scaffold.New(false, nil)
+	e.SkipBackups()
 	for _, b := range blocks {
 		if err := e.Upsert(filepath.Join(dir, "AGENTS.md"), b.ID, b.Body); err != nil {
 			return err
 		}
 	}
-	if err := e.EnsureClaudeImport(filepath.Join(dir, "CLAUDE.md")); err != nil {
-		return err
-	}
-	for _, pattern := range []string{"AGENTS.md.*.bak", "CLAUDE.md.*.bak"} {
-		baks, err := filepath.Glob(filepath.Join(dir, pattern))
-		if err != nil {
-			return err
-		}
-		for _, bak := range baks {
-			if err := os.Remove(bak); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
+	return e.EnsureClaudeImport(filepath.Join(dir, "CLAUDE.md"))
 }
 
 func git(dir string, args ...string) error {
