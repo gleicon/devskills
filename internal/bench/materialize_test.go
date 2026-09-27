@@ -45,7 +45,7 @@ func gitOut(t *testing.T, dir string, args ...string) string {
 func TestMaterialize(t *testing.T) {
 	s := fixtureScenario(t)
 	repo := t.TempDir()
-	if err := Materialize(s, repo); err != nil {
+	if err := Materialize(s, repo, nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -89,7 +89,7 @@ func TestMaterializeNestedDirs(t *testing.T) {
 		t.Fatal(err)
 	}
 	repo := t.TempDir()
-	if err := Materialize(s, repo); err != nil {
+	if err := Materialize(s, repo, nil); err != nil {
 		t.Fatal(err)
 	}
 	if got := gitOut(t, repo, "show", WorkBranch+":internal/deep/d.go"); got == "" {
@@ -106,8 +106,40 @@ func TestMaterializeEmptyChangeFails(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = Materialize(s, t.TempDir())
+	err = Materialize(s, t.TempDir(), nil)
 	if err == nil || !strings.Contains(err.Error(), "noop") {
 		t.Errorf("want loud failure naming the scenario for an empty change/, got %v", err)
+	}
+}
+
+func TestMaterializeBlocks(t *testing.T) {
+	s := fixtureScenario(t)
+	if err := os.WriteFile(filepath.Join(s.Dir, "base", "AGENTS.md"), []byte("Fixture rules.\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	repo := t.TempDir()
+	if err := Materialize(s, repo, []Block{{ID: "base", Body: "BASEBLOCK\n"}}); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, branch := range []string{DefaultBranch, WorkBranch} {
+		agents := gitOut(t, repo, "show", branch+":AGENTS.md")
+		for _, want := range []string{"Fixture rules.", "<!-- BEGIN devskills:base -->", "BASEBLOCK"} {
+			if !strings.Contains(agents, want) {
+				t.Errorf("AGENTS.md on %s = %q, missing %q", branch, agents, want)
+			}
+		}
+		if got := gitOut(t, repo, "show", branch+":CLAUDE.md"); !strings.Contains(got, "@AGENTS.md") {
+			t.Errorf("CLAUDE.md on %s = %q, want the AGENTS.md import", branch, got)
+		}
+	}
+	if got := gitOut(t, repo, "diff", "--name-only", DefaultBranch+"..."+WorkBranch); strings.Contains(got, ".md") {
+		t.Errorf("branch diff = %q, want blocks outside the change a skill reviews", got)
+	}
+	if got := gitOut(t, repo, "ls-files"); strings.Contains(got, ".bak") {
+		t.Errorf("tracked files = %q, want no engine backup committed into the fixture", got)
+	}
+	if got := gitOut(t, repo, "status", "--porcelain"); got != "" {
+		t.Errorf("working tree dirty after materialize: %q", got)
 	}
 }

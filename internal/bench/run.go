@@ -50,11 +50,11 @@ type Runner struct {
 }
 
 // Run benches one skill version against one scenario: materialize the fixture
-// into a fresh sandbox, install the version project-locally alongside extras
-// (the scenario's Skills), invoke the harness headlessly in the sandbox,
-// capture output and the post-run diff. The returned error is infrastructural
+// and the blocks paired with the version into a fresh sandbox, install the
+// version project-locally alongside extras (the scenario's Skills), invoke the
+// harness headlessly in the sandbox, capture output and the post-run diff. The returned error is infrastructural
 // (sandbox, git); harness failures land in Result.Err.
-func (r Runner) Run(ctx context.Context, s *Scenario, skill SkillVersion, extras []SkillVersion) (Result, error) {
+func (r Runner) Run(ctx context.Context, s *Scenario, skill SkillVersion, extras []SkillVersion, blocks []Block) (Result, error) {
 	argv, err := headlessArgs(r.Harness, s.Task, r.Model, skill.Name)
 	if err != nil {
 		return Result{}, err
@@ -64,7 +64,7 @@ func (r Runner) Run(ctx context.Context, s *Scenario, skill SkillVersion, extras
 		return Result{}, err
 	}
 	defer os.RemoveAll(sandbox)
-	if err := Materialize(s, sandbox); err != nil {
+	if err := Materialize(s, sandbox, blocks); err != nil {
 		return Result{}, err
 	}
 	// The diff base is the materialized tip, pinned by SHA: a run that

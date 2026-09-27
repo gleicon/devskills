@@ -67,6 +67,43 @@ func LoadSkills(root string, names []string) ([]SkillVersion, error) {
 	return skills, nil
 }
 
+// Block is one managed AGENTS.md block: the marker id devskills init writes it
+// under, its source path under agents-md/, and that source's content.
+type Block struct {
+	ID   string
+	Path string // slash-separated, relative to agents-md/
+	Body string
+}
+
+// LoadBlocks resolves the blocks named by refs (ID and Path set) in the repo at
+// root, paired with the skill versions: old from the main branch, new from the
+// working tree. A block absent on the main branch is left out of old, the way
+// baseline mode leaves out a skill new on the branch.
+func LoadBlocks(root string, refs []Block) (oldBlocks, newBlocks []Block, err error) {
+	branch, err := mainBranch(root)
+	if err != nil {
+		return nil, nil, err
+	}
+	for _, ref := range refs {
+		b, err := os.ReadFile(filepath.Join(root, "agents-md", filepath.FromSlash(ref.Path)))
+		if err != nil {
+			return nil, nil, fmt.Errorf("block %q not found in working tree: %w", ref.ID, err)
+		}
+		newBlocks = append(newBlocks, Block{ID: ref.ID, Path: ref.Path, Body: string(b)})
+
+		spec := branch + ":agents-md/" + ref.Path
+		if _, err := gitStdout(root, "cat-file", "-e", spec); err != nil {
+			continue
+		}
+		b, err = gitStdout(root, "show", spec)
+		if err != nil {
+			return nil, nil, err
+		}
+		oldBlocks = append(oldBlocks, Block{ID: ref.ID, Path: ref.Path, Body: string(b)})
+	}
+	return oldBlocks, newBlocks, nil
+}
+
 // workingTreeFiles reads the skill's directory from the working tree, keyed by
 // slash-separated path relative to skills/<skill>/.
 func workingTreeFiles(root, skill string) (map[string][]byte, error) {

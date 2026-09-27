@@ -57,7 +57,7 @@ echo "one warning" >&2
 	skill := benchSkill("SKILLBODY\n")
 	skill.Files["ref.md"] = []byte("COMPANION\n")
 	r := Runner{Harness: harness.Claude, Model: "pin-model"}
-	res, err := r.Run(context.Background(), fixtureScenario(t), skill, nil)
+	res, err := r.Run(context.Background(), fixtureScenario(t), skill, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -98,7 +98,7 @@ func TestRunnerReadsClaudeResult(t *testing.T) {
  "modelUsage":{"claude-sonnet-5":{"inputTokens":100,"outputTokens":20,"cacheReadInputTokens":3000,"cacheCreationInputTokens":400}}}
 EOF`)
 	r := Runner{Harness: harness.Claude, Model: "m"}
-	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"), nil)
+	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -117,7 +117,7 @@ EOF`)
 func TestRunnerFailsOnNonJSONClaudeOutput(t *testing.T) {
 	fakeCLI(t, "claude", `echo "plain text"`)
 	r := Runner{Harness: harness.Claude, Model: "m"}
-	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"), nil)
+	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -137,7 +137,7 @@ export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null
 git add -A
 git -c user.name=h -c user.email=h@h commit -q -m done`)
 	r := Runner{Harness: harness.Claude, Model: "m"}
-	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"), nil)
+	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -152,7 +152,7 @@ git -c user.name=h -c user.email=h@h commit -q -m done`)
 func TestRunnerRecordsFailure(t *testing.T) {
 	fakeClaude(t, `echo "boom" >&2; exit 3`)
 	r := Runner{Harness: harness.Claude, Model: "m"}
-	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"), nil)
+	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -167,7 +167,7 @@ func TestRunnerRecordsFailure(t *testing.T) {
 func TestRunnerRecordsTimeout(t *testing.T) {
 	fakeClaude(t, `sleep 5`)
 	r := Runner{Harness: harness.Claude, Model: "m", Timeout: 100 * time.Millisecond}
-	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"), nil)
+	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -192,7 +192,7 @@ func TestRunnerScenarioTimeoutPrecedence(t *testing.T) {
 			s := fixtureScenario(t)
 			s.Timeout = tt.scenario
 			r := Runner{Harness: harness.Claude, Model: "m", Timeout: tt.runner}
-			res, err := r.Run(context.Background(), s, benchSkill("s"), nil)
+			res, err := r.Run(context.Background(), s, benchSkill("s"), nil, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -207,7 +207,7 @@ func TestRunnerInstallsExtraSkills(t *testing.T) {
 	fakeClaude(t, `cat .claude/skills/ds-x/SKILL.md .claude/skills/ds-y/SKILL.md`)
 	extra := SkillVersion{Name: "ds-y", Files: map[string][]byte{"SKILL.md": []byte("EXTRABODY\n")}}
 	r := Runner{Harness: harness.Claude, Model: "m"}
-	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("SKILLBODY\n"), []SkillVersion{extra})
+	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("SKILLBODY\n"), []SkillVersion{extra}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -231,7 +231,7 @@ func TestRunnerMissingCLI(t *testing.T) {
 	}
 	t.Setenv("PATH", bin)
 	r := Runner{Harness: harness.Claude, Model: "m"}
-	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"), nil)
+	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -248,7 +248,7 @@ grep -q 'allow_implicit_invocation: false' .codex/skills/ds-x/agents/openai.yaml
 echo '{"type":"item.completed","item":{"type":"agent_message","text":"'$sidecar'"}}'
 echo '{"type":"turn.completed","usage":{"input_tokens":10,"cached_input_tokens":0,"output_tokens":5}}'`)
 	r := Runner{Harness: harness.Codex, Model: "codex-model"}
-	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("S"), nil)
+	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("S"), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -283,7 +283,7 @@ echo '{"type":"text","part":{"text":"'$iso'"}}'
 echo '{"type":"text","part":{"text":"'$skill'"}}'
 echo '{"type":"step_finish","part":{"cost":0.01,"tokens":{"input":10,"output":4,"reasoning":1,"cache":{"read":0,"write":0}}}}'`)
 	r := Runner{Harness: harness.OpenCode, Model: "anthropic/some-model"}
-	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("OCSKILL"), nil)
+	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("OCSKILL"), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -324,7 +324,7 @@ func TestRunnerOpenCodePWDIsSandbox(t *testing.T) {
 	t.Setenv("PATH", bin+string(os.PathListSeparator)+os.Getenv("PATH"))
 	t.Setenv(fakePWDEnv, "1")
 	r := Runner{Harness: harness.OpenCode, Model: "m"}
-	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"), nil)
+	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -333,5 +333,20 @@ func TestRunnerOpenCodePWDIsSandbox(t *testing.T) {
 	}
 	if res.Stdout != "PWD is cwd" {
 		t.Errorf("fake opencode saw %q, want PWD naming the sandbox it runs in", res.Stdout)
+	}
+}
+
+func TestRunnerInstallsBlocks(t *testing.T) {
+	fakeClaude(t, `cat CLAUDE.md AGENTS.md`)
+	r := Runner{Harness: harness.Claude, Model: "m"}
+	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"), nil, []Block{{ID: "base", Body: "BASEBLOCK"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(res.Stdout, "@AGENTS.md") || !strings.Contains(res.Stdout, "BASEBLOCK") {
+		t.Errorf("stdout = %q, want the block and its CLAUDE.md import in the sandbox", res.Stdout)
+	}
+	if strings.Contains(res.Diff, "BASEBLOCK") {
+		t.Errorf("diff = %q, want the installed block kept out of the post-run diff", res.Diff)
 	}
 }

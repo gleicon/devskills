@@ -204,7 +204,7 @@ func (b benchRun) runHarness(ctx context.Context, stream io.Writer, h harness.ID
 				total++
 				lipgloss.Fprintf(stream, "== %s/%s %s run %d/%d (%s, model %s)\n",
 					b.opts.Skill, s.Name, v.Label, i, b.opts.Runs, h.Name(), model)
-				res, err := runner.Run(ctx, s, v, b.extras[s.Name])
+				res, err := runner.Run(ctx, s, v, b.extras[s.Name], nil)
 				if err != nil {
 					return bench.HarnessReport{}, 0, 0, err
 				}
