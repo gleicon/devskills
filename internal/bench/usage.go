@@ -141,3 +141,75 @@ func parseCodex(stdout string, price *Price) (string, *Usage, error) {
 	}
 	return text, u, failed
 }
+
+// openCodeEvent is one line of `opencode run --format json`, reduced to the
+// fields bench reads.
+type openCodeEvent struct {
+	Type string `json:"type"`
+	Part struct {
+		Text   string  `json:"text"`
+		Cost   float64 `json:"cost"`
+		Tokens struct {
+			Input     float64 `json:"input"`
+			Output    float64 `json:"output"`
+			Reasoning float64 `json:"reasoning"`
+			Cache     struct {
+				Read  float64 `json:"read"`
+				Write float64 `json:"write"`
+			} `json:"cache"`
+		} `json:"tokens"`
+	} `json:"part"`
+	Error struct {
+		Name string `json:"name"`
+		Data struct {
+			Message string `json:"message"`
+		} `json:"data"`
+	} `json:"error"`
+}
+
+// parseOpenCode reads OpenCode's JSONL event stream. Every text part joins
+// the final text, as the text mode prints them all. Tokens and cost arrive
+// per step and are summed. Usage is non-nil whenever a step finished.
+func parseOpenCode(stdout string) (string, *Usage, error) {
+	var (
+		texts  []string
+		u      *Usage
+		failed error
+	)
+	for line := range strings.Lines(stdout) {
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+		var e openCodeEvent
+		if err := json.Unmarshal([]byte(line), &e); err != nil {
+			return "", nil, fmt.Errorf("opencode output is not a JSON event stream: %w", err)
+		}
+		switch e.Type {
+		case "text":
+			if t := strings.TrimSpace(e.Part.Text); t != "" {
+				texts = append(texts, t)
+			}
+		case "step_finish":
+			if u == nil {
+				u = &Usage{}
+			}
+			// input excludes the cache counts and output excludes
+			// reasoning, unlike Claude's and Codex's.
+			tk := e.Part.Tokens
+			u.Input += int(tk.Input)
+			u.CacheRead += int(tk.Cache.Read)
+			u.CacheWrite += int(tk.Cache.Write)
+			u.Output += int(tk.Output + tk.Reasoning)
+			u.CostUSD += e.Part.Cost
+		case "error":
+			failed = fmt.Errorf("opencode error: %s", cmp.Or(e.Error.Data.Message, e.Error.Name))
+		}
+	}
+	if u == nil {
+		return "", nil, cmp.Or(failed, errors.New("opencode output has no step_finish event"))
+	}
+	// OpenCode reports 0 for a model it cannot price, including every model
+	// behind a ChatGPT sign-in, so 0 means unknown, not free.
+	u.CostKnown = u.CostUSD > 0
+	return strings.Join(texts, "\n"), u, failed
+}

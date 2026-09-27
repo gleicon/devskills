@@ -1,6 +1,7 @@
 package bench
 
 import (
+	"fmt"
 	"math"
 	"strings"
 	"testing"
@@ -105,6 +106,77 @@ func TestParseCodex(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			text, usage, err := parseCodex(tt.stdout, tt.price)
+			if tt.wantErr == "" && err != nil {
+				t.Fatalf("err = %v", err)
+			}
+			if tt.wantErr != "" && (err == nil || !strings.Contains(err.Error(), tt.wantErr)) {
+				t.Fatalf("err = %v, want it to contain %q", err, tt.wantErr)
+			}
+			if text != tt.wantText {
+				t.Errorf("text = %q, want %q", text, tt.wantText)
+			}
+			if (usage == nil) != (tt.wantUsage == nil) {
+				t.Fatalf("usage = %+v, want %+v", usage, tt.wantUsage)
+			}
+			if usage != nil {
+				got, want := *usage, *tt.wantUsage
+				if math.Abs(got.CostUSD-want.CostUSD) > 1e-9 {
+					t.Errorf("cost = %v, want %v", got.CostUSD, want.CostUSD)
+				}
+				got.CostUSD, want.CostUSD = 0, 0
+				if got != want {
+					t.Errorf("usage = %+v, want %+v", got, want)
+				}
+			}
+		})
+	}
+}
+
+func TestParseOpenCode(t *testing.T) {
+	step := func(cost string, input, output, reasoning, read, write int) string {
+		return fmt.Sprintf(`{"type":"step_finish","sessionID":"s","part":{"type":"step-finish","reason":"stop","cost":%s,"tokens":{"total":0,"input":%d,"output":%d,"reasoning":%d,"cache":{"read":%d,"write":%d}}}}`,
+			cost, input, output, reasoning, read, write) + "\n"
+	}
+	text := func(s string) string {
+		return `{"type":"text","sessionID":"s","part":{"type":"text","text":"` + s + `","time":{"start":1,"end":2}}}` + "\n"
+	}
+	tests := []struct {
+		name      string
+		stdout    string
+		wantText  string
+		wantUsage *Usage
+		wantErr   string
+	}{
+		{
+			name:     "steps sum and every text part joins",
+			stdout:   `{"type":"step_start","part":{}}` + "\n" + text("looking") + `{"type":"tool_use","part":{"state":{"output":"fixture text"}}}` + "\n" + step("0.25", 100, 20, 5, 3000, 400) + text("found it") + text("  ") + step("0.5", 10, 2, 0, 50, 0),
+			wantText: "looking\nfound it",
+			// output adds reasoning back in
+			wantUsage: &Usage{Input: 110, CacheRead: 3050, CacheWrite: 400, Output: 27, CostUSD: 0.75, CostKnown: true},
+		},
+		{
+			name:      "zero cost is unknown, not free",
+			stdout:    text("done") + step("0", 100, 20, 0, 0, 0),
+			wantText:  "done",
+			wantUsage: &Usage{Input: 100, Output: 20},
+		},
+		{
+			name:      "error event fails the run but keeps its spend",
+			stdout:    step("0.1", 1, 1, 0, 0, 0) + `{"type":"error","error":{"name":"APIError","data":{"message":"overloaded"}}}` + "\n",
+			wantUsage: &Usage{Input: 1, Output: 1, CostUSD: 0.1, CostKnown: true},
+			wantErr:   "opencode error: overloaded",
+		},
+		{
+			name:    "error with no message falls back to its name",
+			stdout:  `{"type":"error","error":{"name":"ProviderAuthError"}}` + "\n",
+			wantErr: "opencode error: ProviderAuthError",
+		},
+		{name: "no step finished", stdout: text("hi"), wantErr: "no step_finish"},
+		{name: "plain text", stdout: "done\n", wantErr: "not a JSON event stream"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			text, usage, err := parseOpenCode(tt.stdout)
 			if tt.wantErr == "" && err != nil {
 				t.Fatalf("err = %v", err)
 			}

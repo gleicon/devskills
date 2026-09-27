@@ -122,6 +122,8 @@ func (r Runner) Run(ctx context.Context, s *Scenario, skill SkillVersion, extras
 		res.applyParsed(parseClaude(res.Stdout))
 	case harness.Codex:
 		res.applyParsed(parseCodex(res.Stdout, r.Price))
+	case harness.OpenCode:
+		res.applyParsed(parseOpenCode(res.Stdout))
 	}
 	return res, nil
 }
@@ -163,7 +165,7 @@ func headlessArgs(id harness.ID, task, model, skill string) ([]string, error) {
 		// permission prompts a headless run can't answer — approvals-off like
 		// Claude, unconfined beyond the sandbox cwd, so scenario tasks are
 		// trusted input.
-		return []string{"opencode", "run", task, "--model", model, "--pure", "--auto"}, nil
+		return []string{"opencode", "run", task, "--model", model, "--format", "json", "--pure", "--auto"}, nil
 	}
 	return nil, fmt.Errorf("harness %q is not supported by bench", id)
 }

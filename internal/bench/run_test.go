@@ -277,8 +277,11 @@ func TestRunnerOpenCodeInvocation(t *testing.T) {
 	argsFile := filepath.Join(t.TempDir(), "args")
 	t.Setenv("ARGS_OUT", argsFile)
 	fakeCLI(t, "opencode", `printf '%s\n' "$@" > "$ARGS_OUT"
-[ -d "$OPENCODE_CONFIG_DIR" ] && [ -z "$(ls -A "$OPENCODE_CONFIG_DIR")" ] && [ "$OPENCODE_DISABLE_CLAUDE_CODE" = 1 ] && echo ISOLATED
-cat .opencode/skills/ds-x/SKILL.md`)
+[ -d "$OPENCODE_CONFIG_DIR" ] && [ -z "$(ls -A "$OPENCODE_CONFIG_DIR")" ] && [ "$OPENCODE_DISABLE_CLAUDE_CODE" = 1 ] && iso=ISOLATED
+grep -q OCSKILL .opencode/skills/ds-x/SKILL.md && skill=OCSKILL
+echo '{"type":"text","part":{"text":"'$iso'"}}'
+echo '{"type":"text","part":{"text":"'$skill'"}}'
+echo '{"type":"step_finish","part":{"cost":0.01,"tokens":{"input":10,"output":4,"reasoning":1,"cache":{"read":0,"write":0}}}}'`)
 	r := Runner{Harness: harness.OpenCode, Model: "anthropic/some-model"}
 	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("OCSKILL"), nil)
 	if err != nil {
@@ -291,7 +294,7 @@ cat .opencode/skills/ds-x/SKILL.md`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"run", "Review the diff", "--model", "anthropic/some-model", "--pure", "--auto"} {
+	for _, want := range []string{"run", "Review the diff", "--model", "anthropic/some-model", "--format", "json", "--pure", "--auto"} {
 		if !strings.Contains(string(args), want) {
 			t.Errorf("opencode args = %q, missing %q", args, want)
 		}
