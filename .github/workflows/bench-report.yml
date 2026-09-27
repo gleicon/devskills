@@ -1,7 +1,8 @@
 name: bench-report
 
-# FR-16: a PR touching a covered skill (one with scenarios under evals/)
-# must carry a benchmark report — in the PR body or as a committed file.
+# FR-16: a PR touching a covered skill (one with scenarios under evals/) or an
+# agents-md block must carry a benchmark report — in the PR body or as a
+# committed file.
 # Presence only: no benchmark runs, no model tokens, no secrets (NFR-4).
 
 on:
@@ -9,7 +10,7 @@ on:
     # edited included: the intended flow pastes the report into the PR body
     # after opening, and a body edit must re-run the presence check.
     types: [opened, edited, reopened, synchronize]
-    paths: ["skills/**"]
+    paths: ["skills/**", "agents-md/**"]
 
 permissions:
   contents: read
@@ -37,11 +38,16 @@ jobs:
               covered="$covered $skill"
             fi
           done
-          if [ -z "$covered" ]; then
-            echo "no covered skills touched — report not required"
+          blocks=""
+          if grep -q '^agents-md/' <<<"$changed"; then
+            blocks=yes
+          fi
+          if [ -z "$covered" ] && [ -z "$blocks" ]; then
+            echo "no covered skills or agents-md blocks touched — report not required"
             exit 0
           fi
-          echo "covered skills touched:$covered"
+          [ -n "$covered" ] && echo "covered skills touched:$covered"
+          [ -n "$blocks" ] && echo "agents-md blocks touched"
 
           if printf '%s' "$PR_BODY" | grep -q "Bench report:"; then
             echo "benchmark report found in the PR body"
@@ -54,5 +60,5 @@ jobs:
             fi
           done
 
-          echo "::error::PR touches covered skill(s):$covered but carries no benchmark report. Run 'devskills bench <skill> --format pr-md' and paste the report into the PR body or commit it."
+          echo "::error::PR touches covered skills or agents-md blocks but carries no benchmark report. Run 'devskills bench <skill> --format pr-md' (with '--blocks <names>' for a block change) and paste the report into the PR body or commit it."
           exit 1
