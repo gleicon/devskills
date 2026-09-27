@@ -67,21 +67,26 @@ func LoadSkills(root string, names []string) ([]SkillVersion, error) {
 	return skills, nil
 }
 
-// Block is one managed AGENTS.md block: the marker id devskills init writes it
-// under, its source path under agents-md/, that source's content, and its blob
-// SHA.
-type Block struct {
+// BlockRef names a managed AGENTS.md block to load: the marker id devskills
+// init writes it under and its source path under agents-md/.
+type BlockRef struct {
 	ID   string
 	Path string // slash-separated, relative to agents-md/
+}
+
+// Block is one managed AGENTS.md block as loaded from one version's tree: its
+// marker id, content, and blob SHA.
+type Block struct {
+	ID   string
 	Body string
 	SHA  string
 }
 
-// LoadBlocks resolves the blocks named by refs (ID and Path set) in the repo at
-// root, paired with the skill versions: old from the main branch, new from the
-// working tree. A block absent on the main branch is left out of old, the way
-// baseline mode leaves out a skill new on the branch.
-func LoadBlocks(root string, refs []Block) (oldBlocks, newBlocks []Block, err error) {
+// LoadBlocks loads the blocks refs name from the repo at root, paired with the
+// skill versions: old from the main branch, new from the working tree. A block
+// absent on the main branch is left out of old, the way baseline mode leaves
+// out a skill new on the branch.
+func LoadBlocks(root string, refs []BlockRef) (oldBlocks, newBlocks []Block, err error) {
 	branch, err := mainBranch(root)
 	if err != nil {
 		return nil, nil, err
@@ -96,7 +101,7 @@ func LoadBlocks(root string, refs []Block) (oldBlocks, newBlocks []Block, err er
 		if err != nil {
 			return nil, nil, err
 		}
-		newBlocks = append(newBlocks, Block{ID: ref.ID, Path: ref.Path, Body: string(b), SHA: trimSHA(sha)})
+		newBlocks = append(newBlocks, Block{ID: ref.ID, Body: string(b), SHA: trimSHA(sha)})
 
 		spec := branch + ":agents-md/" + ref.Path
 		if _, err := gitStdout(root, "cat-file", "-e", spec); err != nil {
@@ -110,7 +115,7 @@ func LoadBlocks(root string, refs []Block) (oldBlocks, newBlocks []Block, err er
 		if err != nil {
 			return nil, nil, err
 		}
-		oldBlocks = append(oldBlocks, Block{ID: ref.ID, Path: ref.Path, Body: string(b), SHA: trimSHA(sha)})
+		oldBlocks = append(oldBlocks, Block{ID: ref.ID, Body: string(b), SHA: trimSHA(sha)})
 	}
 	return oldBlocks, newBlocks, nil
 }

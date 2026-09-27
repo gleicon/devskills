@@ -231,13 +231,13 @@ func loadBlocks(root, list string) (map[string][]bench.Block, []string, error) {
 		}
 	}
 	var (
-		refs  []bench.Block
+		refs  []bench.BlockRef
 		names []string
 	)
 	for _, b := range blocksFor(sel) {
 		// init always writes base; bench writes it only when picked.
 		if slices.Contains(picked, b.name) {
-			refs = append(refs, bench.Block{ID: b.id, Path: b.asset})
+			refs = append(refs, bench.BlockRef{ID: b.id, Path: b.asset})
 			names = append(names, b.name)
 		}
 	}

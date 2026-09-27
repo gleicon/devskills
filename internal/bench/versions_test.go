@@ -137,7 +137,7 @@ func TestLoadBlocks(t *testing.T) {
 	}
 	write("system/agents-base.md", "NEWBASE\n")
 	write("system/concise.md", "NEWCONCISE\n")
-	refs := []Block{{ID: "base", Path: "system/agents-base.md"}, {ID: "concise", Path: "system/concise.md"}}
+	refs := []BlockRef{{ID: "base", Path: "system/agents-base.md"}, {ID: "concise", Path: "system/concise.md"}}
 
 	oldBlocks, newBlocks, err := LoadBlocks(root, refs)
 	if err != nil {
@@ -159,7 +159,7 @@ func TestLoadBlocks(t *testing.T) {
 		}
 	}
 
-	_, _, err = LoadBlocks(root, []Block{{ID: "gone", Path: "system/gone.md"}})
+	_, _, err = LoadBlocks(root, []BlockRef{{ID: "gone", Path: "system/gone.md"}})
 	if err == nil || !strings.Contains(err.Error(), "gone") {
 		t.Errorf("want a loud error naming a block missing from the working tree, got %v", err)
 	}
