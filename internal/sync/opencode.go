@@ -49,9 +49,7 @@ func denySkills(src []byte) ([]byte, error) {
 	if n := len(rules.Members); n > 0 && memberName(rules.Members[n-1]) == skillPattern && isDeny(rules.Members[n-1]) {
 		return src, nil
 	}
-	for i := indexOf(rules, skillPattern); i >= 0; i = indexOf(rules, skillPattern) {
-		removeMember(rules, i)
-	}
+	removeAll(rules, skillPattern)
 	appendMember(rules, skillPattern, hujson.String("deny"))
 	return root.Pack(), nil
 }
@@ -71,9 +69,7 @@ func allowSkills(src []byte) ([]byte, error) {
 	if rules == nil || indexOf(rules, skillPattern) < 0 {
 		return src, nil
 	}
-	for i := indexOf(rules, skillPattern); i >= 0; i = indexOf(rules, skillPattern) {
-		removeMember(rules, i)
-	}
+	removeAll(rules, skillPattern)
 	if len(rules.Members) == 0 {
 		removeMember(perm, indexOf(perm, "skill"))
 	}
@@ -202,6 +198,13 @@ func removeMember(obj *hujson.Object, i int) {
 		// Concat, not append: Extra aliases the parsed input buffer.
 		obj.AfterExtra = slices.Concat(last.AfterExtra, obj.AfterExtra)
 		last.AfterExtra = nil
+	}
+}
+
+// removeAll deletes every member of obj named name — JSONC allows duplicates.
+func removeAll(obj *hujson.Object, name string) {
+	for i := indexOf(obj, name); i >= 0; i = indexOf(obj, name) {
+		removeMember(obj, i)
 	}
 }
 
