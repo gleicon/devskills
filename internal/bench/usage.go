@@ -96,9 +96,9 @@ type codexEvent struct {
 
 // parseCodex reads Codex's JSONL event stream: the last agent message is the
 // final text, and the last turn.completed carries usage — a running total for
-// the thread, so it is never summed. Codex reports no cost; price, when
-// non-nil, supplies it. Usage is non-nil whenever a turn completed.
-func parseCodex(stdout string, price *Price) (string, *Usage, error) {
+// the thread, so it is never summed. Codex reports no cost, so it stays
+// unknown here. Usage is non-nil whenever a turn completed.
+func parseCodex(stdout string) (string, *Usage, error) {
 	var (
 		text   string
 		u      *Usage
@@ -135,9 +135,6 @@ func parseCodex(stdout string, price *Price) (string, *Usage, error) {
 	}
 	if u == nil {
 		return "", nil, cmp.Or(failed, errors.New("codex output has no turn.completed event"))
-	}
-	if price != nil {
-		u.CostUSD, u.CostKnown = price.Cost(*u), true
 	}
 	return text, u, failed
 }

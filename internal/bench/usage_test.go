@@ -62,7 +62,6 @@ func TestParseClaude(t *testing.T) {
 }
 
 func TestParseCodex(t *testing.T) {
-	terra := &Price{Checked: "2026-09-26", Input: 2, CacheRead: 0.2, CacheWrite: 2.5, Output: 12}
 	// Mirrors Codex's own fixture: input_tokens counts the cached and
 	// cache-write tokens, output_tokens counts the reasoning ones.
 	const stream = `{"type":"thread.started","thread_id":"t1"}
@@ -75,21 +74,12 @@ func TestParseCodex(t *testing.T) {
 	tests := []struct {
 		name      string
 		stdout    string
-		price     *Price
 		wantText  string
 		wantUsage *Usage
 		wantErr   string
 	}{
 		{
-			name:     "priced",
-			stdout:   stream,
-			price:    terra,
-			wantText: "found it",
-			// 500k×$2 + 400k×$0.20 + 100k×$2.50 + 100k×$12, per 1M
-			wantUsage: &Usage{Input: 500000, CacheRead: 400000, CacheWrite: 100000, Output: 100000, CostUSD: 2.53, CostKnown: true},
-		},
-		{
-			name:      "no price leaves cost unknown",
+			name:      "usage with cost unknown",
 			stdout:    stream,
 			wantText:  "found it",
 			wantUsage: &Usage{Input: 500000, CacheRead: 400000, CacheWrite: 100000, Output: 100000},
@@ -105,7 +95,7 @@ func TestParseCodex(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			text, usage, err := parseCodex(tt.stdout, tt.price)
+			text, usage, err := parseCodex(tt.stdout)
 			if tt.wantErr == "" && err != nil {
 				t.Fatalf("err = %v", err)
 			}
@@ -127,6 +117,43 @@ func TestParseCodex(t *testing.T) {
 				if got != want {
 					t.Errorf("usage = %+v, want %+v", got, want)
 				}
+			}
+		})
+	}
+}
+
+func TestParseOutputPricesOnlyUnknownCost(t *testing.T) {
+	price := &Price{Checked: "2026-09-26", Input: 2, CacheRead: 0.2, CacheWrite: 2.5, Output: 12}
+	tokens := Usage{Input: 500000, CacheRead: 400000, CacheWrite: 100000, Output: 100000}
+	reported := tokens
+	reported.CostUSD, reported.CostKnown = 1, true
+	priced := tokens
+	// 500k×$2 + 400k×$0.20 + 100k×$2.50 + 100k×$12, per 1M
+	priced.CostUSD, priced.CostKnown = 2.53, true
+	tests := []struct {
+		name  string
+		usage Usage
+		price *Price
+		want  Usage
+	}{
+		{"unknown cost is priced", tokens, price, priced},
+		{"reported cost is kept", reported, price, reported},
+		{"no price leaves cost unknown", tokens, nil, tokens},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			res := Result{Stdout: "raw"}
+			res.parseOutput(func(string) (string, *Usage, error) { u := tt.usage; return "text", &u, nil }, tt.price)
+			if res.Stdout != "text" || res.Usage == nil {
+				t.Fatalf("stdout = %q, usage = %+v", res.Stdout, res.Usage)
+			}
+			got, want := *res.Usage, tt.want
+			if math.Abs(got.CostUSD-want.CostUSD) > 1e-9 {
+				t.Errorf("cost = %v, want %v", got.CostUSD, want.CostUSD)
+			}
+			got.CostUSD, want.CostUSD = 0, 0
+			if got != want {
+				t.Errorf("usage = %+v, want %+v", got, want)
 			}
 		})
 	}

@@ -56,7 +56,7 @@ type Runner struct {
 // returned error is infrastructural (sandbox, git); harness failures land in
 // Result.Err.
 func (r Runner) Run(ctx context.Context, s *Scenario, skill SkillVersion, extras []SkillVersion, blocks []Block) (Result, error) {
-	argv, err := headlessArgs(r.Harness, s.Task, r.Model, skill.Name)
+	argv, parse, err := headless(r.Harness, s.Task, r.Model, skill.Name)
 	if err != nil {
 		return Result{}, err
 	}
@@ -121,23 +121,23 @@ func (r Runner) Run(ctx context.Context, s *Scenario, skill SkillVersion, extras
 		return Result{}, err
 	}
 	res := Result{Stdout: stdout.String(), Stderr: stderr.String(), Diff: diff, Err: runErr}
-	switch r.Harness {
-	case harness.Claude:
-		res.applyParsed(parseClaude(res.Stdout))
-	case harness.Codex:
-		res.applyParsed(parseCodex(res.Stdout, r.Price))
-	case harness.OpenCode:
-		res.applyParsed(parseOpenCode(res.Stdout))
-	}
+	res.parseOutput(parse, r.Price)
 	return res, nil
 }
 
-// applyParsed swaps the raw JSON stdout for the final text, so the checker
-// scores what the model said, and records usage. Output that yields no usage
-// keeps the raw stdout for the transcript; a parse error fails an otherwise
-// clean run.
-func (res *Result) applyParsed(text string, usage *Usage, err error) {
+// parser splits an assistant's JSON output into its final text and usage.
+type parser func(stdout string) (text string, usage *Usage, err error)
+
+// parseOutput swaps the raw JSON stdout for the final text, so the checker
+// scores what the model said, and records usage, costed at price when the
+// assistant reported no cost. Output that yields no usage keeps the raw stdout
+// for the transcript; a parse error fails an otherwise clean run.
+func (res *Result) parseOutput(parse parser, price *Price) {
+	text, usage, err := parse(res.Stdout)
 	if usage != nil {
+		if !usage.CostKnown && price != nil {
+			usage.CostUSD, usage.CostKnown = price.Cost(*usage), true
+		}
 		res.Stdout, res.Usage = text, usage
 	}
 	if res.Err == nil {
@@ -145,8 +145,9 @@ func (res *Result) applyParsed(text string, usage *Usage, err error) {
 	}
 }
 
-// headlessArgs builds the non-interactive invocation for a harness.
-func headlessArgs(id harness.ID, task, model, skill string) ([]string, error) {
+// headless builds the non-interactive invocation for a harness and picks the
+// parser for its output.
+func headless(id harness.ID, task, model, skill string) ([]string, parser, error) {
 	switch id {
 	case harness.Claude:
 		// Claude Code does not surface project-local skills to a headless run,
@@ -164,19 +165,19 @@ func headlessArgs(id harness.ID, task, model, skill string) ([]string, error) {
 		// trusted input (see the trust model in docs/bench.md).
 		return []string{"claude", "-p", prompt, "--model", model, "--output-format", "json",
 			"--setting-sources", "project", "--settings", `{"autoMemoryEnabled":false}`, "--strict-mcp-config",
-			"--dangerously-skip-permissions"}, nil
+			"--dangerously-skip-permissions"}, parseClaude, nil
 	case harness.Codex:
 		// exec is codex's non-interactive mode; workspace-write confines
 		// model-run commands to the sandbox repo.
-		return []string{"codex", "exec", "--json", "--model", model, "--sandbox", "workspace-write", task}, nil
+		return []string{"codex", "exec", "--json", "--model", model, "--sandbox", "workspace-write", task}, parseCodex, nil
 	case harness.OpenCode:
 		// --pure drops the operator's external plugins; --auto approves the
 		// permission prompts a headless run can't answer — approvals-off like
 		// Claude, unconfined beyond the sandbox cwd, so scenario tasks are
 		// trusted input.
-		return []string{"opencode", "run", task, "--model", model, "--format", "json", "--pure", "--auto"}, nil
+		return []string{"opencode", "run", task, "--model", model, "--format", "json", "--pure", "--auto"}, parseOpenCode, nil
 	}
-	return nil, fmt.Errorf("harness %q is not supported by bench", id)
+	return nil, nil, fmt.Errorf("harness %q is not supported by bench", id)
 }
 
 // installSkills writes each skill — its full directory, companions included —
