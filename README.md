@@ -37,9 +37,9 @@ Then sync the skills into your assistants:
 devskills install
 ```
 
-`install` detects Claude Code, OpenCode, and Codex, lets you pick which to target, and copies the catalog into each one's skills directory. Re-run it any time to update — it prunes skills that were renamed or dropped and never touches anything it didn't ship. Use `--local` to install into the current repo instead of globally, `--dry-run` to preview the plan, `--uninstall` to remove.
+`install` detects Claude Code, OpenCode, and Codex, lets you pick which to target, and copies the catalog into each one's skills directory. Re-run it any time to update — it prunes skills that were renamed or dropped and never touches anything it didn't ship, apart from the OpenCode permission rule below. Use `--local` to install into the current repo instead of globally, `--dry-run` to preview the plan, `--uninstall` to remove.
 
-*Enforcement is per-assistant: Claude Code and Codex honor the invoke-only flag (Codex via a generated policy sidecar); OpenCode [doesn't yet](https://github.com/anomalyco/opencode/issues/34498), so a skill there can still be model-invoked until upstream lands it.*
+*Enforcement is per-assistant: Claude Code and Codex honor the invoke-only flag (Codex via a generated policy sidecar). OpenCode [ignores it](https://github.com/anomalyco/opencode/issues/34498), so `install` adds `"ds-*": "deny"` to `permission.skill` in OpenCode's `opencode.json` instead, keeping your comments and formatting. The model can't load a `ds-*` skill, and you run them from OpenCode's Skills picker. `--uninstall` takes the rule back out.*
 
 ## Use
 
