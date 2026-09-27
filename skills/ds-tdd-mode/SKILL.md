@@ -44,6 +44,6 @@ A test that breaks on a behavior-preserving refactor is coupled to implementatio
 
 ## Output
 
-Work each slice test first, then implementation. Report each slice as the behavior pinned and the files touched — never the test or implementation code. At the end, report which behaviors remain untested.
+For each slice: the test, then the implementation. Report which behaviors remain untested.
 
 Confirm activation with "TDD mode active." Activating a mode only turns on this posture; it is not approval to begin work — continue with whatever the user already asked for, or wait for their next instruction.

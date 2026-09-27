@@ -133,7 +133,7 @@ One-pass questions and handbacks — counters the interaction defects that push 
 
 Drive implementation test-first, one **vertical** slice at a time (one test → minimal implementation → repeat). Refuses horizontal slicing (all tests up front). Tests exercise observable behavior through the public interface, never internals.
 
-- **Output:** per slice, the behavior pinned and the files touched — not the code; reports which behaviors remain untested.
+- **Output:** per slice, the test then the implementation; reports which behaviors remain untested.
 - **Reach for it when:** building a feature you want anchored to real, refactor-survivable behavior.
 
 ### `/ds-test-mode` — mode
