@@ -24,9 +24,6 @@ import (
 // bare "language" block predates the per-language language:<lang> ids.
 var retiredBlocks = []string{"language"}
 
-// baseAsset is the base block's file under agents-md/, written by every init.
-const baseAsset = "system/agents-base.md"
-
 // layers are the optional AGENTS.md blocks init offers beside base. Adding one
 // here is the whole change: flag, flagsChanged, prompt, and write all derive
 // from this table.
@@ -170,30 +167,12 @@ func runInit(out io.Writer, catalog fs.FS, root string, sel initSelection, dryRu
 		return err
 	}
 
-	add := func(id, rel string) error {
-		body, err := readAsset(catalog, rel)
+	for _, b := range blocksFor(sel) {
+		body, err := readAsset(catalog, b.asset)
 		if err != nil {
 			return err
 		}
-		return e.Upsert(agentsPath, id, body)
-	}
-	if err := add("base", baseAsset); err != nil {
-		return err
-	}
-	// Iterate the table, not sel.layers, so block order stays canonical.
-	for _, l := range layers {
-		if slices.Contains(sel.layers, l.id) {
-			if err := add(l.id, l.asset); err != nil {
-				return err
-			}
-		}
-	}
-	for _, lang := range sel.langs {
-		body, err := readAsset(catalog, languageAsset(lang))
-		if err != nil {
-			return err
-		}
-		if err := e.Upsert(agentsPath, languageBlockID(lang), body); err != nil {
+		if err := e.Upsert(agentsPath, b.id, body); err != nil {
 			return err
 		}
 	}
@@ -240,9 +219,28 @@ func removeLegacyProfile(out io.Writer, root string, dryRun bool) error {
 	return nil
 }
 
-func languageBlockID(lang string) string { return "language:" + lang }
+// agentsBlock is one AGENTS.md block init writes.
+type agentsBlock struct {
+	name  string // what the selection calls it: "base", a layer id, or a language
+	id    string // managed-block id
+	asset string // file under agents-md/
+}
 
-func languageAsset(lang string) string { return "language/" + lang + ".md" }
+// blocksFor lists the blocks init writes for sel, in the order it writes them:
+// base, the selected layers in table order, then the languages as selected.
+func blocksFor(sel initSelection) []agentsBlock {
+	blocks := []agentsBlock{{"base", "base", "system/agents-base.md"}}
+	// Iterate the table, not sel.layers, so block order stays canonical.
+	for _, l := range layers {
+		if slices.Contains(sel.layers, l.id) {
+			blocks = append(blocks, agentsBlock{l.id, l.id, l.asset})
+		}
+	}
+	for _, lang := range sel.langs {
+		blocks = append(blocks, agentsBlock{lang, "language:" + lang, "language/" + lang + ".md"})
+	}
+	return blocks
+}
 
 func readAsset(catalog fs.FS, rel string) (string, error) {
 	b, err := fs.ReadFile(catalog, path.Join("agents-md", rel))

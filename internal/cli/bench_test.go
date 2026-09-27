@@ -536,7 +536,8 @@ func TestRunBenchInterruptedContextAborts(t *testing.T) {
 }
 
 // blocksRoot adds agents-md blocks to a benchRoot: base and the go profile
-// committed on main then diverged, and concise new in the working tree.
+// committed on main then diverged, and concise and the shell profile new in the
+// working tree.
 func blocksRoot(t *testing.T) string {
 	t.Helper()
 	root := benchRoot(t, "alpha")
@@ -546,6 +547,7 @@ func blocksRoot(t *testing.T) string {
 	gitRun(t, root, "commit", "-q", "-m", "blocks")
 	writeFile(t, root, "agents-md/system/agents-base.md", "NEWBASE\n")
 	writeFile(t, root, "agents-md/language/go.md", "NEWGO\n")
+	writeFile(t, root, "agents-md/language/shell.md", "NEWSHELL\n")
 	writeFile(t, root, "agents-md/system/concise.md", "NEWCONCISE\n")
 	return root
 }
@@ -578,6 +580,25 @@ func TestRunBenchInstallsBlocksPerVersion(t *testing.T) {
 		t.Errorf("report should list each block with its SHAs in init's order:\n%s", got)
 	}
 	if want := "--blocks base,concise,go --format pr-md"; !strings.Contains(got, want) {
+		t.Errorf("report missing %q:\n%s", want, got)
+	}
+}
+
+func TestRunBenchOrdersLanguagesLikeInit(t *testing.T) {
+	root := blocksRoot(t)
+	fakeClaudeCLI(t, `cat AGENTS.md`)
+	var out strings.Builder
+	opts := benchOptions{Skill: "ds-x", Runs: 1, Format: "pr-md", Blocks: "shell,go"}
+	if err := runBench(context.Background(), &out, io.Discard, root, opts); err != nil {
+		t.Fatal(err)
+	}
+	got := out.String()
+	_, newRun, _ := strings.Cut(got, "#### new run 1")
+	// init --lang shell,go writes shell first, so bench must too.
+	if iShell, iGo := strings.Index(newRun, "NEWSHELL"), strings.Index(newRun, "NEWGO"); iShell < 0 || iGo < iShell {
+		t.Errorf("new run should get the languages in the order given:\n%s", newRun)
+	}
+	if want := "--blocks shell,go --format pr-md"; !strings.Contains(got, want) {
 		t.Errorf("report missing %q:\n%s", want, got)
 	}
 }

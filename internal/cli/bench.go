@@ -199,11 +199,11 @@ func loadBenchRun(root string, opts benchOptions) (benchRun, error) {
 	}, nil
 }
 
-// loadBlocks resolves the --blocks names in init's canonical order — base,
-// layers, languages — so the sandbox's AGENTS.md reads the way a real init
-// would write it, and loads each version's copies keyed by version label. It
-// also returns the names in that order. Languages are listed from the working
-// tree, so a profile new on the branch can be benched.
+// loadBlocks resolves the --blocks names to the blocks init writes for the same
+// selection, in init's order, so the sandbox's AGENTS.md reads the way a real
+// init would write it, and loads each version's copies keyed by version label.
+// It also returns the names in that order. Languages are listed from the
+// working tree, so a profile new on the branch can be benched.
 func loadBlocks(root, list string) (map[string][]bench.Block, []string, error) {
 	if list == "" {
 		return nil, nil, nil
@@ -221,22 +221,25 @@ func loadBlocks(root, list string) (map[string][]bench.Block, []string, error) {
 	if err != nil {
 		return nil, nil, err
 	}
+	var sel initSelection
+	for _, name := range picked {
+		switch {
+		case slices.Contains(langs, name):
+			sel.langs = append(sel.langs, name)
+		case name != "base":
+			sel.layers = append(sel.layers, name)
+		}
+	}
 	var (
 		refs  []bench.Block
 		names []string
 	)
-	add := func(name, id, path string) {
-		if slices.Contains(picked, name) {
-			refs = append(refs, bench.Block{ID: id, Path: path})
-			names = append(names, name)
+	for _, b := range blocksFor(sel) {
+		// init always writes base; bench writes it only when picked.
+		if slices.Contains(picked, b.name) {
+			refs = append(refs, bench.Block{ID: b.id, Path: b.asset})
+			names = append(names, b.name)
 		}
-	}
-	add("base", "base", baseAsset)
-	for _, l := range layers {
-		add(l.id, l.id, l.asset)
-	}
-	for _, lang := range langs {
-		add(lang, languageBlockID(lang), languageAsset(lang))
 	}
 	oldBlocks, newBlocks, err := bench.LoadBlocks(root, refs)
 	if err != nil {
