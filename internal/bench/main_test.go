@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"testing"
+
+	"github.com/gleicon/devskills/internal/benchtest"
 )
 
 // fakePWDEnv turns the test binary into a fake opencode that reports whether
@@ -15,7 +17,14 @@ func TestMain(m *testing.M) {
 	if os.Getenv(fakePWDEnv) == "1" {
 		os.Exit(fakeOpenCodePWD())
 	}
-	os.Exit(m.Run())
+	shim, err := benchtest.ShimAssistants()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	code := m.Run()
+	os.RemoveAll(shim)
+	os.Exit(code)
 }
 
 func fakeOpenCodePWD() int {

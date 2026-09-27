@@ -140,27 +140,48 @@ func (r Resolver) LegacyCommandDir(id ID) (string, bool) {
 // precedence override > env > default.
 func (r Resolver) configDir(id ID) string {
 	if o := r.Overrides[id]; o != "" {
-		return r.expand(o)
+		return r.Expand(o)
 	}
 	switch id {
 	case Claude:
 		if v := r.env("CLAUDE_CONFIG_DIR"); v != "" {
-			return r.expand(v)
+			return r.Expand(v)
 		}
 		return filepath.Join(r.Home, ".claude")
 	case Codex:
 		if v := r.env("CODEX_HOME"); v != "" {
-			return r.expand(v)
+			return r.Expand(v)
 		}
 		return filepath.Join(r.Home, ".codex")
 	case OpenCode:
 		// XDG_CONFIG_HOME is the parent; opencode/ sits under it.
 		if v := r.env("XDG_CONFIG_HOME"); v != "" {
-			return filepath.Join(r.expand(v), "opencode")
+			return filepath.Join(r.Expand(v), "opencode")
 		}
 		return filepath.Join(r.Home, ".config", "opencode")
 	}
 	return ""
+}
+
+// LoginDir is where a harness keeps the login a headless run bills, the env
+// var that picks it, and whether that var is set (false: the default login).
+func (r Resolver) LoginDir(id ID) (dir, envVar string, fromEnv bool) {
+	var def, sub string
+	switch id {
+	case Claude:
+		envVar, def = "CLAUDE_CONFIG_DIR", ".claude"
+	case Codex:
+		envVar, def = "CODEX_HOME", ".codex"
+	case OpenCode:
+		// OpenCode keeps auth in its data dir, not its config dir.
+		envVar, def, sub = "XDG_DATA_HOME", ".local/share", "opencode"
+	default:
+		return "", "", false
+	}
+	if v := r.env(envVar); v != "" {
+		return filepath.Join(r.Expand(v), sub), envVar, true
+	}
+	return filepath.Join(r.Home, filepath.FromSlash(def), sub), envVar, false
 }
 
 // LocalDir is the project-local dot directory a harness reads (".claude", …).
@@ -180,9 +201,9 @@ func localSkillsDir(id ID) string {
 	return filepath.Join(LocalDir(id), "skills")
 }
 
-// expand resolves a leading ~ against Home, since env vars and flag values are
+// Expand resolves a leading ~ against Home, since env vars and flag values are
 // not shell-expanded.
-func (r Resolver) expand(p string) string {
+func (r Resolver) Expand(p string) string {
 	if p == "~" {
 		return r.Home
 	}

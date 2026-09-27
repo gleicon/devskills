@@ -26,14 +26,14 @@ Skill names come from the `skills/<name>/` path segment. Evals-only changes (sce
 
 ## Pre-flight
 
-Before the first bench invocation, echo the resolved targets with each one's scenario count and total run count, plus the assistant set the runs will use — the bench default when none was chosen, named explicitly so it never rides silently. Ask for the mode if it is still unresolved. One confirmation for the whole batch, not one per skill; the user can amend the assistant set at this gate. Zero bench runs happen before this gate.
+Before the first bench invocation, run the bench command once without `--login`: it prints the login each assistant will bill, then refuses without starting a run. Echo the resolved targets with each one's scenario count and total run count, plus the assistant set the runs will use — the bench default when none was chosen, named explicitly so it never rides silently — and the logins bench printed, verbatim. Ask for the mode if it is still unresolved. One confirmation for the whole batch, not one per skill; the user can amend the assistant set or the login at this gate. Zero bench runs happen before this gate. After it, pass one `--login <dir>` for each login the user approved — never a login they didn't see.
 
 ## Running the bench
 
 Always the working tree, never an installed binary, always the pr-md report:
 
 ```bash
-make bench SKILL=<skill> ARGS="--format pr-md --out <scratch>/<skill>.md [passthrough flags]"
+make bench SKILL=<skill> ARGS="--format pr-md --out <scratch>/<skill>.md --login <approved dir>… [passthrough flags]"
 ```
 
 (equivalently `go run . bench <skill> …`). The report's hit tables plus embedded transcripts are the diagnosis input and the PR artifact — no second format is ever needed. Bench targets run sequentially.

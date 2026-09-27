@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"charm.land/huh/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/spf13/cobra"
 
@@ -28,6 +30,8 @@ type benchOptions struct {
 	Out      string        // pr-md destination file; empty writes to stdout
 	Timeout  time.Duration // per-run bound; 0 defers to the scenario, then bench.DefaultTimeout
 	Blocks   string        // comma-separated agents-md blocks to install; empty installs none
+	Logins   []string      // login dirs the operator approved; each assistant's must be one of them
+	tty      bool          // terminal on stdin and stdout, so the confirm prompt can run
 }
 
 func newBenchCmd() *cobra.Command {
@@ -37,7 +41,7 @@ func newBenchCmd() *cobra.Command {
 		Short: "Benchmark a skill against its scenarios in evals/",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			opts.Skill = args[0]
+			opts.Skill, opts.tty = args[0], isTTY()
 			r, err := harness.NewResolver(nil)
 			if err != nil {
 				return err
@@ -54,6 +58,7 @@ func newBenchCmd() *cobra.Command {
 	f.StringVar(&opts.Out, "out", "", "with --format pr-md, write the report to this file")
 	f.StringVar(&opts.Blocks, "blocks", "", "comma-separated agents-md blocks to install beside each version (base, init's layer ids, languages)")
 	f.DurationVar(&opts.Timeout, "timeout", 0, "per-run timeout (default the scenario's timeout, else "+bench.DefaultTimeout.String()+")")
+	f.StringSliceVar(&opts.Logins, "login", nil, "login dir bench may bill, e.g. ~/.claude-personal; repeat per assistant (required without a terminal)")
 	return cmd
 }
 
@@ -73,6 +78,9 @@ func runBench(ctx context.Context, out, errOut io.Writer, root string, opts benc
 	// (docs/bench.md).
 	if unconfined := slices.DeleteFunc(slices.Clone(b.harnesses), func(h harness.ID) bool { return h == harness.Codex }); len(unconfined) > 0 {
 		lipgloss.Fprintf(errOut, "warning: %s runs approvals-off and unconfined — treat evals/ content like code you are about to run (docs/bench.md)\n", joinNames(unconfined))
+	}
+	if err := confirmLogins(errOut, b); err != nil {
+		return err
 	}
 	// Raw mode's product is the run stream itself, so it goes to out. In
 	// pr-md mode the product is the report; every streamed line — run
@@ -102,6 +110,51 @@ func runBench(ctx context.Context, out, errOut io.Writer, root string, opts benc
 	}
 	if failures == total {
 		return fmt.Errorf("all %d runs failed", failures)
+	}
+	return nil
+}
+
+// confirmLogins names the login each assistant's runs will bill and starts no
+// run until the operator approves those exact logins: every one listed in
+// --login, or confirmed at the terminal prompt. A headless run uses whatever
+// login the environment resolves, which need not be the one the operator means
+// to pay with — so a bare yes, which approves any login, is never enough.
+func confirmLogins(errOut io.Writer, b benchRun) error {
+	r, err := harness.NewResolver(nil)
+	if err != nil {
+		return err
+	}
+	approved := make([]string, len(b.opts.Logins))
+	for i, l := range b.opts.Logins {
+		approved[i] = filepath.Clean(r.Expand(l))
+	}
+	lipgloss.Fprintf(errOut, "bench will start %d runs on each assistant below, billed to its login:\n",
+		len(b.scenarios)*len(b.versions)*b.opts.Runs)
+	var unapproved []string
+	for _, h := range b.harnesses {
+		dir, envVar, fromEnv := r.LoginDir(h)
+		source := "from " + envVar
+		if !fromEnv {
+			source = "the default: " + envVar + " is unset"
+		}
+		lipgloss.Fprintf(errOut, "  %s: %s (%s)\n", h.Name(), dir, source)
+		if !slices.Contains(approved, filepath.Clean(dir)) {
+			unapproved = append(unapproved, fmt.Sprintf("%s's %s (set %s to bill another)", h.Name(), dir, envVar))
+		}
+	}
+	if len(unapproved) == 0 {
+		return nil
+	}
+	if len(b.opts.Logins) > 0 || !b.opts.tty {
+		return fmt.Errorf("bench would bill logins no --login approves: %s", strings.Join(unapproved, "; "))
+	}
+	ok := false
+	confirm := huh.NewConfirm().Title("Bill these logins?").Value(&ok)
+	if err := huh.NewForm(huh.NewGroup(confirm)).WithTheme(huh.ThemeFunc(formTheme)).Run(); err != nil {
+		return err
+	}
+	if !ok {
+		return errors.New("bench cancelled: nothing ran")
 	}
 	return nil
 }
