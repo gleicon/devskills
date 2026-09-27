@@ -98,7 +98,10 @@ func (r Runner) Run(ctx context.Context, s *Scenario, skill SkillVersion, extras
 			return Result{}, err
 		}
 		defer os.RemoveAll(configDir)
-		cmd.Env = append(os.Environ(),
+		// cmd.Environ, not os.Environ: Go only points PWD at cmd.Dir when Env
+		// is nil, and opencode resolves its project from PWD — an inherited
+		// one runs it in the caller's repo instead of the sandbox.
+		cmd.Env = append(cmd.Environ(),
 			"OPENCODE_CONFIG_DIR="+configDir,
 			"OPENCODE_DISABLE_CLAUDE_CODE=1",
 		)

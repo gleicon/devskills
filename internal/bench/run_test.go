@@ -308,3 +308,30 @@ echo '{"type":"step_finish","part":{"cost":0.01,"tokens":{"input":10,"output":4,
 		t.Errorf("stdout = %q, want the installed skill under .opencode/skills", res.Stdout)
 	}
 }
+
+func TestRunnerOpenCodePWDIsSandbox(t *testing.T) {
+	// A shell fake can't see this: sh resets an inherited PWD that doesn't
+	// name its cwd. The real opencode is a native binary that trusts PWD, so
+	// the fake is this test binary, symlinked in as opencode (see TestMain).
+	self, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	bin := t.TempDir()
+	if err := os.Symlink(self, filepath.Join(bin, "opencode")); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", bin+string(os.PathListSeparator)+os.Getenv("PATH"))
+	t.Setenv(fakePWDEnv, "1")
+	r := Runner{Harness: harness.OpenCode, Model: "m"}
+	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Err != nil {
+		t.Fatalf("Result.Err = %v", res.Err)
+	}
+	if res.Stdout != "PWD is cwd" {
+		t.Errorf("fake opencode saw %q, want PWD naming the sandbox it runs in", res.Stdout)
+	}
+}
