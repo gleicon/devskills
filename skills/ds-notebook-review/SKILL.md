@@ -8,10 +8,20 @@ When invoked, audit the `.ipynb` files in scope against one question: **will thi
 
 ## Arguments
 
-- Treat positional args as scope (notebook files, directories, globs). With no scope, review the `.ipynb` files changed on the current branch.
+- Treat positional args as scope (notebook files, directories, globs). With no scope, review the `.ipynb` files changed on the current branch — list them with `git --no-pager diff --no-ext-diff --name-only <base>...HEAD -- '*.ipynb'`, never read the raw diff: it carries every output blob.
 - `--full` → review all notebooks in the repo instead of just the branch's changes. Explicit positional scope still wins; `--full` only replaces the no-scope default.
 - Freeform scope ("the training notebook", "the EDA folder") is interpreted reasonably.
 - `--fix` → after reporting, apply only the findings whose fix is **mechanical and unambiguous**: strip committed output cells, reset `execution_count` to `null`, remove a scratch cell the review is certain is dead. Anything that changes execution semantics or rests on an assumption — setting a seed, reordering cells, rewriting leakage-prone preprocessing, deleting a cell whose effect you can't confirm — **stays report-only**. Edit the notebook JSON directly for the mechanical fixes (clear each cell's `outputs`, reset `execution_count` to `null`), confirm the file still parses as valid notebook JSON, then close with a summary of what was applied and what was left.
+
+## Reading a notebook
+
+Read each notebook through this projection, never raw — an embedded image or other binary output is tens of kilobytes of base64 with nothing to review. It prints every cell's index, type, `execution_count` and source; every output's type and MIME payload sizes; and all text output in full (stream text, `text/plain`, tracebacks), where a leaked secret would show:
+
+```bash
+jq -r 'def txt: if type == "array" then join("") else . end; .cells | to_entries[] | "--- cell \(.key) [\(.value.cell_type)] exec=\(.value.execution_count)\n\(.value.source | txt)" + ((.value.outputs // []) | map("\n  output: \(.output_type) \((.data // {}) | to_entries | map("\(.key) \(.value | tostring | length)B") | join(", "))\n\((.text // .data["text/plain"] // ((.traceback // []) | join("\n"))) | txt)") | join(""))' <notebook.ipynb>
+```
+
+Open an output's raw payload only when a finding depends on it — an HTML table with no `text/plain` twin, say.
 
 ## What to check
 
