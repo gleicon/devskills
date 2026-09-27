@@ -1,6 +1,8 @@
 package bench
 
 import (
+	"crypto/sha1"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -146,6 +148,15 @@ func TestLoadBlocks(t *testing.T) {
 	}
 	if len(newBlocks) != 2 || newBlocks[0].Body != "NEWBASE\n" || newBlocks[1].Body != "NEWCONCISE\n" {
 		t.Errorf("new = %+v, want both from the working tree", newBlocks)
+	}
+	// Git's blob SHA: what the report prints and `git hash-object` reproduces.
+	blob := func(body string) string {
+		return fmt.Sprintf("%x", sha1.Sum(fmt.Appendf(nil, "blob %d\x00%s", len(body), body)))
+	}
+	for _, b := range append(oldBlocks, newBlocks...) {
+		if b.SHA != blob(b.Body) {
+			t.Errorf("block %s SHA = %q, want the blob SHA of its body %q", b.ID, b.SHA, blob(b.Body))
+		}
 	}
 
 	_, _, err = LoadBlocks(root, []Block{{ID: "gone", Path: "system/gone.md"}})

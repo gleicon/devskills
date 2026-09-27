@@ -148,6 +148,45 @@ func TestReportMarkdownBaseline(t *testing.T) {
 	}
 }
 
+func TestReportMarkdownBlocks(t *testing.T) {
+	tests := []struct {
+		name     string
+		baseline bool
+		want     []string
+	}{
+		{
+			name: "each block names its old and new SHA",
+			want: []string{
+				"- Blocks, each from its version's tree:\n",
+				"  - `base`: old `aaaa`, new `bbbb`\n",
+				"  - `concise`: new `cccc` (absent on the main branch, so old runs go without)\n",
+			},
+		},
+		{
+			name:     "baseline names only the new SHA",
+			baseline: true,
+			want: []string{
+				"  - `base`: new `bbbb`\n",
+				"  - `concise`: new `cccc`\n",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := sampleReport()
+			r.Baseline = tt.baseline
+			r.OldBlocks = []Block{{ID: "base", SHA: "aaaa"}}
+			r.NewBlocks = []Block{{ID: "base", SHA: "bbbb"}, {ID: "concise", SHA: "cccc"}}
+			got := r.Markdown()
+			for _, want := range tt.want {
+				if !strings.Contains(got, want) {
+					t.Errorf("markdown missing %q in:\n%s", want, got)
+				}
+			}
+		})
+	}
+}
+
 func TestReportMarkdownPricedAndUnpriced(t *testing.T) {
 	tests := []struct {
 		name     string

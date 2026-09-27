@@ -65,18 +65,18 @@ func (r Report) Markdown() string {
 		fmt.Fprintf(&b, "- Versions: old `%s` (main branch), new `%s` (working tree)\n", r.OldSHA, r.NewSHA)
 	}
 	if len(r.NewBlocks) > 0 {
-		var ids, branchOnly []string
+		b.WriteString("- Blocks, each from its version's tree:\n")
 		for _, nb := range r.NewBlocks {
-			ids = append(ids, nb.ID)
-			if !slices.ContainsFunc(r.OldBlocks, func(ob Block) bool { return ob.ID == nb.ID }) {
-				branchOnly = append(branchOnly, nb.ID)
+			i := slices.IndexFunc(r.OldBlocks, func(ob Block) bool { return ob.ID == nb.ID })
+			switch {
+			case r.Baseline:
+				fmt.Fprintf(&b, "  - `%s`: new `%s`\n", nb.ID, nb.SHA)
+			case i < 0:
+				fmt.Fprintf(&b, "  - `%s`: new `%s` (absent on the main branch, so old runs go without)\n", nb.ID, nb.SHA)
+			default:
+				fmt.Fprintf(&b, "  - `%s`: old `%s`, new `%s`\n", nb.ID, r.OldBlocks[i].SHA, nb.SHA)
 			}
 		}
-		fmt.Fprintf(&b, "- Blocks: %s, each from its version's tree", strings.Join(ids, ", "))
-		if len(branchOnly) > 0 && !r.Baseline {
-			fmt.Fprintf(&b, "; absent on the main branch, so old runs go without: %s", strings.Join(branchOnly, ", "))
-		}
-		b.WriteString("\n")
 	}
 	for _, g := range r.Groups {
 		fmt.Fprintf(&b, "\n## %s — model `%s`\n", g.Harness, g.Model)

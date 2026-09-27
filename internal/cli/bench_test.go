@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -569,13 +570,15 @@ func TestRunBenchInstallsBlocksPerVersion(t *testing.T) {
 	if iBase < 0 || iConcise < iBase || iGo < iConcise {
 		t.Errorf("new run should get working-tree blocks in init's order (base, layers, languages):\n%s", newRun)
 	}
-	for _, want := range []string{
-		"- Blocks: base, concise, language:go, each from its version's tree; absent on the main branch, so old runs go without: concise",
-		"--blocks base,concise,go --format pr-md",
-	} {
-		if !strings.Contains(got, want) {
-			t.Errorf("report missing %q:\n%s", want, got)
-		}
+	blocks := regexp.MustCompile("- Blocks, each from its version's tree:\n" +
+		"  - `base`: old `[0-9a-f]{40}`, new `[0-9a-f]{40}`\n" +
+		"  - `concise`: new `[0-9a-f]{40}` \\(absent on the main branch, so old runs go without\\)\n" +
+		"  - `language:go`: old `[0-9a-f]{40}`, new `[0-9a-f]{40}`\n")
+	if !blocks.MatchString(got) {
+		t.Errorf("report should list each block with its SHAs in init's order:\n%s", got)
+	}
+	if want := "--blocks base,concise,go --format pr-md"; !strings.Contains(got, want) {
+		t.Errorf("report missing %q:\n%s", want, got)
 	}
 }
 

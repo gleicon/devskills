@@ -68,11 +68,13 @@ func LoadSkills(root string, names []string) ([]SkillVersion, error) {
 }
 
 // Block is one managed AGENTS.md block: the marker id devskills init writes it
-// under, its source path under agents-md/, and that source's content.
+// under, its source path under agents-md/, that source's content, and its blob
+// SHA.
 type Block struct {
 	ID   string
 	Path string // slash-separated, relative to agents-md/
 	Body string
+	SHA  string
 }
 
 // LoadBlocks resolves the blocks named by refs (ID and Path set) in the repo at
@@ -85,11 +87,16 @@ func LoadBlocks(root string, refs []Block) (oldBlocks, newBlocks []Block, err er
 		return nil, nil, err
 	}
 	for _, ref := range refs {
-		b, err := os.ReadFile(filepath.Join(root, "agents-md", filepath.FromSlash(ref.Path)))
+		path := filepath.Join(root, "agents-md", filepath.FromSlash(ref.Path))
+		b, err := os.ReadFile(path)
 		if err != nil {
 			return nil, nil, fmt.Errorf("block %q not found in working tree: %w", ref.ID, err)
 		}
-		newBlocks = append(newBlocks, Block{ID: ref.ID, Path: ref.Path, Body: string(b)})
+		sha, err := gitStdout(root, "hash-object", path)
+		if err != nil {
+			return nil, nil, err
+		}
+		newBlocks = append(newBlocks, Block{ID: ref.ID, Path: ref.Path, Body: string(b), SHA: trimSHA(sha)})
 
 		spec := branch + ":agents-md/" + ref.Path
 		if _, err := gitStdout(root, "cat-file", "-e", spec); err != nil {
@@ -99,7 +106,11 @@ func LoadBlocks(root string, refs []Block) (oldBlocks, newBlocks []Block, err er
 		if err != nil {
 			return nil, nil, err
 		}
-		oldBlocks = append(oldBlocks, Block{ID: ref.ID, Path: ref.Path, Body: string(b)})
+		sha, err = gitStdout(root, "rev-parse", spec)
+		if err != nil {
+			return nil, nil, err
+		}
+		oldBlocks = append(oldBlocks, Block{ID: ref.ID, Path: ref.Path, Body: string(b), SHA: trimSHA(sha)})
 	}
 	return oldBlocks, newBlocks, nil
 }
