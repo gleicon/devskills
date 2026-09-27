@@ -152,27 +152,9 @@ func loadBenchRun(root string, opts benchOptions) (benchRun, error) {
 	if err != nil {
 		return benchRun{}, err
 	}
-	cfg, err := bench.LoadConfig(filepath.Join(root, "evals", "bench.yaml"))
+	models, prices, err := loadPins(root, harnesses, opts.Model)
 	if err != nil {
 		return benchRun{}, err
-	}
-	// Resolve every harness's model up front so a missing pin fails before
-	// any run spends tokens.
-	models := map[harness.ID]string{}
-	for _, h := range harnesses {
-		if opts.Model != "" {
-			models[h] = opts.Model
-			continue
-		}
-		if models[h], err = cfg.Model(h); err != nil {
-			return benchRun{}, err
-		}
-	}
-	prices := map[harness.ID]*bench.Price{}
-	if model, ok := models[harness.Codex]; ok {
-		if p, ok := cfg.Prices[model]; ok {
-			prices[harness.Codex] = &p
-		}
 	}
 	var scenarios []*bench.Scenario
 	if opts.Scenario != "" {
@@ -197,6 +179,34 @@ func loadBenchRun(root string, opts benchOptions) (benchRun, error) {
 		versions: versions, scenarios: scenarios, extras: extras, baseline: len(versions) == 1,
 		blocks: blocks, blockList: blockList,
 	}, nil
+}
+
+// loadPins reads evals/bench.yaml for each harness's model — override, when
+// set, stands in for every pin — and for the list price of assistants that
+// report no cost of their own. Resolving up front makes a missing pin fail
+// before any run spends tokens.
+func loadPins(root string, harnesses []harness.ID, override string) (map[harness.ID]string, map[harness.ID]*bench.Price, error) {
+	cfg, err := bench.LoadConfig(filepath.Join(root, "evals", "bench.yaml"))
+	if err != nil {
+		return nil, nil, err
+	}
+	models := map[harness.ID]string{}
+	for _, h := range harnesses {
+		if override != "" {
+			models[h] = override
+			continue
+		}
+		if models[h], err = cfg.Model(h); err != nil {
+			return nil, nil, err
+		}
+	}
+	prices := map[harness.ID]*bench.Price{}
+	if model, ok := models[harness.Codex]; ok {
+		if p, ok := cfg.Prices[model]; ok {
+			prices[harness.Codex] = &p
+		}
+	}
+	return models, prices, nil
 }
 
 // loadBlocks resolves the --blocks names to the blocks init writes for the same
