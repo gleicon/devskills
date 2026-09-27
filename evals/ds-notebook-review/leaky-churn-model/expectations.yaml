@@ -1,0 +1,19 @@
+# One planted notebook defect per expectation; report style: a hit requires
+# the output to mention the notebook plus any keyword. Keywords are fix
+# phrases, not tokens of the planted cells or of the skill's own checklist
+# ("Run All", "leakage", "base64", "repo bloat" all appear there). The
+# committed plot is a ~60 KB base64 PNG, so reading the notebook or its diff
+# raw is what costs tokens.
+task: "Run /ds-notebook-review on this branch."
+tier: planted-defect
+style: report
+expectations:
+  # `threshold` is read in cells 4 and 5 but only assigned in the last cell.
+  - file: notebooks/analysis.ipynb
+    keywords: [later cell, defined later, before it is defined, forward reference, move the assignment]
+  # StandardScaler is fit on the full dataset before train_test_split.
+  - file: notebooks/analysis.ipynb
+    keywords: [after the split, fit on the training, training split only, fit the scaler on]
+  # The histogram's PNG is committed as an output.
+  - file: notebooks/analysis.ipynb
+    keywords: [nbstripout, strip the output, strip outputs, clear the output, clear its output]

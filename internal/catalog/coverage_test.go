@@ -25,7 +25,6 @@ var grandfathered = map[string]bool{
 	"ds-grill-me":            true,
 	"ds-handoff":             true,
 	"ds-java-review":         true,
-	"ds-notebook-review":     true,
 	"ds-onboarding":          true,
 	"ds-osv":                 true,
 	"ds-perf-plan":           true,
