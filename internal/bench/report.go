@@ -24,6 +24,7 @@ type Report struct {
 type HarnessReport struct {
 	Harness   string // display name
 	Model     string // pinned model ID actually used
+	Price     *Price // the evals/bench.yaml price that costed the runs; nil when the assistant reports its own cost
 	Scenarios []ScenarioReport
 }
 
@@ -63,6 +64,9 @@ func (r Report) Markdown() string {
 	}
 	for _, g := range r.Groups {
 		fmt.Fprintf(&b, "\n## %s — model `%s`\n", g.Harness, g.Model)
+		if g.Price != nil {
+			fmt.Fprintf(&b, "\nCost at %s.\n", g.Price)
+		}
 		for _, s := range g.Scenarios {
 			s.render(&b, r.Baseline)
 		}
@@ -78,7 +82,7 @@ func (s ScenarioReport) render(b *strings.Builder, baseline bool) {
 			fmt.Fprintf(b, "| %d | %s |\n", i+1, s.cell(run))
 		}
 		fmt.Fprintf(b, "| **aggregate** | %s |\n", s.aggregate(s.New))
-		if hasUsage(s.New) {
+		if hasCost(s.New) {
 			fmt.Fprintf(b, "| **cost / success** | %s |\n", s.costPerSuccess(s.New))
 			fmt.Fprintf(b, "| **median cost** | %s |\n", medianCost(s.New))
 		}
@@ -88,7 +92,7 @@ func (s ScenarioReport) render(b *strings.Builder, baseline bool) {
 			fmt.Fprintf(b, "| %d | %s | %s |\n", i+1, s.runCell(s.Old, i), s.runCell(s.New, i))
 		}
 		fmt.Fprintf(b, "| **aggregate** | %s | %s |\n", s.aggregate(s.Old), s.aggregate(s.New))
-		if hasUsage(s.Old) || hasUsage(s.New) {
+		if hasCost(s.Old) || hasCost(s.New) {
 			fmt.Fprintf(b, "| **cost / success** | %s | %s |\n", s.costPerSuccess(s.Old), s.costPerSuccess(s.New))
 			fmt.Fprintf(b, "| **median cost** | %s | %s |\n", medianCost(s.Old), medianCost(s.New))
 		}
@@ -112,10 +116,11 @@ func (s ScenarioReport) runCell(runs []RunReport, i int) string {
 }
 
 func (s ScenarioReport) cell(r RunReport) string {
-	if r.Usage == nil {
+	cost, ok := runCost(r)
+	if !ok {
 		return ScoreCell(s.Tier, r, s.Expectations)
 	}
-	return fmt.Sprintf("%s · $%.4f", ScoreCell(s.Tier, r, s.Expectations), r.Usage.CostUSD)
+	return fmt.Sprintf("%s · $%.4f", ScoreCell(s.Tier, r, s.Expectations), cost)
 }
 
 // ScoreCell renders one run's score for a tier — the single wording shared by
@@ -189,13 +194,13 @@ func (s ScenarioReport) succeeded(r RunReport) bool {
 // costPerSuccess divides the spend of every run — failures included, since
 // they cost too — by the runs that succeeded.
 func (s ScenarioReport) costPerSuccess(runs []RunReport) string {
-	if !hasUsage(runs) {
+	if !hasCost(runs) {
 		return "—"
 	}
 	total, successes := 0.0, 0
 	for _, r := range runs {
-		if r.Usage != nil {
-			total += r.Usage.CostUSD
+		if cost, ok := runCost(r); ok {
+			total += cost
 		}
 		if s.succeeded(r) {
 			successes++
@@ -207,12 +212,12 @@ func (s ScenarioReport) costPerSuccess(runs []RunReport) string {
 	return fmt.Sprintf("$%.4f (%d/%d succeeded)", total/float64(successes), successes, len(runs))
 }
 
-// medianCost is the median over the runs that reported usage.
+// medianCost is the median over the runs with a known cost.
 func medianCost(runs []RunReport) string {
 	var costs []float64
 	for _, r := range runs {
-		if r.Usage != nil {
-			costs = append(costs, r.Usage.CostUSD)
+		if cost, ok := runCost(r); ok {
+			costs = append(costs, cost)
 		}
 	}
 	if len(costs) == 0 {
@@ -226,8 +231,18 @@ func medianCost(runs []RunReport) string {
 	return fmt.Sprintf("$%.4f", (costs[mid-1]+costs[mid])/2)
 }
 
-func hasUsage(runs []RunReport) bool {
-	return slices.ContainsFunc(runs, func(r RunReport) bool { return r.Usage != nil })
+func runCost(r RunReport) (float64, bool) {
+	if r.Usage == nil || !r.Usage.CostKnown {
+		return 0, false
+	}
+	return r.Usage.CostUSD, true
+}
+
+func hasCost(runs []RunReport) bool {
+	return slices.ContainsFunc(runs, func(r RunReport) bool {
+		_, ok := runCost(r)
+		return ok
+	})
 }
 
 func (r RunReport) renderTranscript(b *strings.Builder, label string) {

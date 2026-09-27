@@ -46,6 +46,7 @@ type Runner struct {
 	Harness harness.ID
 	Model   string
 	Timeout time.Duration // 0 defers to the scenario's timeout, then DefaultTimeout
+	Price   *Price        // list price for assistants that report tokens but no cost; nil leaves cost unknown
 }
 
 // Run benches one skill version against one scenario: materialize the fixture
@@ -116,17 +117,20 @@ func (r Runner) Run(ctx context.Context, s *Scenario, skill SkillVersion, extras
 		return Result{}, err
 	}
 	res := Result{Stdout: stdout.String(), Stderr: stderr.String(), Diff: diff, Err: runErr}
-	if r.Harness == harness.Claude {
-		res.applyClaudeResult()
+	switch r.Harness {
+	case harness.Claude:
+		res.applyParsed(parseClaude(res.Stdout))
+	case harness.Codex:
+		res.applyParsed(parseCodex(res.Stdout, r.Price))
 	}
 	return res, nil
 }
 
-// applyClaudeResult swaps the raw JSON stdout for the final text, so the checker
-// scores what the model said, and records usage. An unparseable result
-// keeps the raw stdout for the transcript and fails an otherwise clean run.
-func (res *Result) applyClaudeResult() {
-	text, usage, err := parseClaude(res.Stdout)
+// applyParsed swaps the raw JSON stdout for the final text, so the checker
+// scores what the model said, and records usage. Output that yields no usage
+// keeps the raw stdout for the transcript; a parse error fails an otherwise
+// clean run.
+func (res *Result) applyParsed(text string, usage *Usage, err error) {
 	if usage != nil {
 		res.Stdout, res.Usage = text, usage
 	}
@@ -153,7 +157,7 @@ func headlessArgs(id harness.ID, task, model, skill string) ([]string, error) {
 	case harness.Codex:
 		// exec is codex's non-interactive mode; workspace-write confines
 		// model-run commands to the sandbox repo.
-		return []string{"codex", "exec", "--model", model, "--sandbox", "workspace-write", task}, nil
+		return []string{"codex", "exec", "--json", "--model", model, "--sandbox", "workspace-write", task}, nil
 	case harness.OpenCode:
 		// --pure drops the operator's external plugins; --auto approves the
 		// permission prompts a headless run can't answer — approvals-off like

@@ -108,7 +108,7 @@ EOF`)
 	if res.Stdout != "found the slop" {
 		t.Errorf("stdout = %q, want the result text, not the raw JSON", res.Stdout)
 	}
-	want := Usage{Input: 100, CacheRead: 3000, CacheWrite: 400, Output: 20, CostUSD: 0.25}
+	want := Usage{Input: 100, CacheRead: 3000, CacheWrite: 400, Output: 20, CostUSD: 0.25, CostKnown: true}
 	if res.Usage == nil || *res.Usage != want {
 		t.Errorf("usage = %+v, want %+v", res.Usage, want)
 	}
@@ -244,7 +244,9 @@ func TestRunnerCodexInvocation(t *testing.T) {
 	argsFile := filepath.Join(t.TempDir(), "args")
 	t.Setenv("ARGS_OUT", argsFile)
 	fakeCLI(t, "codex", `printf '%s\n' "$@" > "$ARGS_OUT"
-cat .codex/skills/ds-x/agents/openai.yaml`)
+grep -q 'allow_implicit_invocation: false' .codex/skills/ds-x/agents/openai.yaml && sidecar=SIDECAR
+echo '{"type":"item.completed","item":{"type":"agent_message","text":"'$sidecar'"}}'
+echo '{"type":"turn.completed","usage":{"input_tokens":10,"cached_input_tokens":0,"output_tokens":5}}'`)
 	r := Runner{Harness: harness.Codex, Model: "codex-model"}
 	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("S"), nil)
 	if err != nil {
@@ -257,14 +259,17 @@ cat .codex/skills/ds-x/agents/openai.yaml`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"exec", "--model", "codex-model", "--sandbox", "workspace-write", "Review the diff"} {
+	for _, want := range []string{"exec", "--json", "--model", "codex-model", "--sandbox", "workspace-write", "Review the diff"} {
 		if !strings.Contains(string(args), want) {
 			t.Errorf("codex args = %q, missing %q", args, want)
 		}
 	}
 	// The sync engine's Codex sidecar must be emitted in the sandbox install.
-	if !strings.Contains(res.Stdout, "allow_implicit_invocation: false") {
-		t.Errorf("stdout = %q, want the codex sidecar policy", res.Stdout)
+	if res.Stdout != "SIDECAR" {
+		t.Errorf("stdout = %q, want the agent message confirming the codex sidecar policy", res.Stdout)
+	}
+	if res.Usage == nil || res.Usage.Input != 10 || res.Usage.Output != 5 {
+		t.Errorf("usage = %+v, want the turn.completed counts", res.Usage)
 	}
 }
 

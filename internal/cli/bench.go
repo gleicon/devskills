@@ -110,6 +110,7 @@ type benchRun struct {
 	opts      benchOptions
 	harnesses []harness.ID
 	models    map[harness.ID]string
+	prices    map[harness.ID]*bench.Price // only for assistants that report no cost of their own
 	versions  []bench.SkillVersion
 	scenarios []*bench.Scenario
 	extras    map[string][]bench.SkillVersion // scenario name -> its declared skills
@@ -159,6 +160,12 @@ func loadBenchRun(root string, opts benchOptions) (benchRun, error) {
 			return benchRun{}, err
 		}
 	}
+	prices := map[harness.ID]*bench.Price{}
+	if model, ok := models[harness.Codex]; ok {
+		if p, ok := cfg.Price(model); ok {
+			prices[harness.Codex] = &p
+		}
+	}
 	var scenarios []*bench.Scenario
 	if opts.Scenario != "" {
 		s, err := bench.LoadScenario(filepath.Join(root, "evals", opts.Skill, opts.Scenario))
@@ -178,7 +185,7 @@ func loadBenchRun(root string, opts benchOptions) (benchRun, error) {
 		}
 	}
 	return benchRun{
-		opts: opts, harnesses: harnesses, models: models,
+		opts: opts, harnesses: harnesses, models: models, prices: prices,
 		versions: versions, scenarios: scenarios, extras: extras, baseline: len(versions) == 1,
 	}, nil
 }
@@ -187,8 +194,8 @@ func loadBenchRun(root string, opts benchOptions) (benchRun, error) {
 // streaming progress, and returns its report group plus run/failure counts.
 func (b benchRun) runHarness(ctx context.Context, stream io.Writer, h harness.ID) (bench.HarnessReport, int, int, error) {
 	model := b.models[h]
-	runner := bench.Runner{Harness: h, Model: model, Timeout: b.opts.Timeout}
-	group := bench.HarnessReport{Harness: h.Name(), Model: model}
+	runner := bench.Runner{Harness: h, Model: model, Timeout: b.opts.Timeout, Price: b.prices[h]}
+	group := bench.HarnessReport{Harness: h.Name(), Model: model, Price: b.prices[h]}
 	total, failures := 0, 0
 	for _, s := range b.scenarios {
 		sr := bench.ScenarioReport{Name: s.Name, Tier: s.Tier, Expectations: s.ExpectedHits()}

@@ -43,12 +43,12 @@ func sampleReport() Report {
 				Name:         "narrated-greeting",
 				Expectations: 3,
 				Old: []RunReport{
-					{Checked: true, Hits: 1, Extras: 0, Usage: &Usage{Input: 10, CacheRead: 900, CacheWrite: 50, Output: 30, CostUSD: 0.05}, Stdout: "removed one comment\n", Diff: "diff --git a/greet.go b/greet.go\n-// First we get the greeting\n"},
+					{Checked: true, Hits: 1, Extras: 0, Usage: &Usage{Input: 10, CacheRead: 900, CacheWrite: 50, Output: 30, CostUSD: 0.05, CostKnown: true}, Stdout: "removed one comment\n", Diff: "diff --git a/greet.go b/greet.go\n-// First we get the greeting\n"},
 					{Failed: true, FailMsg: "timed out after 5m0s", Stderr: "signal: killed\n"},
 				},
 				New: []RunReport{
-					{Checked: true, Hits: 3, Extras: 1, Usage: &Usage{CostUSD: 0.04}, Stdout: "cleaned all three\nplus a ```code``` fence\n"},
-					{Checked: true, Hits: 2, Extras: 0, Usage: &Usage{CostUSD: 0.03}, Stdout: "cleaned two\n"},
+					{Checked: true, Hits: 3, Extras: 1, Usage: &Usage{CostUSD: 0.04, CostKnown: true}, Stdout: "cleaned all three\nplus a ```code``` fence\n"},
+					{Checked: true, Hits: 2, Extras: 0, Usage: &Usage{CostUSD: 0.03, CostKnown: true}, Stdout: "cleaned two\n"},
 				},
 			}},
 		}},
@@ -145,5 +145,51 @@ func TestReportMarkdownBaseline(t *testing.T) {
 	}
 	if !strings.Contains(got, "Baseline mode") {
 		t.Error("baseline report must say so")
+	}
+}
+
+func TestReportMarkdownPricedAndUnpriced(t *testing.T) {
+	tests := []struct {
+		name     string
+		price    *Price
+		usage    *Usage
+		want     []string
+		wantNone []string
+	}{
+		{
+			name:  "bench.yaml price is stated with its date",
+			price: &Price{Checked: "2026-09-26", Input: 2, CacheRead: 0.2, CacheWrite: 2.5, Output: 12},
+			usage: &Usage{Input: 100, Output: 10, CostUSD: 0.0003, CostKnown: true},
+			want: []string{
+				"Cost at list price checked 2026-09-26: $2.00 input, $0.20 cache read, $2.50 cache write, $12.00 output per 1M tokens.",
+				"| 1 | 1/1 hits, 0 extra · $0.0003 |",
+				"| **median cost** | $0.0003 |",
+			},
+		},
+		{
+			name:     "unknown cost shows tokens only",
+			usage:    &Usage{Input: 100, Output: 10},
+			want:     []string{"| 1 | 1/1 hits, 0 extra |", "usage: input 100, cache read 0, cache write 0, output 10, cost unknown"},
+			wantNone: []string{"Cost at", "cost / success", "median cost", "$0.0000"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := Report{Skill: "ds-x", Command: "c", Baseline: true, NewSHA: "2", Groups: []HarnessReport{{
+				Harness: "OpenAI Codex", Model: "gpt-5.6-terra", Price: tt.price,
+				Scenarios: []ScenarioReport{{Name: "s", Expectations: 1, New: []RunReport{{Checked: true, Hits: 1, Usage: tt.usage}}}},
+			}}}
+			got := r.Markdown()
+			for _, w := range tt.want {
+				if !strings.Contains(got, w) {
+					t.Errorf("markdown missing %q:\n%s", w, got)
+				}
+			}
+			for _, w := range tt.wantNone {
+				if strings.Contains(got, w) {
+					t.Errorf("markdown has %q:\n%s", w, got)
+				}
+			}
+		})
 	}
 }

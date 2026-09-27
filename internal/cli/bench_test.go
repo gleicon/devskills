@@ -78,6 +78,13 @@ func fakeClaudeCLI(t *testing.T, script string) {
 	fakeHarnessCLI(t, "claude", claudeJSON(script))
 }
 
+// codexJSON is the event stream a fake codex prints: one agent message
+// carrying text, then a completed turn.
+func codexJSON(text string) string {
+	return `echo '{"type":"item.completed","item":{"type":"agent_message","text":"` + text + `"}}'
+echo '{"type":"turn.completed","usage":{"input_tokens":1000000,"cached_input_tokens":0,"output_tokens":0}}'`
+}
+
 // claudeJSON wraps a fake claude script so its stdout becomes the result
 // text of a JSON result, the way --output-format json reports it. The text
 // must hold no quotes or backslashes: the wrapper does not escape them.
@@ -210,7 +217,7 @@ func TestRunBenchWarnsApprovalsOff(t *testing.T) {
 
 func TestRunBenchNoWarningForCodexOnly(t *testing.T) {
 	root := benchRoot(t, "alpha")
-	fakeHarnessCLI(t, "codex", `echo ok`)
+	fakeHarnessCLI(t, "codex", codexJSON("ok"))
 	var errOut strings.Builder
 	if err := runBench(context.Background(), io.Discard, &errOut, root, benchOptions{Skill: "ds-x", Runs: 1, Harness: "codex"}); err != nil {
 		t.Fatal(err)
@@ -262,7 +269,7 @@ echo ok`)
 func TestRunBenchHarnessFanOut(t *testing.T) {
 	root := benchRoot(t, "alpha")
 	fakeClaudeCLI(t, `echo ok`)
-	fakeHarnessCLI(t, "codex", `echo ok`)
+	fakeHarnessCLI(t, "codex", codexJSON("ok"))
 	var out strings.Builder
 	opts := benchOptions{Skill: "ds-x", Runs: 1, Harness: "claude,codex", Format: "pr-md"}
 	if err := runBench(context.Background(), &out, io.Discard, root, opts); err != nil {
@@ -281,6 +288,49 @@ func TestRunBenchHarnessFanOut(t *testing.T) {
 	// Two harnesses: --model can't carry both pins, so repro omits it.
 	if strings.Contains(got, "--runs 1 --model") {
 		t.Error("multi-harness repro must not pick one harness's model")
+	}
+}
+
+func TestRunBenchPricesCodexFromConfig(t *testing.T) {
+	tests := []struct {
+		name     string
+		prices   string
+		want     []string
+		wantNone []string
+	}{
+		{
+			name:   "priced model",
+			prices: "prices:\n  codex-pin:\n    checked: \"2026-09-26\"\n    input: 2\n    output: 12\n",
+			want:   []string{"Cost at list price checked 2026-09-26", "| 1 | 0/1 hits, 0 extra · $2.0000 | 0/1 hits, 0 extra · $2.0000 |", "| **median cost** | $2.0000 | $2.0000 |"},
+		},
+		{
+			name:     "unpriced model",
+			want:     []string{"cost unknown"},
+			wantNone: []string{"Cost at", "median cost"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			root := benchRoot(t, "alpha")
+			writeFile(t, root, "evals/bench.yaml", "models:\n  codex: codex-pin\n"+tt.prices)
+			fakeHarnessCLI(t, "codex", codexJSON("ok"))
+			var out strings.Builder
+			opts := benchOptions{Skill: "ds-x", Runs: 1, Harness: "codex", Format: "pr-md"}
+			if err := runBench(context.Background(), &out, io.Discard, root, opts); err != nil {
+				t.Fatal(err)
+			}
+			got := out.String()
+			for _, w := range tt.want {
+				if !strings.Contains(got, w) {
+					t.Errorf("report missing %q:\n%s", w, got)
+				}
+			}
+			for _, w := range tt.wantNone {
+				if strings.Contains(got, w) {
+					t.Errorf("report has %q:\n%s", w, got)
+				}
+			}
+		})
 	}
 }
 
