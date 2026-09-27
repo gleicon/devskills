@@ -63,13 +63,9 @@ func TestLoadConfigPrices(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	p, ok := c.Price("m")
 	want := Price{Checked: "2026-09-26", Input: 2, CacheRead: 0.2, CacheWrite: 2.5, Output: 12}
-	if !ok || p != want {
-		t.Errorf("Price(m) = %+v, %v; want %+v", p, ok, want)
-	}
-	if _, ok := c.Price("other"); ok {
-		t.Error("Price(other) found, want no entry")
+	if p := c.Prices["m"]; p != want {
+		t.Errorf("Prices[m] = %+v, want %+v", p, want)
 	}
 }
 

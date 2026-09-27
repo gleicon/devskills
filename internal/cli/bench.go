@@ -175,7 +175,7 @@ func loadBenchRun(root string, opts benchOptions) (benchRun, error) {
 	}
 	prices := map[harness.ID]*bench.Price{}
 	if model, ok := models[harness.Codex]; ok {
-		if p, ok := cfg.Price(model); ok {
+		if p, ok := cfg.Prices[model]; ok {
 			prices[harness.Codex] = &p
 		}
 	}

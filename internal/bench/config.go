@@ -84,9 +84,3 @@ func (c Config) Model(id harness.ID) (string, error) {
 	}
 	return m, nil
 }
-
-// Price returns a model's list price, if the config has one.
-func (c Config) Price(model string) (Price, bool) {
-	p, ok := c.Prices[model]
-	return p, ok
-}
