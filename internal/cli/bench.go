@@ -236,7 +236,7 @@ func loadBlocks(root, list string) (map[string][]bench.Block, []string, error) {
 		add(l.id, l.id, l.asset)
 	}
 	for _, lang := range langs {
-		add(lang, languageBlockID(lang), "language/"+lang+".md")
+		add(lang, languageBlockID(lang), languageAsset(lang))
 	}
 	oldBlocks, newBlocks, err := bench.LoadBlocks(root, refs)
 	if err != nil {

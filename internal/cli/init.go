@@ -189,7 +189,7 @@ func runInit(out io.Writer, catalog fs.FS, root string, sel initSelection, dryRu
 		}
 	}
 	for _, lang := range sel.langs {
-		body, err := readAsset(catalog, "language/"+lang+".md")
+		body, err := readAsset(catalog, languageAsset(lang))
 		if err != nil {
 			return err
 		}
@@ -241,6 +241,8 @@ func removeLegacyProfile(out io.Writer, root string, dryRun bool) error {
 }
 
 func languageBlockID(lang string) string { return "language:" + lang }
+
+func languageAsset(lang string) string { return "language/" + lang + ".md" }
 
 func readAsset(catalog fs.FS, rel string) (string, error) {
 	b, err := fs.ReadFile(catalog, path.Join("agents-md", rel))
