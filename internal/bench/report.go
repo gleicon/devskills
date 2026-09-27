@@ -2,6 +2,7 @@ package bench
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 )
 
@@ -45,6 +46,7 @@ type RunReport struct {
 	Stdout  string
 	Stderr  string
 	Diff    string
+	Usage   *Usage // nil when the assistant reported none
 }
 
 // Markdown renders the report in the pr-md format: per-harness per-run hit
@@ -76,12 +78,20 @@ func (s ScenarioReport) render(b *strings.Builder, baseline bool) {
 			fmt.Fprintf(b, "| %d | %s |\n", i+1, s.cell(run))
 		}
 		fmt.Fprintf(b, "| **aggregate** | %s |\n", s.aggregate(s.New))
+		if hasUsage(s.New) {
+			fmt.Fprintf(b, "| **cost / success** | %s |\n", s.costPerSuccess(s.New))
+			fmt.Fprintf(b, "| **median cost** | %s |\n", medianCost(s.New))
+		}
 	} else {
 		fmt.Fprintf(b, "| run | old | new |\n|---|---|---|\n")
 		for i := range max(len(s.Old), len(s.New)) {
 			fmt.Fprintf(b, "| %d | %s | %s |\n", i+1, s.runCell(s.Old, i), s.runCell(s.New, i))
 		}
 		fmt.Fprintf(b, "| **aggregate** | %s | %s |\n", s.aggregate(s.Old), s.aggregate(s.New))
+		if hasUsage(s.Old) || hasUsage(s.New) {
+			fmt.Fprintf(b, "| **cost / success** | %s | %s |\n", s.costPerSuccess(s.Old), s.costPerSuccess(s.New))
+			fmt.Fprintf(b, "| **median cost** | %s | %s |\n", medianCost(s.Old), medianCost(s.New))
+		}
 	}
 
 	fmt.Fprintf(b, "\n<details>\n<summary>%s transcripts</summary>\n", s.Name)
@@ -102,7 +112,10 @@ func (s ScenarioReport) runCell(runs []RunReport, i int) string {
 }
 
 func (s ScenarioReport) cell(r RunReport) string {
-	return ScoreCell(s.Tier, r, s.Expectations)
+	if r.Usage == nil {
+		return ScoreCell(s.Tier, r, s.Expectations)
+	}
+	return fmt.Sprintf("%s · $%.4f", ScoreCell(s.Tier, r, s.Expectations), r.Usage.CostUSD)
 }
 
 // ScoreCell renders one run's score for a tier — the single wording shared by
@@ -161,10 +174,69 @@ func (s ScenarioReport) aggregate(runs []RunReport) string {
 	}
 }
 
+// succeeded reports whether a run did the whole task: every expectation hit,
+// or for smoke, any output at all.
+func (s ScenarioReport) succeeded(r RunReport) bool {
+	if r.Failed || !r.Checked {
+		return false
+	}
+	if s.Tier == TierSmoke {
+		return r.Hits > 0
+	}
+	return r.Hits == s.Expectations
+}
+
+// costPerSuccess divides the spend of every run — failures included, since
+// they cost too — by the runs that succeeded.
+func (s ScenarioReport) costPerSuccess(runs []RunReport) string {
+	if !hasUsage(runs) {
+		return "—"
+	}
+	total, successes := 0.0, 0
+	for _, r := range runs {
+		if r.Usage != nil {
+			total += r.Usage.CostUSD
+		}
+		if s.succeeded(r) {
+			successes++
+		}
+	}
+	if successes == 0 {
+		return fmt.Sprintf("no success ($%.4f spent)", total)
+	}
+	return fmt.Sprintf("$%.4f (%d/%d succeeded)", total/float64(successes), successes, len(runs))
+}
+
+// medianCost is the median over the runs that reported usage.
+func medianCost(runs []RunReport) string {
+	var costs []float64
+	for _, r := range runs {
+		if r.Usage != nil {
+			costs = append(costs, r.Usage.CostUSD)
+		}
+	}
+	if len(costs) == 0 {
+		return "—"
+	}
+	slices.Sort(costs)
+	mid := len(costs) / 2
+	if len(costs)%2 == 1 {
+		return fmt.Sprintf("$%.4f", costs[mid])
+	}
+	return fmt.Sprintf("$%.4f", (costs[mid-1]+costs[mid])/2)
+}
+
+func hasUsage(runs []RunReport) bool {
+	return slices.ContainsFunc(runs, func(r RunReport) bool { return r.Usage != nil })
+}
+
 func (r RunReport) renderTranscript(b *strings.Builder, label string) {
 	fmt.Fprintf(b, "\n#### %s\n", label)
 	if r.Failed {
 		fmt.Fprintf(b, "\nrun failed: %s\n", r.FailMsg)
+	}
+	if r.Usage != nil {
+		fmt.Fprintf(b, "\nusage: %s\n", r.Usage)
 	}
 	for _, sec := range []struct{ name, body string }{
 		{"stdout", r.Stdout}, {"stderr", r.Stderr}, {"diff", r.Diff},

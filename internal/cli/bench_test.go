@@ -75,7 +75,19 @@ func fakeHarnessCLI(t *testing.T, name, script string) {
 
 func fakeClaudeCLI(t *testing.T, script string) {
 	t.Helper()
-	fakeHarnessCLI(t, "claude", script)
+	fakeHarnessCLI(t, "claude", claudeJSON(script))
+}
+
+// claudeJSON wraps a fake claude script so its stdout becomes the result
+// text of a JSON result, the way --output-format json reports it. The text
+// must hold no quotes or backslashes: the wrapper does not escape them.
+func claudeJSON(script string) string {
+	return "out=$( (\n" + script + "\n) ); rc=$?\n" + `printf '%s' "$out" | awk '
+BEGIN { ORS = ""; print "{\"type\":\"result\",\"subtype\":\"success\",\"is_error\":false,\"result\":\"" }
+{ if (NR > 1) print "\\n"; print }
+END { print "\",\"total_cost_usd\":0.01,\"modelUsage\":{}}\n" }'
+exit $rc
+`
 }
 
 func TestRunBenchOldVsNew(t *testing.T) {

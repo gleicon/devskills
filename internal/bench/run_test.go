@@ -25,7 +25,19 @@ func fakeCLI(t *testing.T, name, script string) {
 
 func fakeClaude(t *testing.T, script string) {
 	t.Helper()
-	fakeCLI(t, "claude", script)
+	fakeCLI(t, "claude", claudeJSON(script))
+}
+
+// claudeJSON wraps a fake claude script so its stdout becomes the result
+// text of a JSON result, the way --output-format json reports it. The text
+// must hold no quotes or backslashes: the wrapper does not escape them.
+func claudeJSON(script string) string {
+	return "out=$( (\n" + script + "\n) ); rc=$?\n" + `printf '%s' "$out" | awk '
+BEGIN { ORS = ""; print "{\"type\":\"result\",\"subtype\":\"success\",\"is_error\":false,\"result\":\"" }
+{ if (NR > 1) print "\\n"; print }
+END { print "\",\"total_cost_usd\":0.01,\"modelUsage\":{}}\n" }'
+exit $rc
+`
 }
 
 // benchSkill is a minimal one-file skill version for runner tests.
@@ -73,10 +85,47 @@ echo "one warning" >&2
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"-p", "Review the diff", "--model", "pin-model", "--safe-mode", "--dangerously-skip-permissions"} {
+	for _, want := range []string{"-p", "Review the diff", "--model", "pin-model", "--output-format", "json", "--safe-mode", "--dangerously-skip-permissions"} {
 		if !strings.Contains(string(args), want) {
 			t.Errorf("claude args = %q, missing %q", args, want)
 		}
+	}
+}
+
+func TestRunnerReadsClaudeResult(t *testing.T) {
+	fakeCLI(t, "claude", `cat <<'EOF'
+{"type":"result","subtype":"success","is_error":false,"result":"found the slop","total_cost_usd":0.25,
+ "modelUsage":{"claude-sonnet-5":{"inputTokens":100,"outputTokens":20,"cacheReadInputTokens":3000,"cacheCreationInputTokens":400}}}
+EOF`)
+	r := Runner{Harness: harness.Claude, Model: "m"}
+	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Err != nil {
+		t.Fatalf("Result.Err = %v", res.Err)
+	}
+	if res.Stdout != "found the slop" {
+		t.Errorf("stdout = %q, want the result text, not the raw JSON", res.Stdout)
+	}
+	want := Usage{Input: 100, CacheRead: 3000, CacheWrite: 400, Output: 20, CostUSD: 0.25}
+	if res.Usage == nil || *res.Usage != want {
+		t.Errorf("usage = %+v, want %+v", res.Usage, want)
+	}
+}
+
+func TestRunnerFailsOnNonJSONClaudeOutput(t *testing.T) {
+	fakeCLI(t, "claude", `echo "plain text"`)
+	r := Runner{Harness: harness.Claude, Model: "m"}
+	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Err == nil {
+		t.Fatal("want Result.Err when claude prints no JSON result")
+	}
+	if !strings.Contains(res.Stdout, "plain text") || res.Usage != nil {
+		t.Errorf("stdout = %q, usage = %v; want the raw output kept and no usage", res.Stdout, res.Usage)
 	}
 }
 

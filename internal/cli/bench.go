@@ -253,7 +253,7 @@ func (b benchRun) emitReport(out io.Writer, groups []bench.HarnessReport) error 
 // recordRun converts one run into its report record, streaming the raw
 // sections when verbose.
 func recordRun(stream io.Writer, s *bench.Scenario, res bench.Result, verbose bool) (bench.RunReport, error) {
-	rr := bench.RunReport{Stdout: res.Stdout, Stderr: res.Stderr, Diff: res.Diff}
+	rr := bench.RunReport{Stdout: res.Stdout, Stderr: res.Stderr, Diff: res.Diff, Usage: res.Usage}
 	if res.Err != nil {
 		rr.Failed = true
 		rr.FailMsg = res.Err.Error()
@@ -267,6 +267,9 @@ func recordRun(stream io.Writer, s *bench.Scenario, res bench.Result, verbose bo
 		rr.Hits = c.HitCount()
 		rr.Extras = len(c.Extras)
 		lipgloss.Fprintf(stream, "score: %s\n", bench.ScoreCell(s.Tier, rr, s.ExpectedHits()))
+	}
+	if res.Usage != nil {
+		lipgloss.Fprintf(stream, "usage: %s\n", res.Usage)
 	}
 	if verbose {
 		for _, sec := range []struct{ name, body string }{

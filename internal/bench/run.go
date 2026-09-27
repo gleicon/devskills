@@ -38,6 +38,7 @@ type Result struct {
 	Stderr string
 	Diff   string // post-run git diff of the sandbox, harness dirs excluded
 	Err    error
+	Usage  *Usage // nil when the assistant reported none
 }
 
 // Runner invokes one harness with a pinned model.
@@ -114,7 +115,24 @@ func (r Runner) Run(ctx context.Context, s *Scenario, skill SkillVersion, extras
 	if err != nil {
 		return Result{}, err
 	}
-	return Result{Stdout: stdout.String(), Stderr: stderr.String(), Diff: diff, Err: runErr}, nil
+	res := Result{Stdout: stdout.String(), Stderr: stderr.String(), Diff: diff, Err: runErr}
+	if r.Harness == harness.Claude {
+		res.applyClaudeResult()
+	}
+	return res, nil
+}
+
+// applyClaudeResult swaps the raw JSON stdout for the final text, so the checker
+// scores what the model said, and records usage. An unparseable result
+// keeps the raw stdout for the transcript and fails an otherwise clean run.
+func (res *Result) applyClaudeResult() {
+	text, usage, err := parseClaude(res.Stdout)
+	if usage != nil {
+		res.Stdout, res.Usage = text, usage
+	}
+	if res.Err == nil {
+		res.Err = err
+	}
 }
 
 // headlessArgs builds the non-interactive invocation for a harness.
@@ -131,7 +149,7 @@ func headlessArgs(id harness.ID, task, model, skill string) ([]string, error) {
 		// --dangerously-skip-permissions runs approvals-off: only the cwd is the
 		// throwaway sandbox — the process is unconfined, so scenario tasks are
 		// trusted input (see the trust model in docs/bench.md).
-		return []string{"claude", "-p", prompt, "--model", model, "--safe-mode", "--dangerously-skip-permissions"}, nil
+		return []string{"claude", "-p", prompt, "--model", model, "--output-format", "json", "--safe-mode", "--dangerously-skip-permissions"}, nil
 	case harness.Codex:
 		// exec is codex's non-interactive mode; workspace-write confines
 		// model-run commands to the sandbox repo.
