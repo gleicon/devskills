@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io/fs"
+	"os"
+	"path/filepath"
 	"slices"
 
 	"github.com/tailscale/hujson"
@@ -54,7 +57,8 @@ func denySkills(src []byte) ([]byte, error) {
 }
 
 // allowSkills undoes denySkills: it removes the "ds-*" rule, then the skill and
-// permission objects if that leaves them empty.
+// permission objects if that leaves them empty. It returns nil when nothing
+// else is left in the config, so the caller can delete the file.
 func allowSkills(src []byte) ([]byte, error) {
 	root, top, err := parseConfig(src)
 	if err != nil {
@@ -73,7 +77,45 @@ func allowSkills(src []byte) ([]byte, error) {
 	if len(perm.Members) == 0 {
 		removeMember(top, indexOf(top, "permission"))
 	}
+	if len(top.Members) == 0 && len(bytes.TrimSpace(slices.Concat(root.BeforeExtra, top.AfterExtra, root.AfterExtra))) == 0 {
+		return nil, nil
+	}
 	return root.Pack(), nil
+}
+
+// openCodeEdit plans the change to the OpenCode config beside skillsDir —
+// OpenCode reads config from the parent of its skills dir in both scopes — or
+// returns nil when there is nothing to change.
+func openCodeEdit(skillsDir string, uninstall bool) (*ConfigEdit, error) {
+	path := openCodeConfigPath(filepath.Dir(skillsDir))
+	src, err := os.ReadFile(path)
+	switch {
+	case errors.Is(err, fs.ErrNotExist) && uninstall:
+		return nil, nil
+	case err != nil && !errors.Is(err, fs.ErrNotExist):
+		return nil, fmt.Errorf("read OpenCode config: %w", err)
+	}
+	edit := denySkills
+	if uninstall {
+		edit = allowSkills
+	}
+	out, err := edit(src)
+	if err != nil {
+		return nil, fmt.Errorf("OpenCode config %s: %w", path, err)
+	}
+	if out != nil && bytes.Equal(out, src) {
+		return nil, nil
+	}
+	return &ConfigEdit{Path: path, Content: out}, nil
+}
+
+// openCodeConfigPath is the config file OpenCode reads in dir: an existing
+// opencode.jsonc, else opencode.json.
+func openCodeConfigPath(dir string) string {
+	if p := filepath.Join(dir, "opencode.jsonc"); exists(p) {
+		return p
+	}
+	return filepath.Join(dir, "opencode.json")
 }
 
 func parseConfig(src []byte) (hujson.Value, *hujson.Object, error) {

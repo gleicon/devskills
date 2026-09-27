@@ -1,6 +1,7 @@
 // Package sync brings a harness's on-disk skills into line with the embedded
 // catalog: write the current skills, prune retired skill dirs and legacy command
-// files. Planning is read-only, so --dry-run is simply "plan but don't apply".
+// files, and keep OpenCode's config denying the skills to the model. Planning is
+// read-only, so --dry-run is simply "plan but don't apply".
 package sync
 
 import (
@@ -20,6 +21,7 @@ type Target struct {
 	SkillsDir string // where skill directories are written and retired ones pruned
 	LegacyDir string // legacy command/prompt dir to purge; empty to skip (local scope)
 	Codex     bool   // emit the per-skill Codex sidecar on write
+	OpenCode  bool   // deny ds-* skills to the model in OpenCode's config
 }
 
 // RemoveKind distinguishes what a prune step deletes.
@@ -56,6 +58,13 @@ type Plan struct {
 	Target  Target
 	Writes  []string // skill names, in catalog order
 	Removes []Remove
+	Config  *ConfigEdit // nil when the assistant's config needs no change
+}
+
+// ConfigEdit is a planned change to a file in the assistant's config dir.
+type ConfigEdit struct {
+	Path    string
+	Content []byte // nil deletes the file
 }
 
 // Engine plans and applies syncs against the embedded catalog. The fs.FS is
@@ -74,7 +83,13 @@ func (e Engine) Plan(t Target) (Plan, error) {
 	if err != nil {
 		return Plan{}, err
 	}
-	return Plan{Target: t, Writes: names, Removes: e.prunes(t, names)}, nil
+	p := Plan{Target: t, Writes: names, Removes: e.prunes(t, names)}
+	if t.OpenCode {
+		if p.Config, err = openCodeEdit(t.SkillsDir, false); err != nil {
+			return Plan{}, err
+		}
+	}
+	return p, nil
 }
 
 // UninstallPlan computes the removals to back devskills out of t: every current
@@ -93,6 +108,11 @@ func (e Engine) UninstallPlan(t Target) (Plan, error) {
 		}
 	}
 	p.Removes = append(p.Removes, e.prunes(t, names)...)
+	if t.OpenCode {
+		if p.Config, err = openCodeEdit(t.SkillsDir, true); err != nil {
+			return Plan{}, err
+		}
+	}
 	return p, nil
 }
 
@@ -139,6 +159,19 @@ func (e Engine) Apply(p Plan) error {
 	for _, rm := range p.Removes {
 		if err := os.RemoveAll(rm.Path); err != nil {
 			return fmt.Errorf("remove %s %s: %w", rm.Kind, rm.Path, err)
+		}
+	}
+	if c := p.Config; c != nil {
+		var err error
+		if c.Content == nil {
+			err = os.Remove(c.Path)
+		} else {
+			// WriteFile, not a temp file and rename, so a config symlinked
+			// from a dotfiles repo stays a symlink.
+			err = os.WriteFile(c.Path, c.Content, 0o644)
+		}
+		if err != nil {
+			return fmt.Errorf("assistant config: %w", err)
 		}
 	}
 	return nil

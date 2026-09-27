@@ -86,6 +86,11 @@ func TestBuildTarget(t *testing.T) {
 			want: dsync.Target{Name: "OpenAI Codex", SkillsDir: fromSlash("/home/u/.codex/skills"), LegacyDir: fromSlash("/home/u/.codex/prompts"), Codex: true},
 		},
 		{
+			name: "opencode local carries the config edit",
+			id:   harness.OpenCode, scope: harness.Local,
+			want: dsync.Target{Name: "OpenCode", SkillsDir: fromSlash("/repo/.opencode/skills"), OpenCode: true},
+		},
+		{
 			name: "claude local drops legacy dir and sidecar",
 			id:   harness.Claude, scope: harness.Local,
 			want: dsync.Target{Name: "Claude Code", SkillsDir: fromSlash("/repo/.claude/skills")},
