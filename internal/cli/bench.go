@@ -117,8 +117,7 @@ type benchRun struct {
 	scenarios []*bench.Scenario
 	extras    map[string][]bench.SkillVersion // scenario name -> its declared skills
 	blocks    map[string][]bench.Block        // version label -> the blocks installed with it
-	blockIDs  []string                        // every requested block, canonical order
-	newBlocks []string                        // requested blocks absent on the main branch
+	blockList []string                        // --blocks names in canonical order, for the repro command
 	baseline  bool
 }
 
@@ -149,11 +148,7 @@ func loadBenchRun(root string, opts benchOptions) (benchRun, error) {
 	if err != nil {
 		return benchRun{}, err
 	}
-	refs, err := parseBlocks(root, opts.Blocks)
-	if err != nil {
-		return benchRun{}, err
-	}
-	oldBlocks, newBlocks, err := bench.LoadBlocks(root, refs)
+	blocks, blockList, err := loadBlocks(root, opts.Blocks)
 	if err != nil {
 		return benchRun{}, err
 	}
@@ -197,56 +192,57 @@ func loadBenchRun(root string, opts benchOptions) (benchRun, error) {
 			return benchRun{}, fmt.Errorf("scenario %s: %w", s.Name, err)
 		}
 	}
-	b := benchRun{
+	return benchRun{
 		opts: opts, harnesses: harnesses, models: models, prices: prices,
 		versions: versions, scenarios: scenarios, extras: extras, baseline: len(versions) == 1,
-		blocks: map[string][]bench.Block{bench.LabelOld: oldBlocks, bench.LabelNew: newBlocks},
-	}
-	for _, r := range refs {
-		b.blockIDs = append(b.blockIDs, r.ID)
-		if !slices.ContainsFunc(oldBlocks, func(o bench.Block) bool { return o.ID == r.ID }) {
-			b.newBlocks = append(b.newBlocks, r.ID)
-		}
-	}
-	return b, nil
+		blocks: blocks, blockList: blockList,
+	}, nil
 }
 
-// parseBlocks resolves the --blocks names to agents-md sources in init's
-// canonical order — base, layers, languages — so the sandbox's AGENTS.md reads
-// the way a real init would write it. Languages are listed from the working
+// loadBlocks resolves the --blocks names in init's canonical order — base,
+// layers, languages — so the sandbox's AGENTS.md reads the way a real init
+// would write it, and loads each version's copies keyed by version label. It
+// also returns the names in that order. Languages are listed from the working
 // tree, so a profile new on the branch can be benched.
-func parseBlocks(root, list string) ([]bench.Block, error) {
+func loadBlocks(root, list string) (map[string][]bench.Block, []string, error) {
 	if list == "" {
-		return nil, nil
+		return nil, nil, nil
 	}
 	langs, err := availableLanguages(os.DirFS(root))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	avail := []string{"base"}
 	for _, l := range layers {
 		avail = append(avail, l.id)
 	}
 	avail = append(avail, langs...)
-	names, err := parseCSV(list, "unknown block", avail)
+	picked, err := parseCSV(list, "unknown block", avail)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	var refs []bench.Block
-	if slices.Contains(names, "base") {
-		refs = append(refs, bench.Block{ID: "base", Path: baseAsset})
-	}
-	for _, l := range layers {
-		if slices.Contains(names, l.id) {
-			refs = append(refs, bench.Block{ID: l.id, Path: l.asset})
+	var (
+		refs  []bench.Block
+		names []string
+	)
+	add := func(name, id, path string) {
+		if slices.Contains(picked, name) {
+			refs = append(refs, bench.Block{ID: id, Path: path})
+			names = append(names, name)
 		}
+	}
+	add("base", "base", baseAsset)
+	for _, l := range layers {
+		add(l.id, l.id, l.asset)
 	}
 	for _, lang := range langs {
-		if slices.Contains(names, lang) {
-			refs = append(refs, bench.Block{ID: "language:" + lang, Path: "language/" + lang + ".md"})
-		}
+		add(lang, languageBlockID(lang), "language/"+lang+".md")
 	}
-	return refs, nil
+	oldBlocks, newBlocks, err := bench.LoadBlocks(root, refs)
+	if err != nil {
+		return nil, nil, err
+	}
+	return map[string][]bench.Block{bench.LabelOld: oldBlocks, bench.LabelNew: newBlocks}, names, nil
 }
 
 // runHarness benches every scenario, version, and run for one harness,
@@ -296,11 +292,11 @@ func (b benchRun) runHarness(ctx context.Context, stream io.Writer, h harness.ID
 func (b benchRun) emitReport(out io.Writer, groups []bench.HarnessReport) error {
 	report := bench.Report{
 		Skill:     b.opts.Skill,
-		Command:   reproCommand(b.opts, b.harnesses, b.models, b.blockIDs),
+		Command:   b.reproCommand(),
 		Baseline:  b.baseline,
 		NewSHA:    b.versions[len(b.versions)-1].SHA,
-		Blocks:    b.blockIDs,
-		NewBlocks: b.newBlocks,
+		OldBlocks: b.blocks[bench.LabelOld],
+		NewBlocks: b.blocks[bench.LabelNew],
 		Groups:    groups,
 	}
 	if !b.baseline {
@@ -353,35 +349,31 @@ func recordRun(stream io.Writer, s *bench.Scenario, res bench.Result, verbose bo
 // (NFR-3). With one harness the resolved model is made explicit so a later
 // pin change cannot alter a reproduction; with several, --model can't carry
 // per-harness values — the report's per-group model IDs pin them instead.
-func reproCommand(opts benchOptions, harnesses []harness.ID, models map[harness.ID]string, blockIDs []string) string {
-	var b strings.Builder
-	fmt.Fprintf(&b, "devskills bench %s", opts.Skill)
-	if opts.Scenario != "" {
-		fmt.Fprintf(&b, " --scenario %s", opts.Scenario)
+func (b benchRun) reproCommand() string {
+	var sb strings.Builder
+	fmt.Fprintf(&sb, "devskills bench %s", b.opts.Skill)
+	if b.opts.Scenario != "" {
+		fmt.Fprintf(&sb, " --scenario %s", b.opts.Scenario)
 	}
-	ids := make([]string, len(harnesses))
-	for i, h := range harnesses {
+	ids := make([]string, len(b.harnesses))
+	for i, h := range b.harnesses {
 		ids[i] = string(h)
 	}
-	fmt.Fprintf(&b, " --harness %s --runs %d", strings.Join(ids, ","), opts.Runs)
-	if opts.Model != "" {
-		fmt.Fprintf(&b, " --model %s", opts.Model)
-	} else if len(harnesses) == 1 {
-		fmt.Fprintf(&b, " --model %s", models[harnesses[0]])
+	fmt.Fprintf(&sb, " --harness %s --runs %d", strings.Join(ids, ","), b.opts.Runs)
+	if b.opts.Model != "" {
+		fmt.Fprintf(&sb, " --model %s", b.opts.Model)
+	} else if len(b.harnesses) == 1 {
+		fmt.Fprintf(&sb, " --model %s", b.models[b.harnesses[0]])
 	}
 	// A non-default timeout shapes results (it decides which slow runs fail),
 	// so a faithful reproduction carries it.
-	if opts.Timeout != 0 && opts.Timeout != bench.DefaultTimeout {
-		fmt.Fprintf(&b, " --timeout %s", opts.Timeout)
+	if b.opts.Timeout != 0 && b.opts.Timeout != bench.DefaultTimeout {
+		fmt.Fprintf(&sb, " --timeout %s", b.opts.Timeout)
 	}
-	if len(blockIDs) > 0 {
-		names := make([]string, len(blockIDs))
-		for i, id := range blockIDs {
-			names[i] = strings.TrimPrefix(id, "language:")
-		}
-		fmt.Fprintf(&b, " --blocks %s", strings.Join(names, ","))
+	if len(b.blockList) > 0 {
+		fmt.Fprintf(&sb, " --blocks %s", strings.Join(b.blockList, ","))
 	}
-	return b.String() + " --format pr-md"
+	return sb.String() + " --format pr-md"
 }
 
 // parseHarnesses turns the --harness flag into validated, deduplicated IDs,

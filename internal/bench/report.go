@@ -16,8 +16,8 @@ type Report struct {
 	Baseline  bool
 	OldSHA    string // empty in baseline mode
 	NewSHA    string
-	Blocks    []string // agents-md block ids installed beside each version
-	NewBlocks []string // of Blocks, those absent on the main branch
+	OldBlocks []Block // agents-md blocks installed beside each version
+	NewBlocks []Block
 	Groups    []HarnessReport
 }
 
@@ -64,10 +64,17 @@ func (r Report) Markdown() string {
 	} else {
 		fmt.Fprintf(&b, "- Versions: old `%s` (main branch), new `%s` (working tree)\n", r.OldSHA, r.NewSHA)
 	}
-	if len(r.Blocks) > 0 {
-		fmt.Fprintf(&b, "- Blocks: %s, each from its version's tree", strings.Join(r.Blocks, ", "))
-		if len(r.NewBlocks) > 0 && !r.Baseline {
-			fmt.Fprintf(&b, "; absent on the main branch, so old runs go without: %s", strings.Join(r.NewBlocks, ", "))
+	if len(r.NewBlocks) > 0 {
+		var ids, branchOnly []string
+		for _, nb := range r.NewBlocks {
+			ids = append(ids, nb.ID)
+			if !slices.ContainsFunc(r.OldBlocks, func(ob Block) bool { return ob.ID == nb.ID }) {
+				branchOnly = append(branchOnly, nb.ID)
+			}
+		}
+		fmt.Fprintf(&b, "- Blocks: %s, each from its version's tree", strings.Join(ids, ", "))
+		if len(branchOnly) > 0 && !r.Baseline {
+			fmt.Fprintf(&b, "; absent on the main branch, so old runs go without: %s", strings.Join(branchOnly, ", "))
 		}
 		b.WriteString("\n")
 	}

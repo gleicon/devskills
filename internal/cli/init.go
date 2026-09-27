@@ -193,7 +193,7 @@ func runInit(out io.Writer, catalog fs.FS, root string, sel initSelection, dryRu
 		if err != nil {
 			return err
 		}
-		if err := e.Upsert(agentsPath, "language:"+lang, body); err != nil {
+		if err := e.Upsert(agentsPath, languageBlockID(lang), body); err != nil {
 			return err
 		}
 	}
@@ -239,6 +239,8 @@ func removeLegacyProfile(out io.Writer, root string, dryRun bool) error {
 	lipgloss.Fprintln(out, "  removed legacy .devskills/language")
 	return nil
 }
+
+func languageBlockID(lang string) string { return "language:" + lang }
 
 func readAsset(catalog fs.FS, rel string) (string, error) {
 	b, err := fs.ReadFile(catalog, path.Join("agents-md", rel))
