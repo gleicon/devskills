@@ -12,7 +12,7 @@ When invoked, run a post-release retrospective over a release range: compare wha
   - `vPREV..vNEXT` — used verbatim; any valid git range works, branches and SHAs included (`v0.4.0..HEAD` for a retro before tagging).
   - a single ref — the range is previous-version-tag..ref.
   - nothing — inspect the repo and offer a range; never silently pick one:
-    - HEAD ahead of the newest version tag (`git tag --sort=-v:refname`) → offer newest-tag..HEAD — the unreleased work, the pre-merge case — with the last two tags as the named alternative.
+    - HEAD ahead of the newest version tag (`git --no-pager tag --sort=-v:refname`) → offer newest-tag..HEAD — the unreleased work, the pre-merge case — with the last two tags as the named alternative.
     - HEAD at the newest tag → the last two version tags.
     - no tags: on a non-default branch, offer merge-base-with-default-branch..HEAD (a branch retro); on the default branch, ask for an explicit range. Never guess.
 - `--record [path]` — also write the retro to `RETRO.md` in the current directory, or to `path`. Without the flag, the retro lives in the session only.
@@ -22,16 +22,16 @@ When invoked, run a post-release retrospective over a release range: compare wha
 Read whatever exists; open the report with a source inventory naming what was found and what analysis its absence disables ("GRILL.md ✓ · SPEC.md ✗ — spec-break analysis skipped").
 
 - **Floor:** at least one of `SPEC.md` / `GRILL.md`. Neither → stop and point at `/ds-spec` and `/ds-grill-me`; with no recorded decisions there is nothing to compare, and the output would be a changelog, not a retro.
-- **Pinned reads:** read `SPEC.md`/`GRILL.md` at the range end — `git show vNEXT:SPEC.md` — never the working tree; the next cycle may already be amending them. Mid-implementation amendments are the in-file dated `Amended YYYY-MM-DD:` lines whose dates fall inside the range (tag dates come from `git log -1 --format=%ci <tag>`).
+- **Pinned reads:** read `SPEC.md`/`GRILL.md` at the range end — `git --no-pager show vNEXT:SPEC.md` — never the working tree; the next cycle may already be amending them. Mid-implementation amendments are the in-file dated `Amended YYYY-MM-DD:` lines whose dates fall inside the range (tag dates come from `git --no-pager log --no-color -1 --format=%ci <tag>`).
 - **Enrichment:** `.project/roadmap.md` and `.project/state.md` (`# settled` / `# hazards`) from the working tree — git-ignored, so the working copy is the only copy. Flag them in the report as "current lens, not range-pinned."
 
 ## Discipline audit
 
 The amendment discipline (scaffolded by `devskills init --spec-discipline`) makes the decision files self-describing; git's job is to verify the files, not to be the source:
 
-1. `git log --oneline vPREV..vNEXT -- SPEC.md GRILL.md`.
+1. `git --no-pager log --no-color --format='%h %s' vPREV..vNEXT -- SPEC.md GRILL.md`.
 2. Check each commit is a dedicated `docs(spec):` / `docs(grill):` commit and the commit count squares with the amendment lines found in the files.
-3. A mismatch — spec edits riding feature commits, changes with no `Amended:` line — is itself a retro finding: report the drift. Only then read `git log -p` on the offending commits to recover what changed.
+3. A mismatch — spec edits riding feature commits, changes with no `Amended:` line — is itself a retro finding: report the drift. Only then read each offending commit with `git --no-pager show --no-ext-diff --no-color --format='%h %s' <sha> -- SPEC.md GRILL.md` to recover what changed.
 
 ## Report
 
