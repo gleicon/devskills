@@ -1,3 +1,4 @@
+<!-- profile: java — managed by devskills; edits between these markers are overwritten -->
 ## Language Profile — Java
 
 Target: Java 25+ (LTS). Backend services, APIs, CLIs, systems tooling.

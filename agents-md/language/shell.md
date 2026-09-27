@@ -1,3 +1,4 @@
+<!-- profile: shell — managed by devskills; edits between these markers are overwritten -->
 ## Language Profile — Shell
 
 Target: bash 3.2+ on macOS and Linux. Build glue, CI steps, installers, operational tooling.

@@ -193,7 +193,7 @@ func runInit(out io.Writer, catalog fs.FS, root string, sel initSelection, dryRu
 		if err != nil {
 			return err
 		}
-		if err := e.Upsert(agentsPath, "language:"+lang, profileBody(lang, body)); err != nil {
+		if err := e.Upsert(agentsPath, "language:"+lang, body); err != nil {
 			return err
 		}
 	}
@@ -238,12 +238,6 @@ func removeLegacyProfile(out io.Writer, root string, dryRun bool) error {
 	os.Remove(filepath.Join(root, ".devskills")) // best effort: only succeeds if empty
 	lipgloss.Fprintln(out, "  removed legacy .devskills/language")
 	return nil
-}
-
-// profileBody is a language profile's block body as init writes it: an
-// ownership note, then the profile.
-func profileBody(lang, body string) string {
-	return fmt.Sprintf("<!-- profile: %s — managed by devskills; edits between these markers are overwritten -->\n%s", lang, body)
 }
 
 func readAsset(catalog fs.FS, rel string) (string, error) {

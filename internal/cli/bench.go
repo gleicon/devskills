@@ -200,7 +200,7 @@ func loadBenchRun(root string, opts benchOptions) (benchRun, error) {
 	b := benchRun{
 		opts: opts, harnesses: harnesses, models: models, prices: prices,
 		versions: versions, scenarios: scenarios, extras: extras, baseline: len(versions) == 1,
-		blocks: map[string][]bench.Block{bench.LabelOld: withProfileNotes(oldBlocks), bench.LabelNew: withProfileNotes(newBlocks)},
+		blocks: map[string][]bench.Block{bench.LabelOld: oldBlocks, bench.LabelNew: newBlocks},
 	}
 	for _, r := range refs {
 		b.blockIDs = append(b.blockIDs, r.ID)
@@ -247,17 +247,6 @@ func parseBlocks(root, list string) ([]bench.Block, error) {
 		}
 	}
 	return refs, nil
-}
-
-// withProfileNotes gives language blocks the ownership note init writes above
-// each profile, so a benched block is byte-identical to an installed one.
-func withProfileNotes(blocks []bench.Block) []bench.Block {
-	for i, b := range blocks {
-		if lang, ok := strings.CutPrefix(b.ID, "language:"); ok {
-			blocks[i].Body = profileBody(lang, b.Body)
-		}
-	}
-	return blocks
 }
 
 // runHarness benches every scenario, version, and run for one harness,

@@ -1,3 +1,4 @@
+<!-- profile: python — managed by devskills; edits between these markers are overwritten -->
 ## Language Profile — Python
 
 Target: Python 3.13+. Backend services, APIs, CLIs, data pipelines, automation.

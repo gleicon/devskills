@@ -1,3 +1,4 @@
+<!-- profile: zig — managed by devskills; edits between these markers are overwritten -->
 ## Language Profile — Zig
 
 Target: Zig 0.16 (current stable). Systems programming, CLIs, embedded, performance-critical code.

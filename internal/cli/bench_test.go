@@ -570,7 +570,6 @@ func TestRunBenchInstallsBlocksPerVersion(t *testing.T) {
 		t.Errorf("new run should get working-tree blocks in init's order (base, layers, languages):\n%s", newRun)
 	}
 	for _, want := range []string{
-		"<!-- profile: go — managed by devskills",
 		"- Blocks: base, concise, language:go, each from its version's tree; absent on the main branch, so old runs go without: concise",
 		"--blocks base,concise,go --format pr-md",
 	} {
