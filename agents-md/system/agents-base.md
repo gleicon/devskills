@@ -81,7 +81,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 - Search to find the right place; read the enclosing function or block, not whole files "to be safe". When an LSP tool is present, use it for definitions and references.
 - If `.project/map.md` exists, read it first and prefer it over re-deriving structure. When the map and the code disagree, the code wins — reread the file.
 - Delegate broad searches to a sub-agent where one is available, so the sweep stays out of your context.
-- Read branch changes as `git --no-pager diff --no-ext-diff --no-color --stat <base>...HEAD` first; read the whole diff when it is small, and file by file when it is not.
+- Read branch changes as `git --no-pager diff --no-ext-diff --no-color --stat <base>...HEAD` first, then diff the files that matter one at a time.
 - Run `git log` with `--no-pager --no-color` and an explicit `--format` — never let the user's pager, diff tool, or color config shape what you read.
 - Send long tool output (scanners, JSON reports) to a temp file and read it through a projection — `jq`, `grep -c`, `head` — never raw.
 - Prefer quiet and compact flags. Start broad, then narrow with a second command rather than guessing a filter up front.
