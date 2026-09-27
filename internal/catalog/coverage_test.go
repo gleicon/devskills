@@ -43,7 +43,6 @@ var grandfathered = map[string]bool{
 	"ds-semgrep":             true,
 	"ds-spec":                true,
 	"ds-step-mode":           true,
-	"ds-tdd-mode":            true,
 	"ds-test-mode":           true,
 	"ds-test-quality-review": true,
 	"ds-tiger-style-mode":    true,
