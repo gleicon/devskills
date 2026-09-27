@@ -201,6 +201,13 @@ func TestOpenCodeConfigLifecycle(t *testing.T) {
 		t.Fatal(err)
 	}
 	assertAbsent(t, config)
+
+	if p, err = e.UninstallPlan(target); err != nil {
+		t.Fatal(err)
+	}
+	if p.Config != nil {
+		t.Errorf("uninstall with no config plans an edit: %+v", p.Config)
+	}
 }
 
 func TestOpenCodeConfigKeepsUserSettings(t *testing.T) {

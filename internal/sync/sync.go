@@ -85,7 +85,7 @@ func (e Engine) Plan(t Target) (Plan, error) {
 	}
 	p := Plan{Target: t, Writes: names, Removes: e.prunes(t, names)}
 	if t.OpenCode {
-		if p.Config, err = openCodeEdit(t.SkillsDir, false); err != nil {
+		if p.Config, err = openCodeEdit(t.SkillsDir, denySkills); err != nil {
 			return Plan{}, err
 		}
 	}
@@ -109,7 +109,7 @@ func (e Engine) UninstallPlan(t Target) (Plan, error) {
 	}
 	p.Removes = append(p.Removes, e.prunes(t, names)...)
 	if t.OpenCode {
-		if p.Config, err = openCodeEdit(t.SkillsDir, true); err != nil {
+		if p.Config, err = openCodeEdit(t.SkillsDir, allowSkills); err != nil {
 			return Plan{}, err
 		}
 	}

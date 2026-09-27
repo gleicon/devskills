@@ -82,27 +82,21 @@ func allowSkills(src []byte) ([]byte, error) {
 	return root.Pack(), nil
 }
 
-// openCodeEdit plans the change to the OpenCode config beside skillsDir —
+// openCodeEdit plans edit's change to the OpenCode config beside skillsDir —
 // OpenCode reads config from the parent of its skills dir in both scopes — or
-// returns nil when there is nothing to change.
-func openCodeEdit(skillsDir string, uninstall bool) (*ConfigEdit, error) {
+// returns nil when there is nothing to change. A missing config reaches edit as
+// empty.
+func openCodeEdit(skillsDir string, edit func([]byte) ([]byte, error)) (*ConfigEdit, error) {
 	path := openCodeConfigPath(filepath.Dir(skillsDir))
 	src, err := os.ReadFile(path)
-	switch {
-	case errors.Is(err, fs.ErrNotExist) && uninstall:
-		return nil, nil
-	case err != nil && !errors.Is(err, fs.ErrNotExist):
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return nil, fmt.Errorf("read OpenCode config: %w", err)
-	}
-	edit := denySkills
-	if uninstall {
-		edit = allowSkills
 	}
 	out, err := edit(src)
 	if err != nil {
 		return nil, fmt.Errorf("OpenCode config %s: %w", path, err)
 	}
-	if out != nil && bytes.Equal(out, src) {
+	if bytes.Equal(out, src) {
 		return nil, nil
 	}
 	return &ConfigEdit{Path: path, Content: out}, nil
