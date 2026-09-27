@@ -119,7 +119,7 @@ func parseCodex(stdout string, price *Price) (string, *Usage, error) {
 			}
 		case "turn.completed":
 			if e.Usage == nil {
-				return "", nil, fmt.Errorf("codex turn.completed carries no usage")
+				return "", nil, errors.New("codex turn.completed carries no usage")
 			}
 			// input_tokens already counts the cached and cache-write tokens,
 			// and output_tokens the reasoning ones.
