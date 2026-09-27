@@ -153,12 +153,13 @@ func headlessArgs(id harness.ID, task, model, skill string) ([]string, error) {
 		// would only reflect the bare task text. Point the model at the file
 		// bench installed — the same thing Codex does for itself by grepping.
 		prompt := fmt.Sprintf("Read .claude/skills/%s/SKILL.md and follow it as your instructions for this task: %s", skill, task)
-		// --safe-mode drops the operator's global CLAUDE.md, hooks, output styles
-		// and agents, which move scores independent of the skill; auth is untouched.
+		// --setting-sources project drops the operator's user-level CLAUDE.md,
+		// skills, plugins, hooks and output styles, which move scores independent
+		// of the skill; --safe-mode would also drop the sandbox's own CLAUDE.md.
 		// --dangerously-skip-permissions runs approvals-off: only the cwd is the
 		// throwaway sandbox — the process is unconfined, so scenario tasks are
 		// trusted input (see the trust model in docs/bench.md).
-		return []string{"claude", "-p", prompt, "--model", model, "--output-format", "json", "--safe-mode", "--dangerously-skip-permissions"}, nil
+		return []string{"claude", "-p", prompt, "--model", model, "--output-format", "json", "--setting-sources", "project", "--dangerously-skip-permissions"}, nil
 	case harness.Codex:
 		// exec is codex's non-interactive mode; workspace-write confines
 		// model-run commands to the sandbox repo.
