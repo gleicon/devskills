@@ -52,8 +52,9 @@ type Runner struct {
 // Run benches one skill version against one scenario: materialize the fixture
 // and the blocks paired with the version into a fresh sandbox, install the
 // version project-locally alongside extras (the scenario's Skills), invoke the
-// harness headlessly in the sandbox, capture output and the post-run diff. The returned error is infrastructural
-// (sandbox, git); harness failures land in Result.Err.
+// harness headlessly in the sandbox, capture output and the post-run diff. The
+// returned error is infrastructural (sandbox, git); harness failures land in
+// Result.Err.
 func (r Runner) Run(ctx context.Context, s *Scenario, skill SkillVersion, extras []SkillVersion, blocks []Block) (Result, error) {
 	argv, err := headlessArgs(r.Harness, s.Task, r.Model, skill.Name)
 	if err != nil {
