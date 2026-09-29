@@ -9,7 +9,7 @@ A skill's **suffix tells you its kind**:
 - **`-mode`** — persistent, toggleable session behavior; changes *how* the agent works until you turn it off. *tiger-style, ui, data, git, step, tdd, test, interaction.*
 - **`-review`** — a findings-list audit. Report-only by default (several take `--fix`); findings are independent and fixable in any order. *bug, security, agent, data, code-quality, doc-quality, test-quality, ui-quality, comment, clarity, notebook, the seven language reviews, and — named for their tools rather than the suffix — osv and semgrep.*
 - **`-plan`** — graded, sequenced moves that each carry a trade-off or dependency, so the output is a *plan*, not a verdict. *perf-plan, architecture-plan.*
-- **no suffix** — a one-shot action that produces a result and returns. *spec, roadmap, explore, blueprint, grill-me, retro, debug, deslop, humanize, verify-this, arena, blast-radius, zoom-out, how, onboarding, handoff, reflect, tldt, quality-gate, the recall trio, and the project-\* family.*
+- **no suffix** — a one-shot action that produces a result and returns. *spec, roadmap, explore, blueprint, grill-me, retro, debug, deslop, humanize, verify-this, arena, blast-radius, zoom-out, how, onboarding, handoff, reflect, tldt, quality-gate, and the project-\* family.*
 - **language profiles** — configured per project via `devskills init --lang`, not invoked as slash commands (see the [README](../README.md#language-profiles)).
 
 Everything except `-mode` runs once and finishes; a `-mode` stays on. The per-skill headings below tag each one with its kind. Each skill is self-contained; a few use an external tool when it's present — `/ds-osv`, `/ds-semgrep`, `/ds-tldt`, and `/ds-security-review`'s structural pass — which `devskills doctor` can install.
@@ -410,38 +410,3 @@ Extractive summarization — selects verbatim sentences, no paraphrasing or gene
 
 - **Args:** `/ds-tldt` (last large block of text), `/ds-tldt <file>`, or `/ds-tldt <url>`.
 - **Reach for it when:** compressing a long doc/page before adding it to context.
-
----
-
-## Context recycling (experimental)
-
-Requires [recall](https://github.com/gleicon/recall) — a local-first context engine. Indexes your projects, accumulates cross-project recipes and insights, and routes questions to a local model before hitting the cloud API. The goal: reuse what you already paid for.
-
-All three skills check for the `recall` binary on invocation. If it's missing, they print install instructions and stop — they never emulate recall's behavior.
-
-### `/ds-recall` — action
-
-Inject context from recall into the current session.
-
-- **Args:**
-  - No args — run `recall map` (always, it's idempotent) then `recall brief`, inject the result.
-  - `query "<question>"` — route through `recall query`: local model first, enriched brief if no local answer.
-  - `brain` — pull cross-project patterns and accumulated recipes via `recall brain`.
-- **Output:** brief injected into context, with a count of matched recipes and prior patterns. If nothing matches, says so — never fabricates context.
-- **Reach for it when:** starting a session in a project recall knows about, or before asking a question you suspect has been solved before.
-
-### `/ds-recall-capture` — action
-
-Store this session's outcome into recall's knowledge base.
-
-- **Process:** extracts signal with `/ds-tldt` (goal + result + insight — no reasoning chain, no failed attempts), then calls `recall run record` and `recall learn`. No opt-in gate — running the skill is consent.
-- **Rules:** skips capture if the session is still in progress or inconclusive. Run before `/clear` — the context is gone after.
-- **Reach for it when:** you just resolved something worth keeping — a bug class, a design decision, a framework pattern — and want it available in future sessions across all your projects.
-
-### `/ds-recall-setup` — action
-
-Initialize recall and install its session integration into your AI assistant.
-
-- **Process:** runs `recall map` + `recall recipes seed`, then delegates assistant wiring to `recall install-skill --target <assistant>` (claude always; opencode/codex when their config dir exists). recall owns its own hook and backs up `settings.json`.
-- **Output:** confirms each step: index, seed, and recall integration install.
-- **Reach for it when:** first time using recall with devskills, or after reinstalling recall.

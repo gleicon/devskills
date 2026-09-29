@@ -155,11 +155,6 @@ If you work this loop often, [devskills-tui](https://github.com/gfronza/devskill
 | Skill | What it does |
 |-------|--------------|
 | `/ds-tldt` | extractive summary of a doc before it enters context — no LLM cost |
-| `/ds-recall` | inject prior local context from [recall](https://github.com/gleicon/recall) into the session |
-| `/ds-recall-capture` | store this session's outcome in recall's knowledge base |
-| `/ds-recall-setup` | initialize recall and its session integration |
-
-> The `recall` skills are experimental and need the external [recall](https://github.com/gleicon/recall) engine installed.
 
 ## The CLI
 
@@ -233,8 +228,6 @@ devskills builds on these upstream sources.
 | [cursor-team-kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit/skills) | `/ds-code-quality-review`, `/ds-deslop`, `/ds-verify-this` |
 | [pstack](https://github.com/cursor/plugins/tree/main/pstack) | `/ds-how`, `/ds-blast-radius`, `/ds-reflect`, `/ds-arena`, six rules in the `AGENTS.md` baseline |
 | [Andrej Karpathy](https://x.com/karpathy/status/2015883857489522876) · [andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) | the `AGENTS.md` baseline |
-| [recall](https://github.com/gleicon/recall) | `/ds-recall`, `/ds-recall-capture`, `/ds-recall-setup` |
-
 ## License
 
 MIT — see [LICENSE](LICENSE).

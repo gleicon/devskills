@@ -26,7 +26,7 @@ func TestReferenceDocsNameEverySkill(t *testing.T) {
 			continue
 		}
 		t.Run(name, func(t *testing.T) {
-			// A plain substring match would let /ds-recall-capture satisfy /ds-recall.
+			// A plain substring match would let a longer skill name satisfy one it starts with.
 			ref := regexp.MustCompile(regexp.QuoteMeta("/"+name) + `([^a-z0-9-]|$)`)
 			for _, doc := range []struct{ where, text string }{
 				{"a ### heading in docs/skills.md", headings},
