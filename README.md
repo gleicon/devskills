@@ -216,6 +216,7 @@ devskills ships no fixed pipeline. Each skill does one job and hands control bac
 - **[docs/grill-me.md](docs/grill-me.md)** · **[docs/tiger-style.md](docs/tiger-style.md)** — the grill playbook and the engineering bar
 - **[docs/ast-grep.md](docs/ast-grep.md)** — the optional structural pass for `/ds-security-review`
 - **[docs/bench.md](docs/bench.md)** — benchmarking skill changes: scenario authoring, check tiers, PR evidence
+- **[docs/tokens.md](docs/tokens.md)** — why devskills bundles no token-saving tools, and what it recommends instead
 
 ## References
 
