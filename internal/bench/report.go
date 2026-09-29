@@ -18,6 +18,7 @@ type Report struct {
 	NewSHA    string
 	OldBlocks []Block // agents-md blocks installed beside each version
 	NewBlocks []Block
+	Plugin    string // Claude Code plugin folder loaded on new runs only; empty when none
 	Groups    []HarnessReport
 }
 
@@ -77,6 +78,9 @@ func (r Report) Markdown() string {
 				fmt.Fprintf(&b, "  - `%s`: old `%s`, new `%s`\n", nb.ID, r.OldBlocks[i].SHA, nb.SHA)
 			}
 		}
+	}
+	if r.Plugin != "" {
+		fmt.Fprintf(&b, "- Plugin: `%s` on new runs only; old runs go without\n", r.Plugin)
 	}
 	for _, g := range r.Groups {
 		fmt.Fprintf(&b, "\n## %s — model `%s`\n", g.Harness, g.Model)

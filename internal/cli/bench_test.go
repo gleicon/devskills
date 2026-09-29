@@ -599,6 +599,66 @@ func TestRunBenchInstallsBlocksPerVersion(t *testing.T) {
 	}
 }
 
+func TestRunBenchLoadsPluginOnNewRunsOnly(t *testing.T) {
+	root := benchRoot(t, "alpha")
+	plugin := filepath.Join(root, "evals/plugins/gp")
+	writeFile(t, root, "evals/plugins/gp/.lsp.json", "{}\n")
+	// The fake prints the folder it was handed with --plugin-dir, if any.
+	fakeClaudeCLI(t, `p=none; prev=; for a in "$@"; do [ "$prev" = --plugin-dir ] && p=$a; prev=$a; done; echo "plugin=$p"`)
+	var out strings.Builder
+	opts := benchOptions{Logins: approveLogins(t), Skill: "ds-x", Runs: 1, Format: "pr-md", Plugin: plugin}
+	if err := runBench(context.Background(), &out, io.Discard, root, opts); err != nil {
+		t.Fatal(err)
+	}
+	got := out.String()
+	oldRun, newRun, ok := strings.Cut(got, "#### new run 1")
+	if !ok {
+		t.Fatalf("report has no new-run transcript:\n%s", got)
+	}
+	if !strings.Contains(oldRun, "plugin=none") {
+		t.Errorf("old run should go without the plugin:\n%s", oldRun)
+	}
+	if !strings.Contains(newRun, "plugin="+plugin) {
+		t.Errorf("new run should load the plugin by absolute path:\n%s", newRun)
+	}
+	// Repo-relative, so the report neither leaks a home directory nor breaks on another checkout.
+	for _, want := range []string{
+		"- Plugin: `evals/plugins/gp` on new runs only; old runs go without",
+		"--plugin-dir evals/plugins/gp --format pr-md",
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("report missing %q:\n%s", want, got)
+		}
+	}
+}
+
+func TestRunBenchBadPluginDirFailsBeforeRuns(t *testing.T) {
+	root := benchRoot(t, "alpha")
+	writeFile(t, root, "evals/plugins/file", "x\n")
+	// ds-fresh exists only in the working tree, so it benches in baseline mode.
+	writeFile(t, root, "skills/ds-fresh/SKILL.md", "FRESH\n")
+	fakeClaudeCLI(t, `echo ran`)
+	folder := filepath.Join(root, "evals/plugins")
+	for _, tc := range []struct{ name, skill, harness, plugin, want string }{
+		{"non-claude harness", "ds-x", "claude,codex", folder, "--harness claude only"},
+		{"baseline mode", "ds-fresh", "", folder, "needs the skill on the main branch"},
+		{"missing", "ds-x", "", filepath.Join(root, "nope"), "no such file"},
+		{"not a folder", "ds-x", "", filepath.Join(folder, "file"), "is not a folder"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var out strings.Builder
+			opts := benchOptions{Logins: approveLogins(t), Skill: tc.skill, Runs: 1, Harness: tc.harness, Plugin: tc.plugin}
+			err := runBench(context.Background(), &out, io.Discard, root, opts)
+			if err == nil || !strings.Contains(err.Error(), tc.want) {
+				t.Errorf("error = %v, want one containing %q", err, tc.want)
+			}
+			if strings.Contains(out.String(), "ran") {
+				t.Error("a bad --plugin-dir must fail before any run spends tokens")
+			}
+		})
+	}
+}
+
 func TestRunBenchOrdersLanguagesLikeInit(t *testing.T) {
 	root := blocksRoot(t)
 	fakeClaudeCLI(t, `cat AGENTS.md`)

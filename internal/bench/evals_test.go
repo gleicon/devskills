@@ -16,7 +16,8 @@ func TestCommittedScenarios(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, skill := range skills {
-		if !skill.IsDir() {
+		// evals/plugins holds plugin folders for --plugin-dir, not scenarios.
+		if !skill.IsDir() || skill.Name() == "plugins" {
 			continue
 		}
 		scenarios, err := LoadScenarios("../../evals", skill.Name())

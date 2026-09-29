@@ -43,10 +43,11 @@ type Result struct {
 
 // Runner invokes one harness with a pinned model.
 type Runner struct {
-	Harness harness.ID
-	Model   string
-	Timeout time.Duration // 0 defers to the scenario's timeout, then DefaultTimeout
-	Price   *Price        // list price for assistants that report tokens but no cost; nil leaves cost unknown
+	Harness   harness.ID
+	Model     string
+	Timeout   time.Duration // 0 defers to the scenario's timeout, then DefaultTimeout
+	Price     *Price        // list price for assistants that report tokens but no cost; nil leaves cost unknown
+	PluginDir string        // Claude Code plugin folder loaded with --plugin-dir; empty loads none
 }
 
 // Run benches one skill version against one scenario: materialize the fixture
@@ -56,7 +57,7 @@ type Runner struct {
 // returned error is infrastructural (sandbox, git); harness failures land in
 // Result.Err.
 func (r Runner) Run(ctx context.Context, s *Scenario, skill SkillVersion, extras []SkillVersion, blocks []Block) (Result, error) {
-	argv, parse, err := headless(r.Harness, s.Task, r.Model, skill.Name)
+	argv, parse, err := headless(r.Harness, s.Task, r.Model, skill.Name, r.PluginDir)
 	if err != nil {
 		return Result{}, err
 	}
@@ -146,8 +147,8 @@ func (res *Result) parseOutput(parse parser, price *Price) {
 }
 
 // headless builds the non-interactive invocation for a harness and picks the
-// parser for its output.
-func headless(id harness.ID, task, model, skill string) ([]string, parser, error) {
+// parser for its output. pluginDir applies to Claude only; callers validate.
+func headless(id harness.ID, task, model, skill, pluginDir string) ([]string, parser, error) {
 	switch id {
 	case harness.Claude:
 		// Claude Code does not surface project-local skills to a headless run,
@@ -163,9 +164,13 @@ func headless(id harness.ID, task, model, skill string) ([]string, parser, error
 		// --dangerously-skip-permissions runs approvals-off: only the cwd is the
 		// throwaway sandbox — the process is unconfined, so scenario tasks are
 		// trusted input (see the trust model in docs/bench.md).
-		return []string{"claude", "-p", prompt, "--model", model, "--output-format", "json",
+		argv := []string{"claude", "-p", prompt, "--model", model, "--output-format", "json",
 			"--setting-sources", "project", "--settings", `{"autoMemoryEnabled":false}`, "--strict-mcp-config",
-			"--dangerously-skip-permissions"}, parseClaude, nil
+			"--dangerously-skip-permissions"}
+		if pluginDir != "" {
+			argv = append(argv, "--plugin-dir", pluginDir)
+		}
+		return argv, parseClaude, nil
 	case harness.Codex:
 		// exec is codex's non-interactive mode; workspace-write confines
 		// model-run commands to the sandbox repo.

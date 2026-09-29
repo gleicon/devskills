@@ -219,6 +219,33 @@ func TestRunnerInstallsExtraSkills(t *testing.T) {
 	}
 }
 
+func TestRunnerLoadsPluginDir(t *testing.T) {
+	for _, tc := range []struct{ name, dir string }{
+		{"without", ""},
+		{"with", "/plugins/gopls-lsp"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			argsFile := filepath.Join(t.TempDir(), "args")
+			t.Setenv("ARGS_OUT", argsFile)
+			fakeClaude(t, `printf '%s\n' "$@" > "$ARGS_OUT"`)
+			r := Runner{Harness: harness.Claude, Model: "m", PluginDir: tc.dir}
+			if _, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"), nil, nil); err != nil {
+				t.Fatal(err)
+			}
+			args, err := os.ReadFile(argsFile)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if tc.dir == "" && strings.Contains(string(args), "--plugin-dir") {
+				t.Errorf("claude args = %q, want no --plugin-dir without a plugin", args)
+			}
+			if tc.dir != "" && !strings.Contains(string(args), "--plugin-dir\n"+tc.dir+"\n") {
+				t.Errorf("claude args = %q, want --plugin-dir %s", args, tc.dir)
+			}
+		})
+	}
+}
+
 func TestRunnerMissingCLI(t *testing.T) {
 	// PATH with git only, no claude: materialization works, the invoke fails.
 	gitPath, err := exec.LookPath("git")

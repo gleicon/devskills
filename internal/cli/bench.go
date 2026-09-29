@@ -30,6 +30,7 @@ type benchOptions struct {
 	Out      string        // pr-md destination file; empty writes to stdout
 	Timeout  time.Duration // per-run bound; 0 defers to the scenario, then bench.DefaultTimeout
 	Blocks   string        // comma-separated agents-md blocks to install; empty installs none
+	Plugin   string        // Claude Code plugin folder loaded on new runs only; empty loads none
 	Logins   []string      // login dirs the operator approved; each assistant's must be one of them
 	tty      bool          // terminal on stdin and stdout, so the confirm prompt can run
 }
@@ -57,6 +58,7 @@ func newBenchCmd() *cobra.Command {
 	f.StringVar(&opts.Format, "format", "", `output format: "pr-md" for the PR-ready markdown report`)
 	f.StringVar(&opts.Out, "out", "", "with --format pr-md, write the report to this file")
 	f.StringVar(&opts.Blocks, "blocks", "", "comma-separated agents-md blocks to install beside each version (base, init's layer ids, languages)")
+	f.StringVar(&opts.Plugin, "plugin-dir", "", "Claude Code plugin folder to load on new runs only, to A/B the plugin")
 	f.DurationVar(&opts.Timeout, "timeout", 0, "per-run timeout (default the scenario's timeout, else "+bench.DefaultTimeout.String()+")")
 	f.StringSliceVar(&opts.Logins, "login", nil, "login dir bench may bill, e.g. ~/.claude-personal; repeat per assistant (required without a terminal)")
 	return cmd
@@ -171,6 +173,8 @@ type benchRun struct {
 	extras    map[string][]bench.SkillVersion // scenario name -> its declared skills
 	blocks    map[string][]bench.Block        // version label -> the blocks installed with it
 	blockList []string                        // --blocks names in canonical order, for the repro command
+	plugins   map[string]string               // version label -> the plugin folder loaded with it
+	pluginArg string                          // --plugin-dir as the report and repro command show it
 	baseline  bool
 }
 
@@ -205,6 +209,10 @@ func loadBenchRun(root string, opts benchOptions) (benchRun, error) {
 	if err != nil {
 		return benchRun{}, err
 	}
+	pluginDir, pluginArg, err := resolvePlugin(root, opts.Plugin, harnesses, len(versions) == 1)
+	if err != nil {
+		return benchRun{}, err
+	}
 	models, prices, err := loadPins(root, harnesses, opts.Model)
 	if err != nil {
 		return benchRun{}, err
@@ -231,7 +239,39 @@ func loadBenchRun(root string, opts benchOptions) (benchRun, error) {
 		opts: opts, harnesses: harnesses, models: models, prices: prices,
 		versions: versions, scenarios: scenarios, extras: extras, baseline: len(versions) == 1,
 		blocks: blocks, blockList: blockList,
+		plugins: map[string]string{bench.LabelNew: pluginDir}, pluginArg: pluginArg,
 	}, nil
+}
+
+// resolvePlugin validates --plugin-dir and returns the folder's absolute path,
+// which the runs load, and the path the report and repro command show:
+// repo-relative when the folder sits inside the repo, so neither leaks a home
+// directory into a PR body.
+func resolvePlugin(root, dir string, harnesses []harness.ID, baseline bool) (abs, shown string, err error) {
+	if dir == "" {
+		return "", "", nil
+	}
+	if slices.ContainsFunc(harnesses, func(h harness.ID) bool { return h != harness.Claude }) {
+		return "", "", errors.New("--plugin-dir loads a Claude Code plugin; use it with --harness claude only")
+	}
+	if baseline {
+		return "", "", errors.New("--plugin-dir needs the skill on the main branch: its old runs are the ones without the plugin")
+	}
+	if abs, err = filepath.Abs(dir); err != nil {
+		return "", "", err
+	}
+	info, err := os.Stat(abs)
+	if err != nil {
+		return "", "", fmt.Errorf("--plugin-dir: %w", err)
+	}
+	if !info.IsDir() {
+		return "", "", fmt.Errorf("--plugin-dir %s is not a folder", dir)
+	}
+	shown = abs
+	if rel, err := filepath.Rel(root, abs); err == nil && filepath.IsLocal(rel) {
+		shown = filepath.ToSlash(rel)
+	}
+	return abs, shown, nil
 }
 
 // loadPins reads evals/bench.yaml for each harness's model — override, when
@@ -325,6 +365,7 @@ func (b benchRun) runHarness(ctx context.Context, stream io.Writer, h harness.ID
 				total++
 				lipgloss.Fprintf(stream, "== %s/%s %s run %d/%d (%s, model %s)\n",
 					b.opts.Skill, s.Name, v.Label, i, b.opts.Runs, h.Name(), model)
+				runner.PluginDir = b.plugins[v.Label]
 				res, err := runner.Run(ctx, s, v, b.extras[s.Name], b.blocks[v.Label])
 				if err != nil {
 					return bench.HarnessReport{}, 0, 0, err
@@ -363,6 +404,7 @@ func (b benchRun) emitReport(out io.Writer, groups []bench.HarnessReport) error 
 		NewSHA:    b.versions[len(b.versions)-1].SHA,
 		OldBlocks: b.blocks[bench.LabelOld],
 		NewBlocks: b.blocks[bench.LabelNew],
+		Plugin:    b.pluginArg,
 		Groups:    groups,
 	}
 	if !b.baseline {
@@ -438,6 +480,9 @@ func (b benchRun) reproCommand() string {
 	}
 	if len(b.blockList) > 0 {
 		fmt.Fprintf(&sb, " --blocks %s", strings.Join(b.blockList, ","))
+	}
+	if b.pluginArg != "" {
+		fmt.Fprintf(&sb, " --plugin-dir %s", b.pluginArg)
 	}
 	return sb.String() + " --format pr-md"
 }
