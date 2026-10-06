@@ -178,7 +178,6 @@ func TestRunInitWritesBlocks(t *testing.T) {
 		"<!-- BEGIN devskills:plain-language -->", "PLAIN WORDS",
 		"<!-- BEGIN devskills:spec-discipline -->", "AMEND INLINE",
 		"<!-- BEGIN devskills:language:go -->", "GO PROFILE",
-		"profile: go — managed by devskills",
 	} {
 		if !strings.Contains(agents, want) {
 			t.Errorf("AGENTS.md missing %q\n%s", want, agents)

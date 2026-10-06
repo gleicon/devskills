@@ -11,7 +11,7 @@ Before writing, look for `RETRO.md` (current directory, then repo root). Its rul
 ## Process
 
 If the user has provided a description: proceed directly.
-If not: ask three focused questions, then produce the spec without further prompting.
+If not: ask the questions below one per message, then produce the spec without further prompting.
 
 Questions (ask only what is missing):
 1. What is the primary user action this system enables?

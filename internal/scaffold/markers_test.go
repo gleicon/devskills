@@ -326,3 +326,20 @@ func TestDryRunWritesNothing(t *testing.T) {
 		t.Errorf("dry run created backups: %v", got)
 	}
 }
+
+func TestSkipBackups(t *testing.T) {
+	dir := t.TempDir()
+	f := filepath.Join(dir, "AGENTS.md")
+	write(t, f, "user\n")
+	e := fixedEngine(false)
+	e.SkipBackups()
+	if err := e.Upsert(f, "base", "principles"); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(read(t, f), "principles") {
+		t.Error("block not written")
+	}
+	if got := baks(t, dir); len(got) != 0 {
+		t.Errorf("backups = %v, want none", got)
+	}
+}

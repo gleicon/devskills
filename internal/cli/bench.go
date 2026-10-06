@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"charm.land/huh/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/spf13/cobra"
 
@@ -27,6 +29,10 @@ type benchOptions struct {
 	Format   string        // "" streams raw runs; "pr-md" emits the markdown report
 	Out      string        // pr-md destination file; empty writes to stdout
 	Timeout  time.Duration // per-run bound; 0 defers to the scenario, then bench.DefaultTimeout
+	Blocks   string        // comma-separated agents-md blocks to install; empty installs none
+	Plugin   string        // Claude Code plugin folder loaded on new runs only; empty loads none
+	Logins   []string      // login dirs the operator approved; each assistant's must be one of them
+	tty      bool          // terminal on stdin and stdout, so the confirm prompt can run
 }
 
 func newBenchCmd() *cobra.Command {
@@ -36,7 +42,7 @@ func newBenchCmd() *cobra.Command {
 		Short: "Benchmark a skill against its scenarios in evals/",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			opts.Skill = args[0]
+			opts.Skill, opts.tty = args[0], isTTY()
 			r, err := harness.NewResolver(nil)
 			if err != nil {
 				return err
@@ -51,7 +57,10 @@ func newBenchCmd() *cobra.Command {
 	f.StringVar(&opts.Harness, "harness", "claude", "comma-separated assistants to bench (claude,codex,opencode)")
 	f.StringVar(&opts.Format, "format", "", `output format: "pr-md" for the PR-ready markdown report`)
 	f.StringVar(&opts.Out, "out", "", "with --format pr-md, write the report to this file")
+	f.StringVar(&opts.Blocks, "blocks", "", "comma-separated agents-md blocks to install beside each version (base, init's layer ids, languages)")
+	f.StringVar(&opts.Plugin, "plugin-dir", "", "Claude Code plugin folder to load on new runs only, to A/B the plugin")
 	f.DurationVar(&opts.Timeout, "timeout", 0, "per-run timeout (default the scenario's timeout, else "+bench.DefaultTimeout.String()+")")
+	f.StringSliceVar(&opts.Logins, "login", nil, "login dir bench may bill, e.g. ~/.claude-personal; repeat per assistant (required without a terminal)")
 	return cmd
 }
 
@@ -71,6 +80,9 @@ func runBench(ctx context.Context, out, errOut io.Writer, root string, opts benc
 	// (docs/bench.md).
 	if unconfined := slices.DeleteFunc(slices.Clone(b.harnesses), func(h harness.ID) bool { return h == harness.Codex }); len(unconfined) > 0 {
 		lipgloss.Fprintf(errOut, "warning: %s runs approvals-off and unconfined — treat evals/ content like code you are about to run (docs/bench.md)\n", joinNames(unconfined))
+	}
+	if err := confirmLogins(errOut, b); err != nil {
+		return err
 	}
 	// Raw mode's product is the run stream itself, so it goes to out. In
 	// pr-md mode the product is the report; every streamed line — run
@@ -104,15 +116,65 @@ func runBench(ctx context.Context, out, errOut io.Writer, root string, opts benc
 	return nil
 }
 
+// confirmLogins names the login each assistant's runs will bill and starts no
+// run until the operator approves those exact logins: every one listed in
+// --login, or confirmed at the terminal prompt. A headless run uses whatever
+// login the environment resolves, which need not be the one the operator means
+// to pay with — so a bare yes, which approves any login, is never enough.
+func confirmLogins(errOut io.Writer, b benchRun) error {
+	r, err := harness.NewResolver(nil)
+	if err != nil {
+		return err
+	}
+	approved := make([]string, len(b.opts.Logins))
+	for i, l := range b.opts.Logins {
+		approved[i] = filepath.Clean(r.Expand(l))
+	}
+	lipgloss.Fprintf(errOut, "bench will start %d runs on each assistant below, billed to its login:\n",
+		len(b.scenarios)*len(b.versions)*b.opts.Runs)
+	var unapproved []string
+	for _, h := range b.harnesses {
+		dir, envVar, fromEnv := r.LoginDir(h)
+		source := "from " + envVar
+		if !fromEnv {
+			source = "the default: " + envVar + " is unset"
+		}
+		lipgloss.Fprintf(errOut, "  %s: %s (%s)\n", h.Name(), dir, source)
+		if !slices.Contains(approved, filepath.Clean(dir)) {
+			unapproved = append(unapproved, fmt.Sprintf("%s's %s (set %s to bill another)", h.Name(), dir, envVar))
+		}
+	}
+	if len(unapproved) == 0 {
+		return nil
+	}
+	if len(b.opts.Logins) > 0 || !b.opts.tty {
+		return fmt.Errorf("bench would bill logins no --login approves: %s", strings.Join(unapproved, "; "))
+	}
+	ok := false
+	confirm := huh.NewConfirm().Title("Bill these logins?").Value(&ok)
+	if err := huh.NewForm(huh.NewGroup(confirm)).WithTheme(huh.ThemeFunc(formTheme)).Run(); err != nil {
+		return err
+	}
+	if !ok {
+		return errors.New("bench cancelled: nothing ran")
+	}
+	return nil
+}
+
 // benchRun is one resolved bench invocation: everything loaded and validated
 // before any run spends tokens.
 type benchRun struct {
 	opts      benchOptions
 	harnesses []harness.ID
 	models    map[harness.ID]string
+	prices    map[harness.ID]*bench.Price // only for assistants that report no cost of their own
 	versions  []bench.SkillVersion
 	scenarios []*bench.Scenario
 	extras    map[string][]bench.SkillVersion // scenario name -> its declared skills
+	blocks    map[string][]bench.Block        // version label -> the blocks installed with it
+	blockList []string                        // --blocks names in canonical order, for the repro command
+	plugins   map[string]string               // version label -> the plugin folder loaded with it
+	pluginArg string                          // --plugin-dir as the report and repro command show it
 	baseline  bool
 }
 
@@ -143,21 +205,17 @@ func loadBenchRun(root string, opts benchOptions) (benchRun, error) {
 	if err != nil {
 		return benchRun{}, err
 	}
-	cfg, err := bench.LoadConfig(filepath.Join(root, "evals", "bench.yaml"))
+	blocks, blockList, err := loadBlocks(root, opts.Blocks)
 	if err != nil {
 		return benchRun{}, err
 	}
-	// Resolve every harness's model up front so a missing pin fails before
-	// any run spends tokens.
-	models := map[harness.ID]string{}
-	for _, h := range harnesses {
-		if opts.Model != "" {
-			models[h] = opts.Model
-			continue
-		}
-		if models[h], err = cfg.Model(h); err != nil {
-			return benchRun{}, err
-		}
+	pluginDir, pluginArg, err := resolvePlugin(root, opts.Plugin, harnesses, len(versions) == 1)
+	if err != nil {
+		return benchRun{}, err
+	}
+	models, prices, err := loadPins(root, harnesses, opts.Model)
+	if err != nil {
+		return benchRun{}, err
 	}
 	var scenarios []*bench.Scenario
 	if opts.Scenario != "" {
@@ -178,17 +236,127 @@ func loadBenchRun(root string, opts benchOptions) (benchRun, error) {
 		}
 	}
 	return benchRun{
-		opts: opts, harnesses: harnesses, models: models,
+		opts: opts, harnesses: harnesses, models: models, prices: prices,
 		versions: versions, scenarios: scenarios, extras: extras, baseline: len(versions) == 1,
+		blocks: blocks, blockList: blockList,
+		plugins: map[string]string{bench.LabelNew: pluginDir}, pluginArg: pluginArg,
 	}, nil
+}
+
+// resolvePlugin validates --plugin-dir and returns the folder's absolute path,
+// which the runs load, and the path the report and repro command show:
+// repo-relative when the folder sits inside the repo, so neither leaks a home
+// directory into a PR body.
+func resolvePlugin(root, dir string, harnesses []harness.ID, baseline bool) (abs, shown string, err error) {
+	if dir == "" {
+		return "", "", nil
+	}
+	if slices.ContainsFunc(harnesses, func(h harness.ID) bool { return h != harness.Claude }) {
+		return "", "", errors.New("--plugin-dir loads a Claude Code plugin; use it with --harness claude only")
+	}
+	if baseline {
+		return "", "", errors.New("--plugin-dir needs the skill on the main branch: its old runs are the ones without the plugin")
+	}
+	if abs, err = filepath.Abs(dir); err != nil {
+		return "", "", err
+	}
+	info, err := os.Stat(abs)
+	if err != nil {
+		return "", "", fmt.Errorf("--plugin-dir: %w", err)
+	}
+	if !info.IsDir() {
+		return "", "", fmt.Errorf("--plugin-dir %s is not a folder", dir)
+	}
+	shown = abs
+	if rel, err := filepath.Rel(root, abs); err == nil && filepath.IsLocal(rel) {
+		shown = filepath.ToSlash(rel)
+	}
+	return abs, shown, nil
+}
+
+// loadPins reads evals/bench.yaml for each harness's model — override, when
+// set, stands in for every pin — and for the list price of assistants that
+// report no cost of their own. Resolving up front makes a missing pin fail
+// before any run spends tokens.
+func loadPins(root string, harnesses []harness.ID, override string) (map[harness.ID]string, map[harness.ID]*bench.Price, error) {
+	cfg, err := bench.LoadConfig(filepath.Join(root, "evals", "bench.yaml"))
+	if err != nil {
+		return nil, nil, err
+	}
+	models := map[harness.ID]string{}
+	for _, h := range harnesses {
+		if override != "" {
+			models[h] = override
+			continue
+		}
+		if models[h], err = cfg.Model(h); err != nil {
+			return nil, nil, err
+		}
+	}
+	prices := map[harness.ID]*bench.Price{}
+	if model, ok := models[harness.Codex]; ok {
+		if p, ok := cfg.Prices[model]; ok {
+			prices[harness.Codex] = &p
+		}
+	}
+	return models, prices, nil
+}
+
+// loadBlocks resolves the --blocks names to the blocks init writes for the same
+// selection, in init's order, so the sandbox's AGENTS.md reads the way a real
+// init would write it, and loads each version's copies keyed by version label.
+// It also returns the names in that order. Languages are listed from the
+// working tree, so a profile new on the branch can be benched.
+func loadBlocks(root, list string) (map[string][]bench.Block, []string, error) {
+	if list == "" {
+		return nil, nil, nil
+	}
+	langs, err := availableLanguages(os.DirFS(root))
+	if err != nil {
+		return nil, nil, err
+	}
+	avail := []string{"base"}
+	for _, l := range layers {
+		avail = append(avail, l.id)
+	}
+	avail = append(avail, langs...)
+	picked, err := parseCSV(list, "unknown block", avail)
+	if err != nil {
+		return nil, nil, err
+	}
+	var sel initSelection
+	for _, name := range picked {
+		switch {
+		case slices.Contains(langs, name):
+			sel.langs = append(sel.langs, name)
+		case name != "base":
+			sel.layers = append(sel.layers, name)
+		}
+	}
+	var (
+		refs  []bench.BlockRef
+		names []string
+	)
+	for _, b := range blocksFor(sel) {
+		// init always writes base; bench writes it only when picked.
+		if slices.Contains(picked, b.name) {
+			refs = append(refs, bench.BlockRef{ID: b.id, Path: b.asset})
+			names = append(names, b.name)
+		}
+	}
+	oldBlocks, newBlocks, err := bench.LoadBlocks(root, refs)
+	if err != nil {
+		return nil, nil, err
+	}
+	return map[string][]bench.Block{bench.LabelOld: oldBlocks, bench.LabelNew: newBlocks}, names, nil
 }
 
 // runHarness benches every scenario, version, and run for one harness,
 // streaming progress, and returns its report group plus run/failure counts.
 func (b benchRun) runHarness(ctx context.Context, stream io.Writer, h harness.ID) (bench.HarnessReport, int, int, error) {
 	model := b.models[h]
-	runner := bench.Runner{Harness: h, Model: model, Timeout: b.opts.Timeout}
-	group := bench.HarnessReport{Harness: h.Name(), Model: model}
+	runner := bench.Runner{Harness: h, Model: model, Timeout: b.opts.Timeout, Price: b.prices[h]}
+	group := bench.HarnessReport{Harness: h.Name(), Model: model, Price: b.prices[h]}
 	total, failures := 0, 0
 	for _, s := range b.scenarios {
 		sr := bench.ScenarioReport{Name: s.Name, Tier: s.Tier, Expectations: s.ExpectedHits()}
@@ -197,7 +365,8 @@ func (b benchRun) runHarness(ctx context.Context, stream io.Writer, h harness.ID
 				total++
 				lipgloss.Fprintf(stream, "== %s/%s %s run %d/%d (%s, model %s)\n",
 					b.opts.Skill, s.Name, v.Label, i, b.opts.Runs, h.Name(), model)
-				res, err := runner.Run(ctx, s, v, b.extras[s.Name])
+				runner.PluginDir = b.plugins[v.Label]
+				res, err := runner.Run(ctx, s, v, b.extras[s.Name], b.blocks[v.Label])
 				if err != nil {
 					return bench.HarnessReport{}, 0, 0, err
 				}
@@ -229,11 +398,14 @@ func (b benchRun) runHarness(ctx context.Context, stream io.Writer, h harness.ID
 // emitReport assembles the pr-md report and writes it to --out, or to out.
 func (b benchRun) emitReport(out io.Writer, groups []bench.HarnessReport) error {
 	report := bench.Report{
-		Skill:    b.opts.Skill,
-		Command:  reproCommand(b.opts, b.harnesses, b.models),
-		Baseline: b.baseline,
-		NewSHA:   b.versions[len(b.versions)-1].SHA,
-		Groups:   groups,
+		Skill:     b.opts.Skill,
+		Command:   b.reproCommand(),
+		Baseline:  b.baseline,
+		NewSHA:    b.versions[len(b.versions)-1].SHA,
+		OldBlocks: b.blocks[bench.LabelOld],
+		NewBlocks: b.blocks[bench.LabelNew],
+		Plugin:    b.pluginArg,
+		Groups:    groups,
 	}
 	if !b.baseline {
 		report.OldSHA = b.versions[0].SHA
@@ -253,7 +425,7 @@ func (b benchRun) emitReport(out io.Writer, groups []bench.HarnessReport) error 
 // recordRun converts one run into its report record, streaming the raw
 // sections when verbose.
 func recordRun(stream io.Writer, s *bench.Scenario, res bench.Result, verbose bool) (bench.RunReport, error) {
-	rr := bench.RunReport{Stdout: res.Stdout, Stderr: res.Stderr, Diff: res.Diff}
+	rr := bench.RunReport{Stdout: res.Stdout, Stderr: res.Stderr, Diff: res.Diff, Usage: res.Usage}
 	if res.Err != nil {
 		rr.Failed = true
 		rr.FailMsg = res.Err.Error()
@@ -267,6 +439,9 @@ func recordRun(stream io.Writer, s *bench.Scenario, res bench.Result, verbose bo
 		rr.Hits = c.HitCount()
 		rr.Extras = len(c.Extras)
 		lipgloss.Fprintf(stream, "score: %s\n", bench.ScoreCell(s.Tier, rr, s.ExpectedHits()))
+	}
+	if res.Usage != nil {
+		lipgloss.Fprintf(stream, "usage: %s\n", res.Usage)
 	}
 	if verbose {
 		for _, sec := range []struct{ name, body string }{
@@ -282,28 +457,34 @@ func recordRun(stream io.Writer, s *bench.Scenario, res bench.Result, verbose bo
 // (NFR-3). With one harness the resolved model is made explicit so a later
 // pin change cannot alter a reproduction; with several, --model can't carry
 // per-harness values — the report's per-group model IDs pin them instead.
-func reproCommand(opts benchOptions, harnesses []harness.ID, models map[harness.ID]string) string {
-	var b strings.Builder
-	fmt.Fprintf(&b, "devskills bench %s", opts.Skill)
-	if opts.Scenario != "" {
-		fmt.Fprintf(&b, " --scenario %s", opts.Scenario)
+func (b benchRun) reproCommand() string {
+	var sb strings.Builder
+	fmt.Fprintf(&sb, "devskills bench %s", b.opts.Skill)
+	if b.opts.Scenario != "" {
+		fmt.Fprintf(&sb, " --scenario %s", b.opts.Scenario)
 	}
-	ids := make([]string, len(harnesses))
-	for i, h := range harnesses {
+	ids := make([]string, len(b.harnesses))
+	for i, h := range b.harnesses {
 		ids[i] = string(h)
 	}
-	fmt.Fprintf(&b, " --harness %s --runs %d", strings.Join(ids, ","), opts.Runs)
-	if opts.Model != "" {
-		fmt.Fprintf(&b, " --model %s", opts.Model)
-	} else if len(harnesses) == 1 {
-		fmt.Fprintf(&b, " --model %s", models[harnesses[0]])
+	fmt.Fprintf(&sb, " --harness %s --runs %d", strings.Join(ids, ","), b.opts.Runs)
+	if b.opts.Model != "" {
+		fmt.Fprintf(&sb, " --model %s", b.opts.Model)
+	} else if len(b.harnesses) == 1 {
+		fmt.Fprintf(&sb, " --model %s", b.models[b.harnesses[0]])
 	}
 	// A non-default timeout shapes results (it decides which slow runs fail),
 	// so a faithful reproduction carries it.
-	if opts.Timeout != 0 && opts.Timeout != bench.DefaultTimeout {
-		fmt.Fprintf(&b, " --timeout %s", opts.Timeout)
+	if b.opts.Timeout != 0 && b.opts.Timeout != bench.DefaultTimeout {
+		fmt.Fprintf(&sb, " --timeout %s", b.opts.Timeout)
 	}
-	return b.String() + " --format pr-md"
+	if len(b.blockList) > 0 {
+		fmt.Fprintf(&sb, " --blocks %s", strings.Join(b.blockList, ","))
+	}
+	if b.pluginArg != "" {
+		fmt.Fprintf(&sb, " --plugin-dir %s", b.pluginArg)
+	}
+	return sb.String() + " --format pr-md"
 }
 
 // parseHarnesses turns the --harness flag into validated, deduplicated IDs,

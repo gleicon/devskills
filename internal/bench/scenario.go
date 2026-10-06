@@ -91,6 +91,10 @@ func LoadScenarios(evalsDir, skill string) ([]*Scenario, error) {
 	return scenarios, nil
 }
 
+// assistantConfig is what the benched assistants read from their project root
+// beyond prompt text: settings, hooks, plugins, and MCP servers.
+var assistantConfig = []string{".claude", ".codex", ".opencode", "opencode.json", "opencode.jsonc"}
+
 // LoadScenario loads and validates a single scenario directory.
 func LoadScenario(dir string) (*Scenario, error) {
 	name := filepath.Base(dir)
@@ -116,6 +120,13 @@ func (s *Scenario) validate() error {
 	for _, sub := range []string{"base", "change"} {
 		if fi, err := os.Stat(filepath.Join(s.Dir, sub)); err != nil || !fi.IsDir() {
 			errs = append(errs, fmt.Errorf("missing %s/ directory", sub))
+		}
+		// Runs are approvals-off, and config such as a Claude hook would run on
+		// the operator's machine without the model ever choosing to.
+		for _, name := range assistantConfig {
+			if _, err := os.Lstat(filepath.Join(s.Dir, sub, name)); err == nil {
+				errs = append(errs, fmt.Errorf("%s/%s: fixtures must not carry assistant config", sub, name))
+			}
 		}
 	}
 	// Skill names are joined into paths — keep them bare directory names.

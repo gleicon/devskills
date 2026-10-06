@@ -38,6 +38,32 @@ func TestSkillsDirDefaults(t *testing.T) {
 	}
 }
 
+func TestLoginDir(t *testing.T) {
+	tests := []struct {
+		id          ID
+		env         map[string]string
+		wantDir     string
+		wantVar     string
+		wantFromEnv bool
+	}{
+		{Claude, nil, "/home/u/.claude", "CLAUDE_CONFIG_DIR", false},
+		{Claude, map[string]string{"CLAUDE_CONFIG_DIR": "~/.claude-personal"}, "/home/u/.claude-personal", "CLAUDE_CONFIG_DIR", true},
+		{Codex, nil, "/home/u/.codex", "CODEX_HOME", false},
+		{Codex, map[string]string{"CODEX_HOME": "/x/codex"}, "/x/codex", "CODEX_HOME", true},
+		{OpenCode, nil, "/home/u/.local/share/opencode", "XDG_DATA_HOME", false},
+		{OpenCode, map[string]string{"XDG_DATA_HOME": "/x/data"}, "/x/data/opencode", "XDG_DATA_HOME", true},
+	}
+	for _, tt := range tests {
+		t.Run(string(tt.id)+"-"+tt.wantDir, func(t *testing.T) {
+			r := Resolver{Home: "/home/u", getenv: fakeEnv(tt.env)}
+			dir, envVar, fromEnv := r.LoginDir(tt.id)
+			if dir != filepath.FromSlash(tt.wantDir) || envVar != tt.wantVar || fromEnv != tt.wantFromEnv {
+				t.Errorf("LoginDir = %q, %q, %v; want %q, %q, %v", dir, envVar, fromEnv, tt.wantDir, tt.wantVar, tt.wantFromEnv)
+			}
+		})
+	}
+}
+
 func TestSkillsDirUnknownHarness(t *testing.T) {
 	r := Resolver{Home: "/home/u", getenv: fakeEnv(nil)}
 	if _, err := r.SkillsDir(ID("nope"), Global); err == nil {

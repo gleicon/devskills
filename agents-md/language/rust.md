@@ -1,3 +1,4 @@
+<!-- profile: rust — managed by devskills; edits between these markers are overwritten -->
 ## Language Profile — Rust
 
 Target: Rust stable. Systems programming, performance-critical services, experimental large projects.

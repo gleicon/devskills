@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 When invoked, read the session for what it taught and route each lesson to the instruction file that would have prevented the cost: a skill the session used, or the project's `AGENTS.md`. The output is a proposal. Nothing is edited until the user names the rows to apply.
 
-`/ds-handoff` compacts the session for the next agent; `/ds-recall-capture` stores its outcome; `/ds-retro` compares a release against its decisions. This one changes the instructions.
+`/ds-handoff` compacts the session for the next agent; `/ds-retro` compares a release against its decisions. This one changes the instructions.
 
 ## Arguments
 

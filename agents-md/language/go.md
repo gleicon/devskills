@@ -1,3 +1,4 @@
+<!-- profile: go — managed by devskills; edits between these markers are overwritten -->
 ## Language Profile — Go
 
 Target: Go 1.24+. Backend services, CLIs, APIs, systems tooling.

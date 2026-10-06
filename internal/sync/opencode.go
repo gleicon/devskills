@@ -1,0 +1,226 @@
+package sync
+
+import (
+	"bytes"
+	"errors"
+	"fmt"
+	"io/fs"
+	"os"
+	"path/filepath"
+	"slices"
+
+	"github.com/tailscale/hujson"
+)
+
+// OpenCode ignores disable-model-invocation, so a permission rule is what keeps
+// devskills user-invoked there: denied skills drop off the model's skill list
+// but still run from the Skills picker.
+const skillPattern = "ds-*"
+
+// freshConfig is the whole config when the assistant has none yet.
+const freshConfig = `{
+  "permission": {
+    "skill": {
+      "ds-*": "deny"
+    }
+  }
+}
+`
+
+// denySkills returns the OpenCode config src with "ds-*": "deny" as the last
+// rule of permission.skill — last because OpenCode applies the last matching
+// rule. Comments, formatting and trailing commas in src are kept.
+func denySkills(src []byte) ([]byte, error) {
+	if len(bytes.TrimSpace(src)) == 0 {
+		return []byte(freshConfig), nil
+	}
+	root, top, err := parseConfig(src)
+	if err != nil {
+		return nil, err
+	}
+	perm, err := ensureObject(top, "permission")
+	if err != nil {
+		return nil, err
+	}
+	rules, err := ensureObject(perm, "skill")
+	if err != nil {
+		return nil, err
+	}
+	if n := len(rules.Members); n > 0 && memberName(rules.Members[n-1]) == skillPattern && isDeny(rules.Members[n-1]) {
+		return src, nil
+	}
+	removeAll(rules, skillPattern)
+	appendMember(rules, skillPattern, hujson.String("deny"))
+	return root.Pack(), nil
+}
+
+// allowSkills undoes denySkills: it removes the "ds-*" rule, then the skill and
+// permission objects if that leaves them empty. It returns nil when nothing
+// else is left in the config, so the caller can delete the file.
+func allowSkills(src []byte) ([]byte, error) {
+	if len(bytes.TrimSpace(src)) == 0 {
+		return src, nil
+	}
+	root, top, err := parseConfig(src)
+	if err != nil {
+		return nil, err
+	}
+	perm, rules := objectAt(&root, "/permission"), objectAt(&root, "/permission/skill")
+	if rules == nil || indexOf(rules, skillPattern) < 0 {
+		return src, nil
+	}
+	removeAll(rules, skillPattern)
+	if len(rules.Members) == 0 {
+		removeMember(perm, indexOf(perm, "skill"))
+	}
+	if len(perm.Members) == 0 {
+		removeMember(top, indexOf(top, "permission"))
+	}
+	if len(top.Members) == 0 && len(bytes.TrimSpace(slices.Concat(root.BeforeExtra, top.AfterExtra, root.AfterExtra))) == 0 {
+		return nil, nil
+	}
+	return root.Pack(), nil
+}
+
+// openCodeEdit plans edit's change to the OpenCode config beside skillsDir —
+// OpenCode reads config from the parent of its skills dir in both scopes — or
+// returns nil when there is nothing to change. A missing config reaches edit as
+// empty.
+func openCodeEdit(skillsDir string, edit func([]byte) ([]byte, error)) (*ConfigEdit, error) {
+	path := openCodeConfigPath(filepath.Dir(skillsDir))
+	src, err := os.ReadFile(path)
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return nil, fmt.Errorf("read OpenCode config: %w", err)
+	}
+	out, err := edit(src)
+	if err != nil {
+		return nil, fmt.Errorf("OpenCode config %s: %w", path, err)
+	}
+	if bytes.Equal(out, src) {
+		return nil, nil
+	}
+	return &ConfigEdit{Path: path, Content: out}, nil
+}
+
+// openCodeConfigPath is the config file OpenCode reads in dir: an existing
+// opencode.jsonc, else opencode.json.
+func openCodeConfigPath(dir string) string {
+	if p := filepath.Join(dir, "opencode.jsonc"); exists(p) {
+		return p
+	}
+	return filepath.Join(dir, "opencode.json")
+}
+
+func parseConfig(src []byte) (hujson.Value, *hujson.Object, error) {
+	root, err := hujson.Parse(src)
+	if err != nil {
+		return hujson.Value{}, nil, err
+	}
+	top, ok := root.Value.(*hujson.Object)
+	if !ok {
+		return hujson.Value{}, nil, errors.New("top level is not an object")
+	}
+	return root, top, nil
+}
+
+// objectAt returns the object at the JSON pointer ptr, or nil when there is
+// none.
+func objectAt(root *hujson.Value, ptr string) *hujson.Object {
+	if v := root.Find(ptr); v != nil {
+		o, _ := v.Value.(*hujson.Object)
+		return o
+	}
+	return nil
+}
+
+// ensureObject returns obj's member name as an object, adding an empty one when
+// it is missing. A string value is one rule for every pattern, so it becomes
+// that object's "*" rule.
+func ensureObject(obj *hujson.Object, name string) (*hujson.Object, error) {
+	i := indexOf(obj, name)
+	if i < 0 {
+		o := &hujson.Object{}
+		appendMember(obj, name, o)
+		return o, nil
+	}
+	v := &obj.Members[i].Value
+	switch t := v.Value.(type) {
+	case *hujson.Object:
+		return t, nil
+	case hujson.Literal:
+		if t.Kind() == '"' {
+			o := &hujson.Object{}
+			appendMember(o, "*", t)
+			v.Value = o
+			return o, nil
+		}
+	}
+	return nil, fmt.Errorf("%q is neither an object nor a string", name)
+}
+
+// appendMember adds name: val as obj's last member, starting where the member
+// before it starts and keeping obj's trailing-comma style.
+func appendMember(obj *hujson.Object, name string, val hujson.ValueTrimmed) {
+	m := hujson.ObjectMember{
+		Name:  hujson.Value{Value: hujson.String(name)},
+		Value: hujson.Value{BeforeExtra: hujson.Extra(" "), Value: val},
+	}
+	if n := len(obj.Members); n > 0 {
+		last := obj.Members[n-1]
+		m.Name.BeforeExtra = lineStart(last.Name.BeforeExtra)
+		if last.Value.AfterExtra != nil {
+			m.Value.AfterExtra = hujson.Extra{}
+		}
+	}
+	obj.Members = append(obj.Members, m)
+}
+
+// removeMember deletes obj's member i. hujson marks a trailing comma by a
+// non-nil AfterExtra on the last value, so the new last value inherits the
+// removed one's mark.
+func removeMember(obj *hujson.Object, i int) {
+	trailing := obj.Members[len(obj.Members)-1].Value.AfterExtra != nil
+	obj.Members = slices.Delete(obj.Members, i, i+1)
+	if len(obj.Members) == 0 {
+		return
+	}
+	last := &obj.Members[len(obj.Members)-1].Value
+	switch {
+	case trailing && last.AfterExtra == nil:
+		last.AfterExtra = hujson.Extra{}
+	case !trailing && last.AfterExtra != nil:
+		// Concat, not append: Extra aliases the parsed input buffer.
+		obj.AfterExtra = slices.Concat(last.AfterExtra, obj.AfterExtra)
+		last.AfterExtra = nil
+	}
+}
+
+// removeAll deletes every member of obj named name — JSONC allows duplicates.
+func removeAll(obj *hujson.Object, name string) {
+	for i := indexOf(obj, name); i >= 0; i = indexOf(obj, name) {
+		removeMember(obj, i)
+	}
+}
+
+// lineStart is the whitespace before a member that puts the next one on a line
+// of its own at the same indentation, leaving behind any comments above it.
+func lineStart(before hujson.Extra) hujson.Extra {
+	i := bytes.LastIndexByte(before, '\n')
+	if i < 0 {
+		return hujson.Extra(" ")
+	}
+	indent := before[i+1:]
+	indent = indent[:len(indent)-len(bytes.TrimLeft(indent, " \t"))]
+	return slices.Concat(hujson.Extra("\n"), indent)
+}
+
+func indexOf(obj *hujson.Object, name string) int {
+	return slices.IndexFunc(obj.Members, func(m hujson.ObjectMember) bool { return memberName(m) == name })
+}
+
+func memberName(m hujson.ObjectMember) string { return m.Name.Value.(hujson.Literal).String() }
+
+func isDeny(m hujson.ObjectMember) bool {
+	lit, ok := m.Value.Value.(hujson.Literal)
+	return ok && lit.Kind() == '"' && lit.String() == "deny"
+}

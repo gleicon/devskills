@@ -167,31 +167,12 @@ func runInit(out io.Writer, catalog fs.FS, root string, sel initSelection, dryRu
 		return err
 	}
 
-	add := func(id, rel string) error {
-		body, err := readAsset(catalog, rel)
+	for _, b := range blocksFor(sel) {
+		body, err := readAsset(catalog, b.asset)
 		if err != nil {
 			return err
 		}
-		return e.Upsert(agentsPath, id, body)
-	}
-	if err := add("base", "system/agents-base.md"); err != nil {
-		return err
-	}
-	// Iterate the table, not sel.layers, so block order stays canonical.
-	for _, l := range layers {
-		if slices.Contains(sel.layers, l.id) {
-			if err := add(l.id, l.asset); err != nil {
-				return err
-			}
-		}
-	}
-	for _, lang := range sel.langs {
-		body, err := readAsset(catalog, "language/"+lang+".md")
-		if err != nil {
-			return err
-		}
-		note := fmt.Sprintf("<!-- profile: %s — managed by devskills; edits between these markers are overwritten -->", lang)
-		if err := e.Upsert(agentsPath, "language:"+lang, note+"\n"+body); err != nil {
+		if err := e.Upsert(agentsPath, b.id, body); err != nil {
 			return err
 		}
 	}
@@ -236,6 +217,29 @@ func removeLegacyProfile(out io.Writer, root string, dryRun bool) error {
 	os.Remove(filepath.Join(root, ".devskills")) // best effort: only succeeds if empty
 	lipgloss.Fprintln(out, "  removed legacy .devskills/language")
 	return nil
+}
+
+// agentsBlock is one AGENTS.md block init writes.
+type agentsBlock struct {
+	name  string // what the selection calls it: "base", a layer id, or a language
+	id    string // managed-block id
+	asset string // file under agents-md/
+}
+
+// blocksFor lists the blocks init writes for sel, in the order it writes them:
+// base, the selected layers in table order, then the languages as selected.
+func blocksFor(sel initSelection) []agentsBlock {
+	blocks := []agentsBlock{{"base", "base", "system/agents-base.md"}}
+	// Iterate the table, not sel.layers, so block order stays canonical.
+	for _, l := range layers {
+		if slices.Contains(sel.layers, l.id) {
+			blocks = append(blocks, agentsBlock{l.id, l.id, l.asset})
+		}
+	}
+	for _, lang := range sel.langs {
+		blocks = append(blocks, agentsBlock{lang, "language:" + lang, "language/" + lang + ".md"})
+	}
+	return blocks
 }
 
 func readAsset(catalog fs.FS, rel string) (string, error) {

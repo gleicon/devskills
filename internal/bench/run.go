@@ -38,22 +38,26 @@ type Result struct {
 	Stderr string
 	Diff   string // post-run git diff of the sandbox, harness dirs excluded
 	Err    error
+	Usage  *Usage // nil when the assistant reported none
 }
 
 // Runner invokes one harness with a pinned model.
 type Runner struct {
-	Harness harness.ID
-	Model   string
-	Timeout time.Duration // 0 defers to the scenario's timeout, then DefaultTimeout
+	Harness   harness.ID
+	Model     string
+	Timeout   time.Duration // 0 defers to the scenario's timeout, then DefaultTimeout
+	Price     *Price        // list price for assistants that report tokens but no cost; nil leaves cost unknown
+	PluginDir string        // Claude Code plugin folder loaded with --plugin-dir; empty loads none
 }
 
 // Run benches one skill version against one scenario: materialize the fixture
-// into a fresh sandbox, install the version project-locally alongside extras
-// (the scenario's Skills), invoke the harness headlessly in the sandbox,
-// capture output and the post-run diff. The returned error is infrastructural
-// (sandbox, git); harness failures land in Result.Err.
-func (r Runner) Run(ctx context.Context, s *Scenario, skill SkillVersion, extras []SkillVersion) (Result, error) {
-	argv, err := headlessArgs(r.Harness, s.Task, r.Model, skill.Name)
+// and the blocks paired with the version into a fresh sandbox, install the
+// version project-locally alongside extras (the scenario's Skills), invoke the
+// harness headlessly in the sandbox, capture output and the post-run diff. The
+// returned error is infrastructural (sandbox, git); harness failures land in
+// Result.Err.
+func (r Runner) Run(ctx context.Context, s *Scenario, skill SkillVersion, extras []SkillVersion, blocks []Block) (Result, error) {
+	argv, parse, err := headless(r.Harness, s.Task, r.Model, skill.Name, r.PluginDir)
 	if err != nil {
 		return Result{}, err
 	}
@@ -62,7 +66,7 @@ func (r Runner) Run(ctx context.Context, s *Scenario, skill SkillVersion, extras
 		return Result{}, err
 	}
 	defer os.RemoveAll(sandbox)
-	if err := Materialize(s, sandbox); err != nil {
+	if err := Materialize(s, sandbox, blocks); err != nil {
 		return Result{}, err
 	}
 	// The diff base is the materialized tip, pinned by SHA: a run that
@@ -96,7 +100,10 @@ func (r Runner) Run(ctx context.Context, s *Scenario, skill SkillVersion, extras
 			return Result{}, err
 		}
 		defer os.RemoveAll(configDir)
-		cmd.Env = append(os.Environ(),
+		// cmd.Environ, not os.Environ: Go only points PWD at cmd.Dir when Env
+		// is nil, and opencode resolves its project from PWD — an inherited
+		// one runs it in the caller's repo instead of the sandbox.
+		cmd.Env = append(cmd.Environ(),
 			"OPENCODE_CONFIG_DIR="+configDir,
 			"OPENCODE_DISABLE_CLAUDE_CODE=1",
 		)
@@ -114,11 +121,34 @@ func (r Runner) Run(ctx context.Context, s *Scenario, skill SkillVersion, extras
 	if err != nil {
 		return Result{}, err
 	}
-	return Result{Stdout: stdout.String(), Stderr: stderr.String(), Diff: diff, Err: runErr}, nil
+	res := Result{Stdout: stdout.String(), Stderr: stderr.String(), Diff: diff, Err: runErr}
+	res.parseOutput(parse, r.Price)
+	return res, nil
 }
 
-// headlessArgs builds the non-interactive invocation for a harness.
-func headlessArgs(id harness.ID, task, model, skill string) ([]string, error) {
+// parser splits an assistant's JSON output into its final text and usage.
+type parser func(stdout string) (text string, usage *Usage, err error)
+
+// parseOutput swaps the raw JSON stdout for the final text, so the checker
+// scores what the model said, and records usage, costed at price when the
+// assistant reported no cost. Output that yields no usage keeps the raw stdout
+// for the transcript; a parse error fails an otherwise clean run.
+func (res *Result) parseOutput(parse parser, price *Price) {
+	text, usage, err := parse(res.Stdout)
+	if usage != nil {
+		if !usage.CostKnown && price != nil {
+			usage.CostUSD, usage.CostKnown = price.Cost(*usage), true
+		}
+		res.Stdout, res.Usage = text, usage
+	}
+	if res.Err == nil {
+		res.Err = err
+	}
+}
+
+// headless builds the non-interactive invocation for a harness and picks the
+// parser for its output. pluginDir applies to Claude only; callers validate.
+func headless(id harness.ID, task, model, skill, pluginDir string) ([]string, parser, error) {
 	switch id {
 	case harness.Claude:
 		// Claude Code does not surface project-local skills to a headless run,
@@ -126,24 +156,33 @@ func headlessArgs(id harness.ID, task, model, skill string) ([]string, error) {
 		// would only reflect the bare task text. Point the model at the file
 		// bench installed — the same thing Codex does for itself by grepping.
 		prompt := fmt.Sprintf("Read .claude/skills/%s/SKILL.md and follow it as your instructions for this task: %s", skill, task)
-		// --safe-mode drops the operator's global CLAUDE.md, hooks, output styles
-		// and agents, which move scores independent of the skill; auth is untouched.
+		// --setting-sources project drops the operator's user-level CLAUDE.md,
+		// skills, plugins, hooks and output styles, which move scores independent
+		// of the skill; --safe-mode would also drop the sandbox's own CLAUDE.md.
+		// Auto-memory and user MCP servers (claude.ai connectors included) sit
+		// outside setting sources, so they are switched off explicitly.
 		// --dangerously-skip-permissions runs approvals-off: only the cwd is the
 		// throwaway sandbox — the process is unconfined, so scenario tasks are
 		// trusted input (see the trust model in docs/bench.md).
-		return []string{"claude", "-p", prompt, "--model", model, "--safe-mode", "--dangerously-skip-permissions"}, nil
+		argv := []string{"claude", "-p", prompt, "--model", model, "--output-format", "json",
+			"--setting-sources", "project", "--settings", `{"autoMemoryEnabled":false}`, "--strict-mcp-config",
+			"--dangerously-skip-permissions"}
+		if pluginDir != "" {
+			argv = append(argv, "--plugin-dir", pluginDir)
+		}
+		return argv, parseClaude, nil
 	case harness.Codex:
 		// exec is codex's non-interactive mode; workspace-write confines
 		// model-run commands to the sandbox repo.
-		return []string{"codex", "exec", "--model", model, "--sandbox", "workspace-write", task}, nil
+		return []string{"codex", "exec", "--json", "--model", model, "--sandbox", "workspace-write", task}, parseCodex, nil
 	case harness.OpenCode:
 		// --pure drops the operator's external plugins; --auto approves the
 		// permission prompts a headless run can't answer — approvals-off like
 		// Claude, unconfined beyond the sandbox cwd, so scenario tasks are
 		// trusted input.
-		return []string{"opencode", "run", task, "--model", model, "--pure", "--auto"}, nil
+		return []string{"opencode", "run", task, "--model", model, "--format", "json", "--pure", "--auto"}, parseOpenCode, nil
 	}
-	return nil, fmt.Errorf("harness %q is not supported by bench", id)
+	return nil, nil, fmt.Errorf("harness %q is not supported by bench", id)
 }
 
 // installSkills writes each skill — its full directory, companions included —

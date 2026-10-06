@@ -1,3 +1,4 @@
+<!-- profile: typescript — managed by devskills; edits between these markers are overwritten -->
 ## Language Profile — TypeScript
 
 Target: TypeScript 5.5+. Cloudflare Workers, Next.js, React, edge runtimes.

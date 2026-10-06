@@ -5,3 +5,15 @@ models:
   # opencode model IDs are provider-qualified, and the provider half depends
   # on how the operator authenticated; --model overrides when yours differs.
   opencode: opencode/claude-sonnet-5
+
+# API list prices in USD per 1M tokens, standard tier, for assistants that
+# report tokens but no cost (Codex). A model without an entry reports tokens
+# only. Source: https://developers.openai.com/api/docs/pricing — recheck and
+# bump `checked` when you edit a rate.
+prices:
+  gpt-5.6-terra:
+    checked: "2026-09-26"
+    input: 2.00
+    cache_read: 0.20
+    cache_write: 2.50
+    output: 12.00

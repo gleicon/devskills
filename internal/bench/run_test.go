@@ -25,7 +25,19 @@ func fakeCLI(t *testing.T, name, script string) {
 
 func fakeClaude(t *testing.T, script string) {
 	t.Helper()
-	fakeCLI(t, "claude", script)
+	fakeCLI(t, "claude", claudeJSON(script))
+}
+
+// claudeJSON wraps a fake claude script so its stdout becomes the result
+// text of a JSON result, the way --output-format json reports it. The text
+// must hold no quotes or backslashes: the wrapper does not escape them.
+func claudeJSON(script string) string {
+	return "out=$( (\n" + script + "\n) ); rc=$?\n" + `printf '%s' "$out" | awk '
+BEGIN { ORS = ""; print "{\"type\":\"result\",\"subtype\":\"success\",\"is_error\":false,\"result\":\"" }
+{ if (NR > 1) print "\\n"; print }
+END { print "\",\"total_cost_usd\":0.01,\"modelUsage\":{}}\n" }'
+exit $rc
+`
 }
 
 // benchSkill is a minimal one-file skill version for runner tests.
@@ -45,7 +57,7 @@ echo "one warning" >&2
 	skill := benchSkill("SKILLBODY\n")
 	skill.Files["ref.md"] = []byte("COMPANION\n")
 	r := Runner{Harness: harness.Claude, Model: "pin-model"}
-	res, err := r.Run(context.Background(), fixtureScenario(t), skill, nil)
+	res, err := r.Run(context.Background(), fixtureScenario(t), skill, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -73,10 +85,47 @@ echo "one warning" >&2
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"-p", "Review the diff", "--model", "pin-model", "--safe-mode", "--dangerously-skip-permissions"} {
+	for _, want := range []string{"-p", "Review the diff", "--model", "pin-model", "--output-format", "json", "--setting-sources", "project", `{"autoMemoryEnabled":false}`, "--strict-mcp-config", "--dangerously-skip-permissions"} {
 		if !strings.Contains(string(args), want) {
 			t.Errorf("claude args = %q, missing %q", args, want)
 		}
+	}
+}
+
+func TestRunnerReadsClaudeResult(t *testing.T) {
+	fakeCLI(t, "claude", `cat <<'EOF'
+{"type":"result","subtype":"success","is_error":false,"result":"found the slop","total_cost_usd":0.25,
+ "modelUsage":{"claude-sonnet-5":{"inputTokens":100,"outputTokens":20,"cacheReadInputTokens":3000,"cacheCreationInputTokens":400}}}
+EOF`)
+	r := Runner{Harness: harness.Claude, Model: "m"}
+	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"), nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Err != nil {
+		t.Fatalf("Result.Err = %v", res.Err)
+	}
+	if res.Stdout != "found the slop" {
+		t.Errorf("stdout = %q, want the result text, not the raw JSON", res.Stdout)
+	}
+	want := Usage{Input: 100, CacheRead: 3000, CacheWrite: 400, Output: 20, CostUSD: 0.25, CostKnown: true}
+	if res.Usage == nil || *res.Usage != want {
+		t.Errorf("usage = %+v, want %+v", res.Usage, want)
+	}
+}
+
+func TestRunnerFailsOnNonJSONClaudeOutput(t *testing.T) {
+	fakeCLI(t, "claude", `echo "plain text"`)
+	r := Runner{Harness: harness.Claude, Model: "m"}
+	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"), nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Err == nil {
+		t.Fatal("want Result.Err when claude prints no JSON result")
+	}
+	if !strings.Contains(res.Stdout, "plain text") || res.Usage != nil {
+		t.Errorf("stdout = %q, usage = %v; want the raw output kept and no usage", res.Stdout, res.Usage)
 	}
 }
 
@@ -88,7 +137,7 @@ export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null
 git add -A
 git -c user.name=h -c user.email=h@h commit -q -m done`)
 	r := Runner{Harness: harness.Claude, Model: "m"}
-	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"), nil)
+	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -103,7 +152,7 @@ git -c user.name=h -c user.email=h@h commit -q -m done`)
 func TestRunnerRecordsFailure(t *testing.T) {
 	fakeClaude(t, `echo "boom" >&2; exit 3`)
 	r := Runner{Harness: harness.Claude, Model: "m"}
-	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"), nil)
+	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -118,7 +167,7 @@ func TestRunnerRecordsFailure(t *testing.T) {
 func TestRunnerRecordsTimeout(t *testing.T) {
 	fakeClaude(t, `sleep 5`)
 	r := Runner{Harness: harness.Claude, Model: "m", Timeout: 100 * time.Millisecond}
-	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"), nil)
+	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -143,7 +192,7 @@ func TestRunnerScenarioTimeoutPrecedence(t *testing.T) {
 			s := fixtureScenario(t)
 			s.Timeout = tt.scenario
 			r := Runner{Harness: harness.Claude, Model: "m", Timeout: tt.runner}
-			res, err := r.Run(context.Background(), s, benchSkill("s"), nil)
+			res, err := r.Run(context.Background(), s, benchSkill("s"), nil, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -158,7 +207,7 @@ func TestRunnerInstallsExtraSkills(t *testing.T) {
 	fakeClaude(t, `cat .claude/skills/ds-x/SKILL.md .claude/skills/ds-y/SKILL.md`)
 	extra := SkillVersion{Name: "ds-y", Files: map[string][]byte{"SKILL.md": []byte("EXTRABODY\n")}}
 	r := Runner{Harness: harness.Claude, Model: "m"}
-	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("SKILLBODY\n"), []SkillVersion{extra})
+	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("SKILLBODY\n"), []SkillVersion{extra}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -167,6 +216,33 @@ func TestRunnerInstallsExtraSkills(t *testing.T) {
 	}
 	if !strings.Contains(res.Stdout, "SKILLBODY") || !strings.Contains(res.Stdout, "EXTRABODY") {
 		t.Errorf("stdout = %q, want both the skill under test and the extra installed", res.Stdout)
+	}
+}
+
+func TestRunnerLoadsPluginDir(t *testing.T) {
+	for _, tc := range []struct{ name, dir string }{
+		{"without", ""},
+		{"with", "/plugins/gopls-lsp"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			argsFile := filepath.Join(t.TempDir(), "args")
+			t.Setenv("ARGS_OUT", argsFile)
+			fakeClaude(t, `printf '%s\n' "$@" > "$ARGS_OUT"`)
+			r := Runner{Harness: harness.Claude, Model: "m", PluginDir: tc.dir}
+			if _, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"), nil, nil); err != nil {
+				t.Fatal(err)
+			}
+			args, err := os.ReadFile(argsFile)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if tc.dir == "" && strings.Contains(string(args), "--plugin-dir") {
+				t.Errorf("claude args = %q, want no --plugin-dir without a plugin", args)
+			}
+			if tc.dir != "" && !strings.Contains(string(args), "--plugin-dir\n"+tc.dir+"\n") {
+				t.Errorf("claude args = %q, want --plugin-dir %s", args, tc.dir)
+			}
+		})
 	}
 }
 
@@ -182,7 +258,7 @@ func TestRunnerMissingCLI(t *testing.T) {
 	}
 	t.Setenv("PATH", bin)
 	r := Runner{Harness: harness.Claude, Model: "m"}
-	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"), nil)
+	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -195,9 +271,11 @@ func TestRunnerCodexInvocation(t *testing.T) {
 	argsFile := filepath.Join(t.TempDir(), "args")
 	t.Setenv("ARGS_OUT", argsFile)
 	fakeCLI(t, "codex", `printf '%s\n' "$@" > "$ARGS_OUT"
-cat .codex/skills/ds-x/agents/openai.yaml`)
+grep -q 'allow_implicit_invocation: false' .codex/skills/ds-x/agents/openai.yaml && sidecar=SIDECAR
+echo '{"type":"item.completed","item":{"type":"agent_message","text":"'$sidecar'"}}'
+echo '{"type":"turn.completed","usage":{"input_tokens":10,"cached_input_tokens":0,"output_tokens":5}}'`)
 	r := Runner{Harness: harness.Codex, Model: "codex-model"}
-	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("S"), nil)
+	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("S"), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -208,14 +286,17 @@ cat .codex/skills/ds-x/agents/openai.yaml`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"exec", "--model", "codex-model", "--sandbox", "workspace-write", "Review the diff"} {
+	for _, want := range []string{"exec", "--json", "--model", "codex-model", "--sandbox", "workspace-write", "Review the diff"} {
 		if !strings.Contains(string(args), want) {
 			t.Errorf("codex args = %q, missing %q", args, want)
 		}
 	}
 	// The sync engine's Codex sidecar must be emitted in the sandbox install.
-	if !strings.Contains(res.Stdout, "allow_implicit_invocation: false") {
-		t.Errorf("stdout = %q, want the codex sidecar policy", res.Stdout)
+	if res.Stdout != "SIDECAR" {
+		t.Errorf("stdout = %q, want the agent message confirming the codex sidecar policy", res.Stdout)
+	}
+	if res.Usage == nil || res.Usage.Input != 10 || res.Usage.Output != 5 {
+		t.Errorf("usage = %+v, want the turn.completed counts", res.Usage)
 	}
 }
 
@@ -223,10 +304,13 @@ func TestRunnerOpenCodeInvocation(t *testing.T) {
 	argsFile := filepath.Join(t.TempDir(), "args")
 	t.Setenv("ARGS_OUT", argsFile)
 	fakeCLI(t, "opencode", `printf '%s\n' "$@" > "$ARGS_OUT"
-[ -d "$OPENCODE_CONFIG_DIR" ] && [ -z "$(ls -A "$OPENCODE_CONFIG_DIR")" ] && [ "$OPENCODE_DISABLE_CLAUDE_CODE" = 1 ] && echo ISOLATED
-cat .opencode/skills/ds-x/SKILL.md`)
+[ -d "$OPENCODE_CONFIG_DIR" ] && [ -z "$(ls -A "$OPENCODE_CONFIG_DIR")" ] && [ "$OPENCODE_DISABLE_CLAUDE_CODE" = 1 ] && iso=ISOLATED
+grep -q OCSKILL .opencode/skills/ds-x/SKILL.md && skill=OCSKILL
+echo '{"type":"text","part":{"text":"'$iso'"}}'
+echo '{"type":"text","part":{"text":"'$skill'"}}'
+echo '{"type":"step_finish","part":{"cost":0.01,"tokens":{"input":10,"output":4,"reasoning":1,"cache":{"read":0,"write":0}}}}'`)
 	r := Runner{Harness: harness.OpenCode, Model: "anthropic/some-model"}
-	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("OCSKILL"), nil)
+	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("OCSKILL"), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -237,7 +321,7 @@ cat .opencode/skills/ds-x/SKILL.md`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"run", "Review the diff", "--model", "anthropic/some-model", "--pure", "--auto"} {
+	for _, want := range []string{"run", "Review the diff", "--model", "anthropic/some-model", "--format", "json", "--pure", "--auto"} {
 		if !strings.Contains(string(args), want) {
 			t.Errorf("opencode args = %q, missing %q", args, want)
 		}
@@ -249,5 +333,47 @@ cat .opencode/skills/ds-x/SKILL.md`)
 	}
 	if !strings.Contains(res.Stdout, "OCSKILL") {
 		t.Errorf("stdout = %q, want the installed skill under .opencode/skills", res.Stdout)
+	}
+}
+
+func TestRunnerOpenCodePWDIsSandbox(t *testing.T) {
+	// A shell fake can't see this: sh resets an inherited PWD that doesn't
+	// name its cwd. The real opencode is a native binary that trusts PWD, so
+	// the fake is this test binary, symlinked in as opencode (see TestMain).
+	self, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	bin := t.TempDir()
+	if err := os.Symlink(self, filepath.Join(bin, "opencode")); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", bin+string(os.PathListSeparator)+os.Getenv("PATH"))
+	t.Setenv(fakePWDEnv, "1")
+	r := Runner{Harness: harness.OpenCode, Model: "m"}
+	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"), nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Err != nil {
+		t.Fatalf("Result.Err = %v", res.Err)
+	}
+	if res.Stdout != "PWD is cwd" {
+		t.Errorf("fake opencode saw %q, want PWD naming the sandbox it runs in", res.Stdout)
+	}
+}
+
+func TestRunnerInstallsBlocks(t *testing.T) {
+	fakeClaude(t, `cat CLAUDE.md AGENTS.md`)
+	r := Runner{Harness: harness.Claude, Model: "m"}
+	res, err := r.Run(context.Background(), fixtureScenario(t), benchSkill("s"), nil, []Block{{ID: "base", Body: "BASEBLOCK"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(res.Stdout, "@AGENTS.md") || !strings.Contains(res.Stdout, "BASEBLOCK") {
+		t.Errorf("stdout = %q, want the block and its CLAUDE.md import in the sandbox", res.Stdout)
+	}
+	if strings.Contains(res.Diff, "BASEBLOCK") {
+		t.Errorf("diff = %q, want the installed block kept out of the post-run diff", res.Diff)
 	}
 }

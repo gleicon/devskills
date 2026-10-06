@@ -1,0 +1,5 @@
+{
+  "name": "gopls-lsp",
+  "version": "1.0.0",
+  "description": "gopls for bench A/B runs"
+}

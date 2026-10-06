@@ -25,6 +25,7 @@ type Engine struct {
 	stamp   string          // suffix for .bak files, fixed for the whole run
 	created map[string]bool // files created this run — never back up
 	backed  map[string]bool // files already backed up this run
+	noBak   bool
 	log     func(string)
 }
 
@@ -201,10 +202,14 @@ func (e *Engine) writeChange(file, orig, next string, existed bool) error {
 	return nil
 }
 
+// SkipBackups stops the engine writing .bak copies, for a tree nobody recovers
+// from — a throwaway sandbox, where a backup would only become another file.
+func (e *Engine) SkipBackups() { e.noBak = true }
+
 // backupOnce copies file to a sibling timestamped .bak, at most once per run and
 // never for a file this run created.
 func (e *Engine) backupOnce(file string) error {
-	if e.created[file] || e.backed[file] {
+	if e.noBak || e.created[file] || e.backed[file] {
 		return nil
 	}
 	data, err := os.ReadFile(file)

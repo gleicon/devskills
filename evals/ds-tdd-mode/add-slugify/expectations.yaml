@@ -1,0 +1,11 @@
+# Structural: the function and its test on added lines. The mode's
+# confirmation line is not checked — the final text is scored, and a run
+# that builds the feature says it only in its first message. The task
+# pre-approves the plan: the skill asks for approval, and a headless run
+# has no second turn to give it. Four behaviors give several slices, so a
+# skill that reprints code per slice shows up in output tokens.
+task: "Run /ds-tdd-mode, then add `Slugify(s string) string` to package text: it lowercases, turns spaces into hyphens, collapses runs of non-alphanumeric characters into one hyphen, and trims leading and trailing hyphens. The plan is approved in advance — work through every slice without stopping to ask."
+tier: structural
+elements:
+  - "func Slugify("
+  - "func TestSlugify"

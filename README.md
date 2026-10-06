@@ -37,9 +37,9 @@ Then sync the skills into your assistants:
 devskills install
 ```
 
-`install` detects Claude Code, OpenCode, and Codex, lets you pick which to target, and copies the catalog into each one's skills directory. Re-run it any time to update — it prunes skills that were renamed or dropped and never touches anything it didn't ship. Use `--local` to install into the current repo instead of globally, `--dry-run` to preview the plan, `--uninstall` to remove.
+`install` detects Claude Code, OpenCode, and Codex, lets you pick which to target, and copies the catalog into each one's skills directory. Re-run it any time to update — it prunes skills that were renamed or dropped and never touches anything it didn't ship, apart from the OpenCode permission rule below. Use `--local` to install into the current repo instead of globally, `--dry-run` to preview the plan, `--uninstall` to remove.
 
-*Enforcement is per-assistant: Claude Code and Codex honor the invoke-only flag (Codex via a generated policy sidecar); OpenCode [doesn't yet](https://github.com/anomalyco/opencode/issues/34498), so a skill there can still be model-invoked until upstream lands it.*
+*Enforcement is per-assistant: Claude Code and Codex honor the invoke-only flag (Codex via a generated policy sidecar). OpenCode [ignores it](https://github.com/anomalyco/opencode/issues/34498), so `install` adds `"ds-*": "deny"` to `permission.skill` in OpenCode's `opencode.json` instead, keeping your comments and formatting. The model can't load a `ds-*` skill, and you run them from OpenCode's Skills picker. `--uninstall` takes the rule back out.*
 
 ## Use
 
@@ -155,11 +155,6 @@ If you work this loop often, [devskills-tui](https://github.com/gfronza/devskill
 | Skill | What it does |
 |-------|--------------|
 | `/ds-tldt` | extractive summary of a doc before it enters context — no LLM cost |
-| `/ds-recall` | inject prior local context from [recall](https://github.com/gleicon/recall) into the session |
-| `/ds-recall-capture` | store this session's outcome in recall's knowledge base |
-| `/ds-recall-setup` | initialize recall and its session integration |
-
-> The `recall` skills are experimental and need the external [recall](https://github.com/gleicon/recall) engine installed.
 
 ## The CLI
 
@@ -221,6 +216,7 @@ devskills ships no fixed pipeline. Each skill does one job and hands control bac
 - **[docs/grill-me.md](docs/grill-me.md)** · **[docs/tiger-style.md](docs/tiger-style.md)** — the grill playbook and the engineering bar
 - **[docs/ast-grep.md](docs/ast-grep.md)** — the optional structural pass for `/ds-security-review`
 - **[docs/bench.md](docs/bench.md)** — benchmarking skill changes: scenario authoring, check tiers, PR evidence
+- **[docs/tokens.md](docs/tokens.md)** — why devskills bundles no token-saving tools, and what it recommends instead
 
 ## References
 
@@ -233,8 +229,6 @@ devskills builds on these upstream sources.
 | [cursor-team-kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit/skills) | `/ds-code-quality-review`, `/ds-deslop`, `/ds-verify-this` |
 | [pstack](https://github.com/cursor/plugins/tree/main/pstack) | `/ds-how`, `/ds-blast-radius`, `/ds-reflect`, `/ds-arena`, six rules in the `AGENTS.md` baseline |
 | [Andrej Karpathy](https://x.com/karpathy/status/2015883857489522876) · [andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) | the `AGENTS.md` baseline |
-| [recall](https://github.com/gleicon/recall) | `/ds-recall`, `/ds-recall-capture`, `/ds-recall-setup` |
-
 ## License
 
 MIT — see [LICENSE](LICENSE).
@@ -275,7 +269,7 @@ Skills and profiles live in `skills/` and `agents-md/` and are embedded into the
 
 Skill prompt changes are benchmarked with `devskills bench`: old (main branch) vs new (working tree) against committed scenarios under `evals/`, scored deterministically — no LLM judging. [docs/bench.md](docs/bench.md) covers authoring scenarios and the check tiers. The repo ships `/ds-dev-skill-bench` to drive the bench and act on its reports — committed under `.claude/skills/` (which OpenCode also reads) and `.codex/skills/`, so it works in all three assistants.
 
-- **Benchmark runs are local only.** `devskills bench` drives your installed assistant CLIs (Claude Code, Codex, OpenCode) with your own auth. The repo stores no LLM credentials, and CI never executes a benchmark. Runs execute the branch's committed tasks and fixtures with approvals off (only Codex is OS-sandboxed) — review `evals/` changes like code before benching an untrusted branch.
+- **Benchmark runs are local only.** `devskills bench` drives your installed assistant CLIs (Claude Code, Codex, OpenCode) with your own auth, and names the login it will bill before the first run. The repo stores no LLM credentials, and CI never executes a benchmark. Runs execute the branch's committed tasks and fixtures with approvals off (only Codex is OS-sandboxed) — review `evals/` changes like code before benching an untrusted branch.
 - **CI is zero-token.** The `bench-report` workflow only checks that a PR touching a covered skill carries a report (in the PR body or a committed file); the unit tests exercise bench against fake CLIs and canned transcripts, fully offline.
 - **New skills need a scenario.** A catalog test fails any skill added without one under `evals/` — run the bench and paste the report into the PR's evidence section.
 

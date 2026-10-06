@@ -67,6 +67,59 @@ func LoadSkills(root string, names []string) ([]SkillVersion, error) {
 	return skills, nil
 }
 
+// BlockRef names a managed AGENTS.md block to load: the marker id devskills
+// init writes it under and its source path under agents-md/.
+type BlockRef struct {
+	ID   string
+	Path string // slash-separated, relative to agents-md/
+}
+
+// Block is one managed AGENTS.md block as loaded from one version's tree: its
+// marker id, content, and blob SHA.
+type Block struct {
+	ID   string
+	Body string
+	SHA  string
+}
+
+// LoadBlocks loads the blocks refs name from the repo at root, paired with the
+// skill versions: old from the main branch, new from the working tree. A block
+// absent on the main branch is left out of old, the way baseline mode leaves
+// out a skill new on the branch.
+func LoadBlocks(root string, refs []BlockRef) (oldBlocks, newBlocks []Block, err error) {
+	branch, err := mainBranch(root)
+	if err != nil {
+		return nil, nil, err
+	}
+	for _, ref := range refs {
+		path := filepath.Join(root, "agents-md", filepath.FromSlash(ref.Path))
+		b, err := os.ReadFile(path)
+		if err != nil {
+			return nil, nil, fmt.Errorf("block %q not found in working tree: %w", ref.ID, err)
+		}
+		sha, err := gitStdout(root, "hash-object", path)
+		if err != nil {
+			return nil, nil, err
+		}
+		newBlocks = append(newBlocks, Block{ID: ref.ID, Body: string(b), SHA: trimSHA(sha)})
+
+		spec := branch + ":agents-md/" + ref.Path
+		if _, err := gitStdout(root, "cat-file", "-e", spec); err != nil {
+			continue
+		}
+		b, err = gitStdout(root, "show", spec)
+		if err != nil {
+			return nil, nil, err
+		}
+		sha, err = gitStdout(root, "rev-parse", spec)
+		if err != nil {
+			return nil, nil, err
+		}
+		oldBlocks = append(oldBlocks, Block{ID: ref.ID, Body: string(b), SHA: trimSHA(sha)})
+	}
+	return oldBlocks, newBlocks, nil
+}
+
 // workingTreeFiles reads the skill's directory from the working tree, keyed by
 // slash-separated path relative to skills/<skill>/.
 func workingTreeFiles(root, skill string) (map[string][]byte, error) {

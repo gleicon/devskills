@@ -9,14 +9,18 @@
 
 | run | new |
 |---|---|
-| 1 | 3/3 hits, 1 extra |
-| 2 | 2/3 hits, 0 extra |
+| 1 | 3/3 hits, 1 extra · $0.0400 |
+| 2 | 2/3 hits, 0 extra · $0.0300 |
 | **aggregate** | 5/6 hits, 1 extra |
+| **cost / success** | $0.0700 (1/2 succeeded) |
+| **median cost** | $0.0350 |
 
 <details>
 <summary>narrated-greeting transcripts</summary>
 
 #### new run 1
+
+usage: input 0, cache read 0, cache write 0, output 0, $0.0400
 
 stdout:
 
@@ -26,6 +30,8 @@ plus a ```code``` fence
 ````
 
 #### new run 2
+
+usage: input 0, cache read 0, cache write 0, output 0, $0.0300
 
 stdout:
 

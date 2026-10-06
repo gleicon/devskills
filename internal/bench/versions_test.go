@@ -1,6 +1,8 @@
 package bench
 
 import (
+	"crypto/sha1"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -112,5 +114,53 @@ func TestLoadSkills(t *testing.T) {
 	}
 	if _, err := LoadSkills(root, []string{"ds-missing"}); err == nil || !strings.Contains(err.Error(), "ds-missing") {
 		t.Errorf("error = %v, want the missing skill named", err)
+	}
+}
+
+func TestLoadBlocks(t *testing.T) {
+	root := t.TempDir()
+	write := func(rel, content string) {
+		t.Helper()
+		p := filepath.Join(root, "agents-md", filepath.FromSlash(rel))
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write("system/agents-base.md", "OLDBASE\n")
+	for _, args := range [][]string{{"init", "-q", "-b", "main"}, {"add", "-A"}, {"commit", "-q", "-m", "base"}} {
+		if err := git(root, args...); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write("system/agents-base.md", "NEWBASE\n")
+	write("system/concise.md", "NEWCONCISE\n")
+	refs := []BlockRef{{ID: "base", Path: "system/agents-base.md"}, {ID: "concise", Path: "system/concise.md"}}
+
+	oldBlocks, newBlocks, err := LoadBlocks(root, refs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(oldBlocks) != 1 || oldBlocks[0].ID != "base" || oldBlocks[0].Body != "OLDBASE\n" {
+		t.Errorf("old = %+v, want only base from main (concise is new on the branch)", oldBlocks)
+	}
+	if len(newBlocks) != 2 || newBlocks[0].Body != "NEWBASE\n" || newBlocks[1].Body != "NEWCONCISE\n" {
+		t.Errorf("new = %+v, want both from the working tree", newBlocks)
+	}
+	// Git's blob SHA: what the report prints and `git hash-object` reproduces.
+	blob := func(body string) string {
+		return fmt.Sprintf("%x", sha1.Sum(fmt.Appendf(nil, "blob %d\x00%s", len(body), body)))
+	}
+	for _, b := range append(oldBlocks, newBlocks...) {
+		if b.SHA != blob(b.Body) {
+			t.Errorf("block %s SHA = %q, want the blob SHA of its body %q", b.ID, b.SHA, blob(b.Body))
+		}
+	}
+
+	_, _, err = LoadBlocks(root, []BlockRef{{ID: "gone", Path: "system/gone.md"}})
+	if err == nil || !strings.Contains(err.Error(), "gone") {
+		t.Errorf("want a loud error naming a block missing from the working tree, got %v", err)
 	}
 }

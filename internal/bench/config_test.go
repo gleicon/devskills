@@ -40,6 +40,10 @@ func TestLoadConfigRejectsMalformed(t *testing.T) {
 		{"unknown harness", "models:\n  gemini: g-1\n", `unknown harness "gemini"`},
 		{"empty pin", "models:\n  claude: \"\"\n", "empty model pin"},
 		{"unknown field", "models:\n  claude: m\nbogus: x\n", "bogus"},
+		{"price without date", "models:\n  codex: m\nprices:\n  m:\n    input: 1\n", "checked must be a YYYY-MM-DD date"},
+		{"price with bad date", "models:\n  codex: m\nprices:\n  m:\n    checked: \"last week\"\n", "checked must be a YYYY-MM-DD date"},
+		{"negative rate", "models:\n  codex: m\nprices:\n  m:\n    checked: \"2026-09-26\"\n    output: -1\n", "negative rate"},
+		{"unknown price field", "models:\n  codex: m\nprices:\n  m:\n    checked: \"2026-09-26\"\n    cached: 1\n", "cached"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -51,6 +55,17 @@ func TestLoadConfigRejectsMalformed(t *testing.T) {
 	}
 	if _, err := LoadConfig(filepath.Join(t.TempDir(), "absent.yaml")); err == nil {
 		t.Error("want error for missing config file")
+	}
+}
+
+func TestLoadConfigPrices(t *testing.T) {
+	c, err := LoadConfig(writeConfig(t, "models:\n  codex: m\nprices:\n  m:\n    checked: \"2026-09-26\"\n    input: 2\n    cache_read: 0.2\n    cache_write: 2.5\n    output: 12\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := Price{Checked: "2026-09-26", Input: 2, CacheRead: 0.2, CacheWrite: 2.5, Output: 12}
+	if p := c.Prices["m"]; p != want {
+		t.Errorf("Prices[m] = %+v, want %+v", p, want)
 	}
 }
 

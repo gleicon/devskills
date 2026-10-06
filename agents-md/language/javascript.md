@@ -1,3 +1,4 @@
+<!-- profile: javascript — managed by devskills; edits between these markers are overwritten -->
 ## Language Profile — JavaScript
 
 Target: ES2022+. Cloudflare Workers, vanilla frontend, Wrangler.

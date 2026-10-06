@@ -20,7 +20,7 @@ When invoked, audit the code against one question: **is the architecture itself 
 
 ## What to assess
 
-Build the picture from evidence — the dependency/import graph, and (when available) which files change together in git history. Don't pattern-match a style onto the code.
+Build the picture from evidence — the dependency/import graph, and (when available) which files change together in git history (`git --no-pager log --no-color --format='--%h' --name-only -n 200`). Don't pattern-match a style onto the code.
 
 **1. Module boundaries & cohesion.** God packages/files, grab-bag `utils`/`common`/`helpers` modules, low cohesion, unclear ownership of a concept.
 
@@ -58,7 +58,7 @@ Rules:
 - **No recommendation without a concrete symptom in this codebase.** Generic best-practice with no local evidence is banned.
 - Before proposing a change, check `# settled` in `.project/state.md` (if present) so you don't re-litigate a call already made; if a proposal would override one, say so explicitly.
 - **Simplicity first** — prefer the change that removes structure over the one that adds it; resist speculative generality.
-- Weight impact by **churn** — a fix in a frequently-changed hot spot (`git log`) pays off more than the same fix in stable code.
+- Weight impact by **churn** — a fix in a frequently-changed hot spot (`git --no-pager log --no-color --format= --name-only --since=6.months | sort | uniq -c | sort -rn | head -20`) pays off more than the same fix in stable code.
 - Behavior-preserving: refactors keep observable behavior; recommend characterization tests before risky moves.
 - `Safety > Performance > Developer Experience`.
 - Each step independently shippable where possible.

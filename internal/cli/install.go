@@ -192,13 +192,14 @@ func runInstall(out io.Writer, catalog fs.FS, r harness.Resolver, scope harness.
 }
 
 // buildTarget wires a harness+scope into a sync target: the skills dir, plus the
-// legacy purge dir (global only) and the Codex sidecar flag.
+// legacy purge dir (global only), the Codex sidecar flag and the OpenCode config
+// flag.
 func buildTarget(r harness.Resolver, id harness.ID, scope harness.Scope) (dsync.Target, error) {
 	skillsDir, err := r.SkillsDir(id, scope)
 	if err != nil {
 		return dsync.Target{}, err
 	}
-	t := dsync.Target{Name: id.Name(), SkillsDir: skillsDir, Codex: id == harness.Codex}
+	t := dsync.Target{Name: id.Name(), SkillsDir: skillsDir, Codex: id == harness.Codex, OpenCode: id == harness.OpenCode}
 	if scope == harness.Global {
 		if legacy, ok := r.LegacyCommandDir(id); ok {
 			t.LegacyDir = legacy
@@ -218,6 +219,16 @@ func renderPlan(out io.Writer, p dsync.Plan, scope harness.Scope, dryRun, uninst
 	}
 	for _, rm := range p.Removes {
 		lipgloss.Fprintf(out, "  remove %s: %s\n", rm.Kind, rm.Path)
+	}
+	if c := p.Config; c != nil {
+		switch {
+		case c.Content == nil:
+			lipgloss.Fprintf(out, "  remove %s\n", c.Path)
+		case uninstall:
+			lipgloss.Fprintf(out, "  remove the ds-* rule from %s\n", c.Path)
+		default:
+			lipgloss.Fprintf(out, "  deny ds-* skills to the model in %s\n", c.Path)
+		}
 	}
 	if dryRun {
 		msg := "  dry run — nothing written"

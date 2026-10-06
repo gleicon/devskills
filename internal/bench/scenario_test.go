@@ -105,6 +105,8 @@ func TestLoadScenarioRejectsMalformed(t *testing.T) {
 		{"bad tier", "task: t\ntier: nope\n", []string{"base", "change"}, `tier = "nope"`},
 		{"missing base dir", validReport, []string{"change"}, "missing base/"},
 		{"missing change dir", validReport, []string{"base"}, "missing change/"},
+		{"claude config in base", validReport, []string{"base/.claude", "change"}, "base/.claude: fixtures must not carry assistant config"},
+		{"opencode config in change", validReport, []string{"base", "change/opencode.json"}, "change/opencode.json: fixtures must not carry assistant config"},
 		{"planted-defect without style", "task: t\ntier: planted-defect\nexpectations:\n  - {file: f, keywords: [k]}\n", []string{"base", "change"}, `style = ""`},
 		{"planted-defect without expectations", "task: t\ntier: planted-defect\nstyle: report\n", []string{"base", "change"}, "requires expectations"},
 		{"expectation without file", "task: t\ntier: planted-defect\nstyle: report\nexpectations:\n  - {keywords: [k]}\n", []string{"base", "change"}, "file is required"},

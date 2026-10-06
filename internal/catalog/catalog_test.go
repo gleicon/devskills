@@ -78,3 +78,27 @@ func TestValidateRejects(t *testing.T) {
 		})
 	}
 }
+
+// TestLanguageProfilesCarryTheirNote guards the ownership note each profile
+// ships as its first line: init writes the file verbatim, so a profile copied
+// from another keeps the wrong language's note unless this catches it.
+func TestLanguageProfilesCarryTheirNote(t *testing.T) {
+	entries, err := os.ReadDir("../../agents-md/language")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, e := range entries {
+		lang, ok := strings.CutSuffix(e.Name(), ".md")
+		if !ok {
+			continue
+		}
+		b, err := os.ReadFile("../../agents-md/language/" + e.Name())
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := "<!-- profile: " + lang + " — managed by devskills; edits between these markers are overwritten -->\n"
+		if !strings.HasPrefix(string(b), want) {
+			t.Errorf("%s must start with %q", e.Name(), want)
+		}
+	}
+}

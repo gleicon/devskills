@@ -96,9 +96,6 @@ Durable context across sessions. The workflow runs fine without any of these.
 
 Preferences live in `.project/config.md` — written by `devskills config`, never by a skill.
 
-## Local knowledge & utilities
+## Utilities
 
-- `/ds-recall` — inject prior local context from recall into this session.
-- `/ds-recall-capture` — store this session's outcome into recall's knowledge base.
-- `/ds-recall-setup` — initialize recall and its session integration.
 - `/ds-tldt` — extractive summary of a long doc before it enters context.
