@@ -142,7 +142,6 @@ Durable context across `/clear` and session ends. The workflow runs fine without
 
 | Skill | What it does |
 |-------|--------------|
-| `/ds-project-map` | map the repo into `.project/map.md` |
 | `/ds-project-resume` | read `.project/` state and apply configured modes |
 | `/ds-project-checkpoint` | write the session's state to `.project/state.md` |
 
