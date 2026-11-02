@@ -14,7 +14,7 @@ The question: a subsystem, a runtime flow, or a placement question ("where shoul
 
 1. **Size the question.** One module, one utility, or one function: explore and explain in a single pass. A subsystem spanning several files or services, a cross-cutting feature, or a whole-architecture question: fan out first. When in doubt, take the single pass.
 2. **Fan out (large questions only).** Split the question into 2 to 4 angles, each a distinct slice of the subsystem, and hand each to a read-only explorer in one message with the brief below. Explorers return facts; you write the prose.
-3. **Read the code, not the names.** If `.project/map.md` exists, start from it. Find the entry point — what triggers the behaviour — then follow the call chain and the data that moves through it, read the definitions of the central types and interfaces, and find where the subsystem meets its neighbours. A part you cannot trace is reported as a gap, never filled in by guessing.
+3. **Read the code, not the names.** Find the entry point — what triggers the behaviour — then follow the call chain and the data that moves through it, read the definitions of the central types and interfaces, and find where the subsystem meets its neighbours. A part you cannot trace is reported as a gap, never filled in by guessing.
 4. **Synthesize.** Where explorers overlap or disagree, settle it by checking the code yourself. Write the explanation in the shape below.
 
 ## Explorer brief

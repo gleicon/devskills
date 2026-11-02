@@ -13,7 +13,7 @@ When invoked, load the project's state and report where to pick up — the count
 ## Process
 
 1. **Apply the modes in `.project/config.md`.** For each one, read that mode's `SKILL.md` from your assistant's skills directory (`~/.claude/skills/`, `$CLAUDE_CONFIG_DIR/skills/`, `~/.codex/skills/`, `~/.config/opencode/skills/`) and adopt its rules for the session. Each mode ends with its own confirmation line — those are the echo; don't restate the list as prose. Where a mode grants a standing authorization, name it inline on that line. If a listed mode isn't installed, say so and tell the user to apply it by hand — never skip one silently.
-2. Read `.project/state.md`. If it is absent, say so, suggest `/ds-project-map` then `/ds-project-checkpoint`, and stop.
+2. Read `.project/state.md`. If it is absent, say so, suggest `/ds-project-checkpoint`, and stop.
 3. Report the mode confirmations, then `# now`, then `# next`.
 
 ## Rules
