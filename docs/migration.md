@@ -1,8 +1,8 @@
 # Migrating an old `.project/`
 
 Repos set up before the rebuild carry `PROJECT.md`, `DECISIONS.md`, `PLAN.md`,
-sometimes `handoff.md` and an `archive/`. The new `.project/` is four files with
-one writer each — `config.md`, `state.md`, `map.md`, `roadmap.md`.
+sometimes `handoff.md` and an `archive/`. The new `.project/` is three files with
+one writer each — `config.md`, `state.md`, `roadmap.md`.
 
 **The old files are claims, not truth.** They were written by the tools this
 release replaces, appended to every session for the life of the project, and never
@@ -85,17 +85,12 @@ and that's the migration working.
    them as the argument. Nothing open means no `roadmap.md`; don't create an empty
    one.
 
-7. **Delete the leftovers.** `PROJECT.md`, `DECISIONS.md`, `PLAN.md` and
-   `handoff.md` are done. `SPEC.md` / `GRILL.md` / `EXPLORE.md` are work products —
-   move them to the repo root if you still want them. `.project/` holds only its
-   four files.
+7. **Delete the leftovers.** `PROJECT.md`, `DECISIONS.md`, `PLAN.md`,
+   `handoff.md` and any `map.md` are done. `SPEC.md` / `GRILL.md` / `EXPLORE.md`
+   are work products — move them to the repo root if you still want them.
+   `.project/` holds only its three files.
 
    `.project/` is usually gitignored, so there is no `git checkout` to fall back
    on. Copy it aside before this step.
 
-8. **`/ds-project-map`** — writes `map.md` from the code. Nothing carries over
-   into it; it regenerates wholesale by design. It runs last because it describes
-   the tree as it finds it — map a `.project/` that still holds the old files and
-   they land in `map.md` as if they were live.
-
-9. Start a fresh session and run **`/ds-project-resume`**.
+8. Start a fresh session and run **`/ds-project-resume`**.

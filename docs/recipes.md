@@ -206,7 +206,7 @@ This loop covers the full spec-to-ship ground — spec, plan, build, verify, shi
 
 Ship with plain `git` + `gh`. The artifacts that persist your thinking are `SPEC.md` and `GRILL.md` — commit them. This is deliberately lighter than a phase-based engine: fewer moving parts, no background state, faster to start.
 
-To carry plan and state *across* sessions (so `/clear` is always safe), layer the `.project/` memory skills on top — `/ds-project-map`, `/ds-project-checkpoint`, `/ds-project-resume` — and seed the plan with `/ds-roadmap`. The full `.project/` playbook is [below](#working-with-project-memory).
+To carry plan and state *across* sessions (so `/clear` is always safe), layer the `.project/` memory skills on top — `/ds-project-checkpoint` and `/ds-project-resume` — and seed the plan with `/ds-roadmap`. The full `.project/` playbook is [below](#working-with-project-memory).
 
 ---
 
@@ -214,7 +214,7 @@ To carry plan and state *across* sessions (so `/clear` is always safe), layer th
 
 When you have a backlog of independent changes to land as *separate* PRs — a queue of issues, or a big refactor split into reviewable chunks — the `.project/` files turn it into a loop that survives `/clear` and hands cleanly between sessions. The plan *is* the protocol.
 
-1. **Map once, plan the queue.** `/ds-project-map` writes `.project/map.md` (the repo facts every issue shares). Put the issue order in `.project/roadmap.md`, and let `state.md` carry the cursor: `# now` is the issue and step you're on, `# next` is the single action that moves it. That split is what makes the session reconstructible after a `/clear` — the queue is durable, the cursor is one line.
+1. **Plan the queue.** Put the issue order in `.project/roadmap.md`, and let `state.md` carry the cursor: `# now` is the issue and step you're on, `# next` is the single action that moves it. That split is what makes the session reconstructible after a `/clear` — the queue is durable, the cursor is one line.
 2. **One branch + one draft PR per issue.** Branch off fresh `main`, implement surgically from the issue's spec, run the tests, open a **draft** PR. Record the PR URL in `# now` — it identifies the work in flight.
 3. **Grill the draft, then mark ready.** Point `/ds-grill-me` at the open PR to stress-test the *approach* one decision at a time; apply what it surfaces, then `gh pr ready`. (This is [the draft-PR grill loop](#the-draft-pr-grill-loop) used as one step of the larger loop.)
 4. **Confirm-then-advance at the gates.** Treat *mark-ready* and *merged* as human checkpoints — never assume a merge. Once merged: `git fetch upstream && git checkout main && git merge --ff-only upstream/main`, delete the branch, tick the issue off, and point `# now` at the next one.
@@ -324,7 +324,7 @@ Long tasks hit two walls: the context window fills, and a big pasted input blows
 
 ## Working with `.project/` memory
 
-The `.project/` skills keep a durable description, plan, session state, and preferences in plain markdown, so any session is safe to `/clear` or end and a fresh agent can pick up exactly where you left off. Everything above works *without* `.project/`; this section is the persistence layer you add for work that spans sittings. For the file layout and each skill's behavior, see [project-workflow.md](project-workflow.md).
+The `.project/` skills keep a durable plan, session state, and preferences in plain markdown, so any session is safe to `/clear` or end and a fresh agent can pick up exactly where you left off. Everything above works *without* `.project/`; this section is the persistence layer you add for work that spans sittings. For the file layout and each skill's behavior, see [project-workflow.md](project-workflow.md).
 
 > **There is no execute skill — and that's deliberate.** In the sequences below, a `you →` line is *you typing a normal instruction to the agent*. Implementing is its default behavior; you don't invoke a skill to make it write code. The skills bookend the work — decide, structure, check, persist — and the building in the middle is plain conversation.
 >
@@ -335,8 +335,6 @@ The `.project/` skills keep a durable description, plan, session state, and pref
 
 ### Project from scratch
 
-No code yet, so map comes last — there's nothing to map until something exists.
-
 ```
 you → "I want a CLI that watches a dir and uploads new files to S3"
 /ds-spec                       # WHAT + acceptance criteria → SPEC.md
@@ -345,7 +343,6 @@ you → "I want a CLI that watches a dir and uploads new files to S3"
 /ds-roadmap               # turn the decisions into an ordered roadmap → .project/roadmap.md
 /ds-tiger-style-mode                # engineering bar on for the session
 you → "implement task 1: project scaffold + the dir-watch loop"
-/ds-project-map                # now there's code — capture map.md (description + repo map)
 /ds-deslop                     # clean the generated code
 /ds-verify-this "watcher emits an event within 1s of a new file appearing"
 /ds-project-checkpoint         # persist state, then /clear is safe
@@ -355,10 +352,10 @@ Next session: `/ds-project-resume` and keep going.
 
 ### Adopting it in a live project
 
-The code already exists, so **map first** — establish ground truth before planning.
+The code already exists, so **zoom out first** — establish ground truth before planning.
 
 ```
-/ds-project-map                # scan the existing repo → .project/map.md
+mkdir .project                 # opt in — /ds-roadmap writes here once it exists
 /ds-zoom-out                   # map the area you're about to touch (responsibility, callers, boundaries)
 /ds-roadmap               # seed the roadmap from your current goals / backlog
 you → "implement the first task"
@@ -491,7 +488,6 @@ you → "implement phase 1: introduce the new interface behind the old one"
 /ds-project-checkpoint         # persist before you stop — this will span sessions
 # ...next session...
 /ds-project-resume             # picks up # now and # next
-/ds-project-map                # regenerate map.md once the shape has changed
 /ds-doc-quality-review         # the shape changed — hunt docs the refactor silently rotted (renames, moved files, dead links)
 ```
 
@@ -501,7 +497,6 @@ Checkpoint between *every* phase so you can `/clear` and resume with a clean con
 
 ```
 /ds-project-resume             # reads state.md: # now and # next
-/ds-project-map                # re-run if the code drifted while you were away
 /ds-zoom-out                   # re-familiarize with the area you'll touch
 ```
 
@@ -515,10 +510,9 @@ That one is for a *person*: context, what was tried, the gotchas. A fresh agent 
 
 ### Keeping `.project/` clean
 
-There is no housekeeping skill, because there is nothing to keep house over. `.project/` holds four files, each with one writer, and each bounded by its own shape:
+There is no housekeeping skill, because there is nothing to keep house over. `.project/` holds three files, each with one writer, and each bounded by its own shape:
 
 - **`state.md`** — one line per entry. `# now` and `# next` are overwritten every checkpoint; `# settled` and `# hazards` only accept a line that forbids something or names what breaks. It doesn't grow into prose, so it never needs compacting.
-- **`map.md`** — regenerated wholesale by `/ds-project-map`, and holds nothing that isn't re-derivable from the source. Re-run it when the repo's shape drifts; there's no incremental state to reconcile.
 - **`roadmap.md`** — `/ds-roadmap` appends and `[x]`s tasks. Prune shipped ones by hand when the list stops showing you what's left; git holds the history.
 - **`config.md`** — yours, small, stable. Change it when your preferred modes change.
 
