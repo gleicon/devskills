@@ -69,13 +69,9 @@ Post-release retrospective over a release range: compare what `SPEC.md`/`GRILL.m
 
 ## Project memory (`.project/`)
 
-A minimal, file-backed project memory — three skills over the four-file `.project/` directory, so any session is safe to `/clear` or end. These are *scribes, not pilots*: they record what you decide, never steer architecture. Walkthrough: [project-workflow.md](project-workflow.md). Worked use cases: [recipes.md](recipes.md).
+A minimal, file-backed project memory — two skills over the three-file `.project/` directory, so any session is safe to `/clear` or end. These are *scribes, not pilots*: they record what you decide, never steer architecture. Walkthrough: [project-workflow.md](project-workflow.md). Worked use cases: [recipes.md](recipes.md).
 
-Every file has exactly one writer. `state.md` is the model's, `map.md` is regenerated wholesale, and `config.md` is yours — written by `devskills config`, editable by no skill, which is what lets it hold standing instructions the assistant can't quietly drop.
-
-### `/ds-project-map` — action
-
-Scan the repo and write `.project/map.md` (overview, stack, repo map). Facts only, and only facts re-derivable from the source — so it regenerates wholesale every run, with nothing to preserve and nothing to ask about. Re-run when the repo drifts.
+Every file has exactly one writer. `state.md` is the model's and `config.md` is yours — written by `devskills config`, editable by no skill, which is what lets it hold standing instructions the assistant can't quietly drop.
 
 ### `/ds-project-checkpoint` — action
 

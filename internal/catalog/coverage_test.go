@@ -28,7 +28,6 @@ var grandfathered = map[string]bool{
 	"ds-onboarding":          true,
 	"ds-osv":                 true,
 	"ds-perf-plan":           true,
-	"ds-project-map":         true,
 	"ds-project-resume":      true,
 	"ds-python-review":       true,
 	"ds-quality-gate":        true,

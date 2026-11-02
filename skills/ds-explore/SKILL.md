@@ -15,7 +15,7 @@ When invoked, help the operator think through how to solve a problem by surfacin
 
 1. Establish the problem. If the user gave none, ask once.
 2. Read the context so options respect reality:
-   - `.project/map.md` and `.project/state.md` if present — honor what `# settled` and `# hazards` record, don't re-litigate them.
+   - `.project/state.md` if present — honor what `# settled` and `# hazards` record, don't re-litigate them.
    - the relevant code.
 3. Gather information:
    - With `--web`: research, bounded — a handful of sources, cite each, no open-ended crawl.

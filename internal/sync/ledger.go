@@ -65,6 +65,9 @@ var legacyCommandFiles = slices.Concat(legacyCommands, renamedCommands)
 //	ds-project-verify   — removed; map.md is regenerated wholesale and state.md
 //	                      holds one line per entry, so neither drifts into prose
 //	                      to reconcile.
+//	ds-project-map      — removed; current models find their way around a repo
+//	                      faster than a stored map, and a stale map outranked
+//	                      the code it described.
 //	ds-recall, ds-recall-capture, ds-recall-setup
 //	                    — removed; a per-prompt hook re-injected a mostly
 //	                      duplicate brief each turn, and learned insights never
@@ -80,7 +83,7 @@ var legacyCommandFiles = slices.Concat(legacyCommands, renamedCommands)
 // one provably ours to delete.
 var retiredSkills = []string{
 	"ds-typeset", "ds-senior-mode",
-	"ds-project-config", "ds-project-compact", "ds-project-verify",
+	"ds-project-config", "ds-project-compact", "ds-project-verify", "ds-project-map",
 	"ds-recall", "ds-recall-capture", "ds-recall-setup",
 	"ds-caveman-lite-mode", "ds-caveman-ultra-mode", "ds-quality-gate-mode",
 	"ds-code-review", "ds-modes", "ds-project-plan", "ds-review",

@@ -8,21 +8,18 @@ For the standalone skills these compose with, see [skills.md](skills.md). For wo
 
 ---
 
-## Four files, one writer each
+## Three files, one writer each
 
 ```
 .project/
 ├── config.md      # yours: the modes to apply at session start (devskills config)
 ├── state.md       # what is in flight, what is settled, what will bite you
-├── map.md         # what the repo is and where things live (/ds-project-map)
 └── roadmap.md     # ordered task checklist (/ds-roadmap)
 ```
 
 Every file has exactly one writer, and that is the design rather than a convention. **`config.md` is written by the `devskills config` command — no skill can edit it**, which is what lets it hold standing instructions the assistant can't quietly drop. Put `ds-step-mode` in there and every session starts gated, whether or not you remember to ask.
 
 Commit the directory as shared project memory, or add it to `.gitignore` for a local scratch space. Nothing here depends on git.
-
-Carrying a `.project/` from before the rebuild — `PROJECT.md`, `DECISIONS.md`, `PLAN.md` — see [migration.md](migration.md).
 
 ### `state.md` is the one a session actually loads
 
@@ -52,11 +49,7 @@ That bound is why there is no housekeeping skill here. A file of one-line entrie
 
 ---
 
-## The three skills
-
-### `/ds-project-map` → `map.md`
-
-Reads the code and writes the repo's structural description: overview, stack, a map of the top-level directories. It regenerates the whole file every run — nothing to preserve, nothing to ask about — which is safe precisely because nothing goes in it that couldn't be re-derived from the source. A constraint or a gotcha belongs in `state.md` instead. Re-run when the repo's shape drifts.
+## The two skills
 
 ### `/ds-project-checkpoint` → `state.md`
 
@@ -77,7 +70,6 @@ Run at session start. It applies the modes in `config.md` (read-and-adopt; `--no
 ```
 # first time on a repo
 devskills config                 # optional: modes to auto-apply → .project/config.md
-/ds-project-map                  # map.md: what + where
 
 # starting a piece of work
 /ds-spec                         # optional: WHAT → SPEC.md
@@ -99,7 +91,7 @@ devskills config                 # optional: modes to auto-apply → .project/co
 /ds-retro --record               # decided vs shipped → RETRO.md rules for the next cycle
 ```
 
-Every step is engineer-driven and self-contained. The only persistent artifacts are four small files — readable, diffable, and yours to edit by hand at any time.
+Every step is engineer-driven and self-contained. The only persistent artifacts are three small files — readable, diffable, and yours to edit by hand at any time.
 
 ---
 
@@ -111,4 +103,4 @@ Every step is engineer-driven and self-contained. The only persistent artifacts 
 - `/ds-handoff` stays separate and ephemeral: a temp dir, tool-agnostic, for handing work to a person.
 - `/ds-step-mode .project/roadmap.md` drives the roadmap one user-gated step at a time — the execution complement to these note-taking skills.
 
-Nothing here is required to use the standalone skills — `.project/` is opt-in. Create it with `/ds-project-map` (or just `mkdir .project`) and the workflow switches on.
+Nothing here is required to use the standalone skills — `.project/` is opt-in. Create it with `mkdir .project` (or let `devskills config` or the first `/ds-project-checkpoint` create it) and the workflow switches on.
